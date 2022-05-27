@@ -7,7 +7,6 @@
 #include <string> // string, hash
 #include <variant> // variant, monostate, get_if
 #include <fstream> // ifstream
-#include <charconv> // from_chars
 #include <unordered_map> // unordered_map
 #include <initializer_list> // initializer_list
 #include <functional> // invoke, hash
@@ -19,31 +18,6 @@
 
 // https://www.cppstories.com/2018/12/fromchars/
 namespace aa {
-
-	template<class>
-	struct evaluator;
-
-	// Nėra kreipiama dėmesio į evaluat'inimo procesu įvykusias klaidas standartiniuose evaluator'iuose,
-	// nes daroma prielaida, kad naudotojas nenori, kad būtų sustabdyta programa jei buvo tokios klados aptiktos.
-	template<arithmetic T>
-	struct evaluator<T> {
-		inline T operator()(const std::string_view &token) const {
-			// Reikia inicializuoti kintamąjį, nes from_chars nebūtinai jį modifikuos.
-			T param = 0;
-			std::from_chars(token.data(), token.data() + token.length(), param);
-			return param;
-		}
-	};
-
-	// Negalime turėti evaluator<std::string_view>, nes atmintis į kurią rodo token pasikeis.
-	template<>
-	struct evaluator<std::string> {
-		inline constexpr std::string operator()(const std::string_view &token) const {
-			return std::string{token};
-		}
-	};
-
-
 
 	// Būvo idėja realizuoti escape sequences, bet faile galima	tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
 	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
