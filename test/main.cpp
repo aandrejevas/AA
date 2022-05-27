@@ -14,19 +14,20 @@ regexes:
 size_t[^y]
 */
 
-#include "AA/container/static_perfect_hash_set.hpp"
-#include "AA/container/static_flat_set.hpp"
-#include "AA/algorithm/find.hpp"
-#include "AA/algorithm/shift.hpp"
-#include "AA/algorithm/permute.hpp"
-#include "AA/algorithm/lcg.hpp"
-#include "AA/algorithm/repeat.hpp"
-#include "AA/preprocessor/assert.hpp"
-#include "AA/metaprogramming/general.hpp"
-#include "AA/time/timekeeper.hpp"
-#include "AA/io/lexer.hpp"
-#include "AA/io/writer.hpp"
-#include "AA/io/print.hpp"
+#include <AA/container/static_perfect_hash_set.hpp>
+#include <AA/container/static_flat_set.hpp>
+#include <AA/algorithm/find.hpp>
+#include <AA/algorithm/shift.hpp>
+#include <AA/algorithm/permute.hpp>
+#include <AA/algorithm/generate.hpp>
+#include <AA/algorithm/lcg.hpp>
+#include <AA/algorithm/repeat.hpp>
+#include <AA/preprocessor/assert.hpp>
+#include <AA/metaprogramming/general.hpp>
+#include <AA/time/timekeeper.hpp>
+#include <AA/io/lexer.hpp>
+#include <AA/io/writer.hpp>
+#include <AA/io/print.hpp>
 #include <cstddef> // size_t
 #include <cstdint> // uint32_t
 #include <cstdlib> // EXIT_SUCCESS
@@ -51,7 +52,8 @@ int main() {
 	timekeeper tttt;
 	tttt.start();
 	{
-		pascal_lcg g, initial_g = g;
+		pascal_lcg g;
+		const pascal_lcg initial_g = g;
 		std::map<int, size_t> m;
 
 		std::ranges::for_each(std::views::iota(1uz, 5001uz), [&](const size_t i) -> void {
