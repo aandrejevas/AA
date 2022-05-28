@@ -78,4 +78,11 @@ namespace aa {
 		} while (true);
 	}
 
+	// product_result_t tipas gali būti void, bet nieko tokio tai, nes return sakinys gali būti naudojamas
+	// su išraišką, jei tos išraiškos tipas yra void, funkcijoje, kurios gražinamas tipas yra void.
+	template<multipliable_with T>
+	inline constexpr product_result_t<T> sq(const T &x) {
+		return x * x;
+	}
+
 }

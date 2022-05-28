@@ -43,3 +43,7 @@
 #define AA_EXP2(...) AA_OVERLOAD(AA_EXP2_, __VA_ARGS__)(__VA_ARGS__)
 #define AA_EXP2_1(n) (1uz << (n))
 #define AA_EXP2_2(T, n) (std::integral_constant<T, 1>::value << (n))
+#
+#
+#
+#define AA_MUL(l, r) ((l) * (r))

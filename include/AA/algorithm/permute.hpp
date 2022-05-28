@@ -3,7 +3,7 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/generator.hpp"
 #include "../metaprogramming/range.hpp"
-#include "lcg.hpp"
+#include "generate.hpp"
 #include <iterator> // iter_swap, iter_value_t, sized_sentinel_for, sentinel_for
 #include <type_traits> // remove_reference_t
 #include <utility> // forward

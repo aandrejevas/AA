@@ -16,7 +16,6 @@
 
 
 
-// https://www.cppstories.com/2018/12/fromchars/
 namespace aa {
 
 	// Būvo idėja realizuoti escape sequences, bet faile galima	tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.

@@ -6,24 +6,46 @@
 // • <array> (<compare>, <initializer_list>), failas įterptas, kad nereiktų naudoti C stiliaus masyvų.
 // • <string_view> (<compare>) ir <string> (<compare>, <initializer_list>), failai įterpti, kad nereiktų naudoti C stiliaus teksto eilučių.
 // • <type_traits> ir <concepts>, failai įterpti, kad išeitų lengvai protauti apie tipus.
+// • <utility> (<compare>, <initializer_list>), failas įterptas, kad išeitų lengvai protauti apie išraiškas.
 // • <limits>, failas įterptas, kad išeitų lengvai nautotis pamatinių tipų savybėmis.
 // Failai paminėti skliausteliose prie įterpiamo failo nurodo kokie failai yra įterpiami pačio įterpiamo failo.
 
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref_t
+#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref_t, add_lvalue_reference_t
 #include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, unsigned_integral, floating_point, relation, invocable
 #include <limits> // numeric_limits
 #include <string_view> // string_view
 #include <array> // array
+#include <utility> // declval
 
 
 
 namespace aa {
 
 	template<class T>
+	struct add_lvalue_cref : std::type_identity<std::add_lvalue_reference_t<std::add_const_t<T>>> {};
+
+	template<class T>
+	using add_lvalue_cref_t = add_lvalue_cref<T>::type;
+
+
+
+	template<class T>
 	concept functor = requires { T::operator(); };
+
+	template<class T, class U = T>
+	concept multipliable_with = requires(const T & t, const U & u) { (t * u); (u * t); };
+
+	// AA_MUL uždeda skliaustelius apie išraišką, bet šiuo atveju tai nesvarbu, nes decltype ir su
+	// skliausteliais ir be jų nustatytų tą patį tipą, nes jam paduodama išraiška, o ne kintamojo vardas.
+	template<class L, multipliable_with<L> R = L>
+	struct product_result
+		: std::type_identity<decltype(AA_MUL(std::declval<add_lvalue_cref_t<L>>(), std::declval<add_lvalue_cref_t<R>>()))> {};
+
+	template<class L, class R = L>
+	using product_result_t = product_result<L, R>::type;
 
 
 
@@ -49,6 +71,9 @@ namespace aa {
 
 	template<class T>
 	concept trivially_copyable = std::is_trivially_copyable_v<T>;
+
+	template<class T, class U>
+	concept unsigned_integral_same_as = std::unsigned_integral<T> && std::same_as<T, U>;
 
 
 
@@ -78,11 +103,6 @@ namespace aa {
 
 	template<class T>
 	using evaluator_result_t = evaluator_result<T>::type;
-
-
-
-	template<class T, class U>
-	concept unsigned_integral_same_as = std::unsigned_integral<T> && std::same_as<T, U>;
 
 
 
