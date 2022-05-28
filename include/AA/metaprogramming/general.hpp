@@ -13,7 +13,7 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref_t, add_lvalue_reference_t
+#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, add_lvalue_reference
 #include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, unsigned_integral, floating_point, relation, invocable
 #include <limits> // numeric_limits
 #include <string_view> // string_view
@@ -25,7 +25,7 @@
 namespace aa {
 
 	template<class T>
-	struct add_lvalue_cref : std::type_identity<std::add_lvalue_reference_t<std::add_const_t<T>>> {};
+	struct add_lvalue_cref : std::add_lvalue_reference<std::add_const_t<T>> {};
 
 	template<class T>
 	using add_lvalue_cref_t = add_lvalue_cref<T>::type;
@@ -99,7 +99,7 @@ namespace aa {
 		&& std::copy_constructible<std::remove_cvref_t<std::invoke_result_t<const T &, const std::string_view &>>>;
 
 	template<storable_evaluator T>
-	struct evaluator_result : std::type_identity<std::remove_cvref_t<std::invoke_result_t<const T &, const std::string_view &>>> {};
+	struct evaluator_result : std::remove_cvref<std::invoke_result_t<const T &, const std::string_view &>> {};
 
 	template<class T>
 	using evaluator_result_t = evaluator_result<T>::type;

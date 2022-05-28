@@ -3,7 +3,7 @@
 #include "general.hpp"
 #include <random> // uniform_random_bit_generator
 #include <limits> // numeric_limits
-#include <type_traits> // invoke_result_t, type_identity, remove_reference_t
+#include <type_traits> // invoke_result, remove_reference_t
 #include <iterator> // iter_difference_t
 #include <concepts> // convertible_to
 
@@ -12,7 +12,7 @@
 namespace aa {
 
 	template<std::uniform_random_bit_generator G>
-	struct generator_result : std::type_identity<std::invoke_result_t<G &>> {};
+	struct generator_result : std::invoke_result<G &> {};
 
 	template<class G>
 	using generator_result_t = generator_result<G>::type;
@@ -27,7 +27,7 @@ namespace aa {
 
 
 	template<full_range_generator G>
-	struct generator_modulus : std::type_identity<next_unsigned_t<generator_result_t<G>>> {};
+	struct generator_modulus : next_unsigned<generator_result_t<G>> {};
 
 	template<class G>
 	using generator_modulus_t = generator_modulus<G>::type;
