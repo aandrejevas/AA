@@ -5,6 +5,8 @@
 #include <cstddef> // size_t, ptrdiff_t
 #include <memory> // construct_at
 #include <utility> // forward
+#include <concepts> // constructible_from
+#include <type_traits> // conditional_t
 
 
 
@@ -30,16 +32,24 @@ namespace aa {
 		inline constexpr reference operator[](const size_type pos) { return at(pos); }
 		inline constexpr const_reference operator[](const size_type pos) const { return at(pos); }
 
-		inline constexpr reference at(const size_type pos) { return *(data() + pos); }
-		inline constexpr const_reference at(const size_type pos) const { return *(data() + pos); }
-		inline constexpr const_reference cat(const size_type pos) const { return at(pos); }
+		inline constexpr reference at(const size_type pos) { return *pointer_at(pos); }
+		inline constexpr const_reference at(const size_type pos) const { return *pointer_at(pos); }
+		inline constexpr const_reference c_at(const size_type pos) const { return at(pos); }
 
-		inline constexpr reference rat(const size_type pos) { return *(r_begin - pos); }
-		inline constexpr const_reference rat(const size_type pos) const { return *(r_begin - pos); }
-		inline constexpr const_reference crat(const size_type pos) const { return rat(pos); }
+		inline constexpr reference r_at(const size_type pos) { return *rpointer_at(pos); }
+		inline constexpr const_reference r_at(const size_type pos) const { return *rpointer_at(pos); }
+		inline constexpr const_reference cr_at(const size_type pos) const { return r_at(pos); }
 
-		inline constexpr pointer data() { return elems.data(); }
-		inline constexpr const_pointer data() const { return elems.data(); }
+		inline constexpr pointer pointer_at(const size_type pos) { return data() + pos; }
+		inline constexpr const_pointer pointer_at(const size_type pos) const { return data() + pos; }
+		inline constexpr const_pointer cpointer_at(const size_type pos) const { return pointer_at(pos); }
+
+		inline constexpr pointer rpointer_at(const size_type pos) { return r_begin - pos; }
+		inline constexpr const_pointer rpointer_at(const size_type pos) const { return r_begin - pos; }
+		inline constexpr const_pointer crpointer_at(const size_type pos) const { return rpointer_at(pos); }
+
+		inline constexpr pointer data() { return elements.data(); }
+		inline constexpr const_pointer data() const { return elements.data(); }
 		inline constexpr const_pointer cdata() const { return data(); }
 
 		inline constexpr pointer rdata() { return r_begin; }
@@ -100,6 +110,7 @@ namespace aa {
 		inline constexpr void push_back(const size_type count) { r_begin += count; }
 
 		template<class... A>
+			requires (std::constructible_from<value_type, A...>)
 		inline constexpr void emplace_back(A&&... args) {
 			std::ranges::construct_at(++r_begin, std::forward<A>(args)...);
 		}
@@ -107,6 +118,7 @@ namespace aa {
 		inline constexpr void insert_back(const value_type &value) { *++r_begin = value; }
 
 		template<class... A>
+			requires (std::constructible_from<value_type, A...>)
 		inline void emplace(const const_iterator pos, A&&... args) {
 			std::memmove(const_cast<iterator>(pos + 1), pos,
 				static_cast<size_t>(reinterpret_cast<const char *>(++r_begin) - reinterpret_cast<const char *>(pos)));
@@ -125,17 +137,18 @@ namespace aa {
 		}
 
 		template<class... A>
-		inline void fast_emplace(const const_iterator pos, A&&... args) {
+			requires (std::constructible_from<value_type, A...>)
+		inline constexpr void fast_emplace(const const_iterator pos, A&&... args) {
 			insert_back(*pos);
 			std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
-		inline void fast_insert(const const_iterator pos, const value_type &value) {
+		inline constexpr void fast_insert(const const_iterator pos, const value_type &value) {
 			insert_back(*pos);
 			*const_cast<iterator>(pos) = value;
 		}
 
-		inline void fast_erase(const const_iterator pos) {
+		inline constexpr void fast_erase(const const_iterator pos) {
 			*const_cast<iterator>(pos) = *r_begin--;
 		}
 
@@ -146,6 +159,8 @@ namespace aa {
 		// Matą netikrą klaidą kompiliuojant su -Ofast.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
+		// Nedarome = default, nes konstrukrotius vis tiek nebus trivial,
+		// nes klasė turi kintamųjų su numatytais inicializatoriais.
 		inline constexpr static_vector() {}
 #pragma GCC diagnostic pop
 		inline constexpr static_vector(const const_iterator pos) : r_begin{const_cast<iterator>(pos)} {}
@@ -155,8 +170,8 @@ namespace aa {
 
 		// Member objects
 	protected: // protected, kad r_end nebūtų galima sugadinti
-		array_t<value_type, N> elems;
-		value_type *const r_end = elems.data() - 1, *r_begin = r_end;
+		array_t<value_type, N> elements;
+		value_type *const r_end = elements.data() - 1, *r_begin = r_end;
 	};
 
 }

@@ -14,6 +14,7 @@ regexes:
 size_t[^y]
 */
 
+#include <AA/container/static_free_vector.hpp>
 #include <AA/container/static_perfect_hash_set.hpp>
 #include <AA/container/static_flat_set.hpp>
 #include <AA/algorithm/find.hpp>
@@ -35,7 +36,7 @@ size_t[^y]
 #include <ios> // sync_with_stdio
 #include <map> // map
 #include <unordered_set> // unordered_set
-#include <ranges> // iota
+#include <ranges> // iota, random_access_range
 #include <algorithm> // for_each, is_sorted, is_permutation
 #include <string> // string
 #include <limits> // numeric_limits
@@ -76,7 +77,6 @@ int main() {
 			const double a = real_distribution(g);
 			AA_TRACE_ASSERT(0 <= a && a < 1, a);
 		}*/
-		//std::unreachable();
 	}
 	{
 		println(type_name<std::string>());
@@ -180,6 +180,22 @@ int main() {
 			a.erase(*a.begin(a.index_at(int_distribution(g, a.bucket_count()))));
 		}
 		std::ranges::for_each(a.buckets(), [&](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
+	}
+	{
+		static_free_vector<size_t, 50'000> a;
+
+		repeat(a.max_size(), [&]() { a.emplace(a.size()); });
+		std::ranges::for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { a.erase(i); AA_TRACE_ASSERT(!a[i]); });
+		std::ranges::for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
+
+		AA_TRACE_ASSERT(a.max_size() == a.size());
+		repeat(a.size() >> 1, [&]() { a.emplace(a.size()); });
+		AA_TRACE_ASSERT(a.max_size() == a.size());
+
+		std::ranges::for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == a.size()); });
+		std::ranges::for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
+
+		static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
 	tttt.stop();
 	println(tttt.elapsed());

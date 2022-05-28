@@ -32,7 +32,9 @@ namespace aa {
 		// Element access
 		inline constexpr const_reference operator[](const size_type pos) const { return elements[pos]; }
 		inline constexpr const_reference at(const size_type pos) const { return elements.at(pos); }
-		inline constexpr const_reference rat(const size_type pos) const { return elements.rat(pos); }
+		inline constexpr const_reference r_at(const size_type pos) const { return elements.r_at(pos); }
+		inline constexpr const_pointer pointer_at(const size_type pos) const { return elements.pointer_at(pos); }
+		inline constexpr const_pointer rpointer_at(const size_type pos) const { return elements.rpointer_at(pos); }
 
 		inline constexpr const_pointer data() const { return elements.data(); }
 		inline constexpr const_pointer rdata() const { return elements.rdata(); }
