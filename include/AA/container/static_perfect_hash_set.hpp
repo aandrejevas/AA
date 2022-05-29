@@ -248,7 +248,7 @@ namespace aa {
 	protected:
 		static_vector<bucket_type *, M> used_bins;
 		array_t<bucket_type, N> bins = {};
-		[[no_unique_address]] const hasher hasher_func = {};
+		[[no_unique_address]] const hasher hasher_func;
 	};
 
 }
