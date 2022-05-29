@@ -22,20 +22,21 @@ namespace aa {
 		using const_reference = const value_type &;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
+		using container_type = static_free_vector<T, N>;
 
 	protected:
-		using container_type = static_vector<std::variant<value_type, void *>, N>;
-		using container_pointer = container_type::pointer;
-		using container_const_pointer = container_type::const_pointer;
+		using internal_container_type = static_vector<std::variant<value_type, void *>, N>;
+		using internal_container_pointer = internal_container_type::pointer;
+		using internal_container_const_pointer = internal_container_type::const_pointer;
 
-		template<bool C>
+		template<class P1, class P2>
 		struct variant_iterator {
-			using value_type = std::conditional_t<C, pointer, const_pointer>;
+			using value_type = P1;
 			using difference_type = difference_type;
 			using reference = value_type;
 			using pointer = value_type;
 			using iterator_category = std::random_access_iterator_tag;
-			using iterator_type = variant_iterator<C>;
+			using iterator_type = variant_iterator<P1, P2>;
 
 			inline constexpr reference operator*() const { return std::get_if<0>(ptr); }
 			inline constexpr pointer operator->() const { return std::get_if<0>(ptr); }
@@ -60,17 +61,17 @@ namespace aa {
 			inline constexpr variant_iterator(const iterator_type &) = default;
 
 		protected:
-			friend static_free_vector<T, N>;
-			using container_pointer = std::conditional_t<C, container_pointer, container_const_pointer>;
+			friend container_type;
+			using internal_container_pointer = P2;
 
-			inline constexpr variant_iterator(const container_pointer p) : ptr{p} {}
+			inline constexpr variant_iterator(const internal_container_pointer p) : ptr{p} {}
 
-			container_pointer ptr;
+			internal_container_pointer ptr;
 		};
 
 	public:
-		using iterator = variant_iterator<true>;
-		using const_iterator = variant_iterator<false>;
+		using iterator = variant_iterator<pointer, internal_container_pointer>;
+		using const_iterator = variant_iterator<const_pointer, internal_container_const_pointer>;
 
 
 
@@ -133,8 +134,8 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		inline constexpr void emplace(A&&... args) {
 			if (first_hole) {
-				const container_pointer hole = first_hole;
-				first_hole = static_cast<container_pointer>(std::get<1>(*hole));
+				const internal_container_pointer hole = first_hole;
+				first_hole = static_cast<internal_container_pointer>(std::get<1>(*hole));
 				hole->template emplace<0>(std::forward<A>(args)...);
 			} else {
 				elements.emplace_back(std::in_place_index<0>, std::forward<A>(args)...);
@@ -142,7 +143,7 @@ namespace aa {
 		}
 
 		inline constexpr void erase(const size_type pos) {
-			const container_pointer element = elements.pointer_at(pos);
+			const internal_container_pointer element = elements.pointer_at(pos);
 			if (!element->index()) {
 				element->template emplace<1>(first_hole);
 				first_hole = element;
@@ -158,8 +159,8 @@ namespace aa {
 
 		// Member objects
 	protected:
-		container_type elements;
-		container_pointer first_hole = nullptr;
+		internal_container_type elements;
+		internal_container_pointer first_hole = nullptr;
 	};
 
 }
