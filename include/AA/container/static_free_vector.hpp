@@ -117,6 +117,8 @@ namespace aa {
 
 
 		// Capacity
+		inline constexpr bool has_holes() const { return first_hole; }
+
 		inline constexpr bool empty() const { return elements.empty(); }
 		inline constexpr bool full() const { return elements.full(); }
 

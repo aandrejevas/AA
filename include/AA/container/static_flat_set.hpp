@@ -66,6 +66,9 @@ namespace aa {
 		// Observers
 		inline constexpr const key_compare &key_comp() const { return comparer; }
 
+		template<class K1, in_relation_with<K1, key_compare> K2>
+		inline constexpr bool compare(const K1 &key1, const K2 &key2) const { return std::invoke(comparer, key1, key2); }
+
 
 
 		// Lookup
@@ -81,18 +84,18 @@ namespace aa {
 
 		template<in_relation_with<value_type, key_compare> K>
 		inline constexpr const_iterator find(const K &key) const {
-			if (empty() || std::invoke(comparer, back(), key)) {
+			if (empty() || compare(back(), key)) {
 				return nullptr;
 			} else {
 				const const_iterator pos = lower_bound(key);
-				return !std::invoke(comparer, key, *pos) ? pos : nullptr;
+				return !compare(key, *pos) ? pos : nullptr;
 			}
 		}
 
 		template<in_relation_with<value_type, key_compare> K>
 		inline constexpr bool contains(const K &key) const {
-			return (empty() || std::invoke(comparer, back(), key))
-				? false : !std::invoke(comparer, key, *lower_bound(key));
+			return (empty() || compare(back(), key))
+				? false : !compare(key, *lower_bound(key));
 		}
 
 
@@ -116,12 +119,12 @@ namespace aa {
 				if (empty()) {
 					clear(value);
 					return true;
-				} else if (std::invoke(comparer, back(), value)) {
+				} else if (compare(back(), value)) {
 					elements.insert_back(value);
 					return true;
 				} else {
 					const const_iterator pos = lower_bound(value);
-					if (std::invoke(comparer, value, *pos)) {
+					if (compare(value, *pos)) {
 						elements.insert(pos, value);
 						return true;
 					} else return false;
@@ -131,11 +134,11 @@ namespace aa {
 
 		template<in_relation_with<value_type, key_compare> K>
 		inline void erase(const K &key) {
-			if (empty() || std::invoke(comparer, back(), key)) {
+			if (empty() || compare(back(), key)) {
 				return;
 			} else {
 				const const_iterator pos = lower_bound(key);
-				if (!std::invoke(comparer, key, *pos))
+				if (!compare(key, *pos))
 					elements.erase(pos);
 			}
 		}

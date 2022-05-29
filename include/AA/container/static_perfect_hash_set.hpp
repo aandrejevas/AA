@@ -165,13 +165,13 @@ namespace aa {
 		[[gnu::always_inline]] static inline constexpr size_type bucket(const size_type hash) { return remainder<N>(hash); }
 		[[gnu::always_inline]] static inline constexpr bucket_type bit(const size_type hash) { return int_exp2<bucket_type>(quotient<N>(hash)); }
 
-		template<hashable_by<hasher> K>
-		[[gnu::always_inline]] inline constexpr size_type hash(const K &key) const { return std::invoke(hasher_func, key); }
-
 
 
 		// Observers
 		inline constexpr const hasher &hash_function() const { return hasher_func; }
+
+		template<hashable_by<hasher> K>
+		[[gnu::always_inline]] inline constexpr size_type hash(const K &key) const { return std::invoke(hasher_func, key); }
 
 		// Kituose konteineriuose vidinio konteinerio nerodome, nes kituose konteineriuose vidinis
 		// konteineris galima sakyti yra pats konteineris tai nėra tikslo to daryti.
