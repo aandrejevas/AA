@@ -14,14 +14,16 @@
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
+	// Ne forward'iname g, nes tiesiog visais atvejais paduosime reference ir tiek, čia nėra reikalo palaikyti move semantics.
 	template<permutable_random_access_range R, differences_generator_for<std::ranges::iterator_t<R>> G>
 	inline constexpr void shuffle(R &&r, G &&g) {
-		shuffle(std::ranges::begin(r), std::ranges::end(r), std::forward<G>(g));
+		shuffle(std::ranges::begin(r), std::ranges::end(r), g);
 	}
 
+	// Ne move'iname b, nes jei b būtų lvalue ref, tai b būtų sugadintas, negali b būti const&, nes tada neišeitų palaikyti move semantics.
 	template<permutable_random_access_iterator I, std::sized_sentinel_for<I> SS, differences_generator_for<I> G>
 	inline constexpr void shuffle(I &&b, const SS &e, G &&g) {
-		partial_shuffle(std::forward<I>(b), e, e - 2, std::forward<G>(g));
+		partial_shuffle(std::forward<I>(b), e, e - 2, g);
 	}
 
 	template<permutable_random_access_iterator I, std::sized_sentinel_for<I> SS, std::sentinel_for<I> S, differences_generator_for<I> G>

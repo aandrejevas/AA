@@ -239,9 +239,8 @@ namespace aa {
 
 
 		// Special member functions
-		inline constexpr static_perfect_hash_set() {}
-		template<class U>
-		inline constexpr static_perfect_hash_set(U &&h) : hasher_func{std::forward<U>(h)} {}
+		template<class U = hasher>
+		inline constexpr static_perfect_hash_set(U &&h = {}) : hasher_func{std::forward<U>(h)} {}
 
 
 

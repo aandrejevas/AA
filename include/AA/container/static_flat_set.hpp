@@ -150,9 +150,11 @@ namespace aa {
 
 
 		// Special member functions
-		inline constexpr static_flat_set() {}
-		template<class U>
-		inline constexpr static_flat_set(U &&c) : comparer{std::forward<U>(c)} {}
+		// Nėra esmės turėti default konstruktoriaus, nes comparer vis tiek reikėtų inicializuoti,
+		// nes comparer tipas yra const. Perfect forwarding naudojame, kad palaikyti move semantics
+		// ir pass by reference, jei parametras būtų const& tai neišeitų palaikyti move semantics.
+		template<class U = key_compare>
+		inline constexpr static_flat_set(U &&c = {}) : comparer{std::forward<U>(c)} {}
 		template<class U = key_compare>
 		inline constexpr static_flat_set(const value_type &value, U &&c = {})
 			: elements{elements.begin()}, comparer{std::forward<U>(c)} { elements.back() = value; }
@@ -162,7 +164,7 @@ namespace aa {
 		// Member objects
 	protected:
 		static_vector<T, N> elements;
-		[[no_unique_address]] const key_compare comparer = {};
+		[[no_unique_address]] const key_compare comparer;
 	};
 
 	template<class T, size_t N, class C = std::ranges::less>
