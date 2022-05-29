@@ -25,6 +25,8 @@ namespace aa {
 		using container_type = static_free_vector<T, N>;
 
 	protected:
+		inline static constexpr const size_t hole_index = 0, elem_index = 1;
+
 		// void* turi būti pirmas tipas, nes masyvo inicializavimo metu, bus inicializuojami visi jo elementai
 		// ir variant default kontruktorius inicializuoja pirmą alternatyvą, makes sence, kad by default aktyvi
 		// alternatyva būtų void* ir apskritai value_type gali neturėti default konstruktoriaus.
@@ -41,8 +43,8 @@ namespace aa {
 			using iterator_category = std::random_access_iterator_tag;
 			using iterator_type = variant_iterator<P1, P2>;
 
-			inline constexpr reference operator*() const { return std::get_if<1>(ptr); }
-			inline constexpr pointer operator->() const { return std::get_if<1>(ptr); }
+			inline constexpr reference operator*() const { return std::get_if<elem_index>(ptr); }
+			inline constexpr pointer operator->() const { return std::get_if<elem_index>(ptr); }
 
 			inline constexpr iterator_type &operator++() { ++ptr; return *this; }
 			inline constexpr iterator_type operator++(int) { return {ptr++}; }
@@ -53,7 +55,7 @@ namespace aa {
 			friend inline constexpr std::strong_ordering operator<=>(const iterator_type &l, const iterator_type &r) { return l.ptr <=> r.ptr; }
 
 			inline constexpr difference_type operator-(const iterator_type &r) const { return ptr - r.ptr; }
-			inline constexpr reference operator[](const difference_type n) const { return std::get_if<1>(ptr + n); }
+			inline constexpr reference operator[](const difference_type n) const { return std::get_if<elem_index>(ptr + n); }
 			inline constexpr iterator_type operator+(const difference_type n) const { return {ptr + n}; }
 			inline constexpr iterator_type operator-(const difference_type n) const { return {ptr - n}; }
 			inline constexpr iterator_type &operator+=(const difference_type n) { ptr += n; return *this; }
@@ -79,23 +81,23 @@ namespace aa {
 
 
 		// Element access
-		inline constexpr pointer operator[](const size_type pos) { return std::get_if<1>(elements.pointer_at(pos)); }
-		inline constexpr const_pointer operator[](const size_type pos) const { return std::get_if<1>(elements.pointer_at(pos)); }
+		inline constexpr pointer operator[](const size_type pos) { return std::get_if<elem_index>(elements.pointer_at(pos)); }
+		inline constexpr const_pointer operator[](const size_type pos) const { return std::get_if<elem_index>(elements.pointer_at(pos)); }
 
-		inline constexpr pointer at(const size_type pos) { return std::get_if<1>(elements.pointer_at(pos)); }
-		inline constexpr const_pointer at(const size_type pos) const { return std::get_if<1>(elements.pointer_at(pos)); }
+		inline constexpr pointer at(const size_type pos) { return std::get_if<elem_index>(elements.pointer_at(pos)); }
+		inline constexpr const_pointer at(const size_type pos) const { return std::get_if<elem_index>(elements.pointer_at(pos)); }
 		inline constexpr const_pointer c_at(const size_type pos) const { return at(pos); }
 
-		inline constexpr pointer r_at(const size_type pos) { return std::get_if<1>(elements.rpointer_at(pos)); }
-		inline constexpr const_pointer r_at(const size_type pos) const { return std::get_if<1>(elements.rpointer_at(pos)); }
+		inline constexpr pointer r_at(const size_type pos) { return std::get_if<elem_index>(elements.rpointer_at(pos)); }
+		inline constexpr const_pointer r_at(const size_type pos) const { return std::get_if<elem_index>(elements.rpointer_at(pos)); }
 		inline constexpr const_pointer cr_at(const size_type pos) const { return r_at(pos); }
 
-		inline constexpr pointer front() { return std::get_if<1>(elements.data()); }
-		inline constexpr const_pointer front() const { return std::get_if<1>(elements.data()); }
+		inline constexpr pointer front() { return std::get_if<elem_index>(elements.data()); }
+		inline constexpr const_pointer front() const { return std::get_if<elem_index>(elements.data()); }
 		inline constexpr const_pointer cfront() const { return front(); }
 
-		inline constexpr pointer back() { return std::get_if<1>(elements.rdata()); }
-		inline constexpr const_pointer back() const { return std::get_if<1>(elements.rdata()); }
+		inline constexpr pointer back() { return std::get_if<elem_index>(elements.rdata()); }
+		inline constexpr const_pointer back() const { return std::get_if<elem_index>(elements.rdata()); }
 		inline constexpr const_pointer cback() const { return back(); }
 
 
@@ -140,17 +142,17 @@ namespace aa {
 		inline constexpr void emplace(A&&... args) {
 			if (first_hole) {
 				const internal_container_pointer hole = first_hole;
-				first_hole = static_cast<internal_container_pointer>(std::get<0>(*hole));
-				hole->template emplace<1>(std::forward<A>(args)...);
+				first_hole = static_cast<internal_container_pointer>(std::get<hole_index>(*hole));
+				hole->template emplace<elem_index>(std::forward<A>(args)...);
 			} else {
-				elements.emplace_back(std::in_place_index<1>, std::forward<A>(args)...);
+				elements.emplace_back(std::in_place_index<elem_index>, std::forward<A>(args)...);
 			}
 		}
 
 		inline constexpr void erase(const size_type pos) {
 			const internal_container_pointer element = elements.pointer_at(pos);
-			if (element->index()) {
-				element->template emplace<0>(first_hole);
+			if (element->index() == elem_index) {
+				element->template emplace<hole_index>(first_hole);
 				first_hole = element;
 			}
 		}
