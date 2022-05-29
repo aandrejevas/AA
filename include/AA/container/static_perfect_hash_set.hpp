@@ -192,10 +192,8 @@ namespace aa {
 		inline constexpr void clear() {
 			// Nedarome used_bins.clear(), nes vis tiek reiktų iteruoti per visus elementus ir tam reiktų įsivesti
 			// lokalų kintamąjį, pamąsčiau kam tai daryti jei galime naudoti jau static_vector klasėje esantį kintamąjį.
-			while (!used_bins.empty()) {
-				*used_bins.back() = 0;
-				used_bins.pop_back();
-			}
+			if (!used_bins.empty())
+				unsafe_clear();
 		}
 
 		inline constexpr void unsafe_clear() {

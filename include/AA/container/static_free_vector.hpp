@@ -7,6 +7,7 @@
 #include <concepts> // constructible_from
 #include <iterator> // random_access_iterator_tag
 #include <compare> // strong_ordering
+#include <functional> // invoke
 
 
 
@@ -136,6 +137,21 @@ namespace aa {
 
 		// Modifiers
 		inline constexpr void clear() { elements.clear(); first_hole = nullptr; }
+
+		template<invocable_ref<pointer> F>
+		inline constexpr void clear(F &&f) {
+			if (!elements.empty())
+				unsafe_clear(f);
+		}
+
+		template<invocable_ref<pointer> F>
+		inline constexpr void unsafe_clear(F &&f) {
+			do {
+				std::invoke(f, back());
+				elements.pop_back();
+			} while (!elements.empty());
+			first_hole = nullptr;
+		}
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)

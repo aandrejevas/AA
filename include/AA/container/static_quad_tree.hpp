@@ -2,7 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include "static_free_vector.hpp"
-#include <cstddef> // size_t
+#include <cstddef> // ptrdiff_t, size_t
 #include <numeric> // accumulate
 #include <functional> // invoke
 #include <utility> // forward
@@ -19,6 +19,8 @@ namespace aa {
 	struct static_quad_tree {
 		// Member types
 		using locator = L;
+		using size_type = size_t;
+		using difference_type = ptrdiff_t;
 		using container_type = static_quad_tree<L, D, N>;
 
 		struct value_type {
@@ -105,6 +107,12 @@ namespace aa {
 
 
 		// Modifiers
+		inline constexpr void clear() {
+			elements.clear([](const value_type *const p) {
+				if (p) *(p->leaf) = nullptr;
+			});
+		}
+
 		inline void insert(void *const element) {
 			trunk.insert(element, locate(element), rect, *this);
 		}

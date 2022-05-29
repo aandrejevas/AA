@@ -49,6 +49,9 @@ namespace aa {
 
 
 
+	template<class F, class... A>
+	concept invocable_ref = std::invocable<F &, A...>;
+
 	template<class T, class F>
 	concept convertible_from = std::is_void_v<T> || std::convertible_to<F, T>;
 
