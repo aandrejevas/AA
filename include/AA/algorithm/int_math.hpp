@@ -12,15 +12,15 @@ namespace aa {
 	//
 	// x generic, nes sqrt generic, taip pat sqrt gražinamos reikšmės tipas priklauso nuo paduodamo argumento tipo.
 	// https://en.wikipedia.org/wiki/Square_root
-	template<convertible_from_floating_point U = void, arithmetic T>
-	inline fist_not_void_t<U, T> ceil_sqrt(const T x) {
-		return static_cast<fist_not_void_t<U, T>>(std::ceil(std::sqrt(x)));
+	template<void_or_convertible_from_floating_point U = void, arithmetic T>
+	inline first_not_void_t<U, T> ceil_sqrt(const T x) {
+		return static_cast<first_not_void_t<U, T>>(std::ceil(std::sqrt(x)));
 	}
 
 	// https://en.wikipedia.org/wiki/Exponentiation
-	template<convertible_from_floating_point U = void, arithmetic T, arithmetic E>
-	inline fist_not_void_t<U, T> ceil_pow(const T x, const E exp) {
-		return static_cast<fist_not_void_t<U, T>>(std::ceil(std::pow(x, exp)));
+	template<void_or_convertible_from_floating_point U = void, arithmetic T, arithmetic E>
+	inline first_not_void_t<U, T> ceil_pow(const T x, const E exp) {
+		return static_cast<first_not_void_t<U, T>>(std::ceil(std::pow(x, exp)));
 	}
 
 }

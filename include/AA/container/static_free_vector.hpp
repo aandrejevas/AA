@@ -3,7 +3,7 @@
 #include "static_vector.hpp"
 #include <cstddef> // size_t, ptrdiff_t
 #include <variant> // variant, get, get_if
-#include <utility> // in_place_index, forward
+#include <utility> // forward
 #include <concepts> // constructible_from
 #include <iterator> // random_access_iterator_tag
 #include <compare> // strong_ordering
@@ -155,13 +155,14 @@ namespace aa {
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		inline constexpr void emplace(A&&... args) {
+		inline constexpr reference emplace(A&&... args) {
 			if (first_hole) {
 				const internal_container_pointer hole = first_hole;
 				first_hole = static_cast<internal_container_pointer>(std::get<hole_index>(*hole));
-				hole->template emplace<elem_index>(std::forward<A>(args)...);
+				return hole->template emplace<elem_index>(std::forward<A>(args)...);
 			} else {
-				elements.emplace_back(std::in_place_index<elem_index>, std::forward<A>(args)...);
+				elements.push_back();
+				return elements.back().template emplace<elem_index>(std::forward<A>(args)...);
 			}
 		}
 
@@ -171,6 +172,12 @@ namespace aa {
 				element->template emplace<hole_index>(first_hole);
 				first_hole = element;
 			}
+		}
+
+		inline constexpr void erase(const pointer pos) {
+			const internal_container_pointer element = reinterpret_cast<internal_container_pointer>(pos);
+			element->template emplace<hole_index>(first_hole);
+			first_hole = element;
 		}
 
 

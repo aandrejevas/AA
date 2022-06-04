@@ -1,7 +1,5 @@
 #pragma once
 #
-#include <type_traits> // integral_constant
-#
 #
 #
 #define AA_STRINGIFY_I(...) #__VA_ARGS__
@@ -28,22 +26,24 @@
 #
 #
 #
-#define AA_NAMEOF(name) ((void)name, AA_STRINGIFY(name))
+#define AA_DISCARD(...) AA_OVERLOAD(AA_DISCARD_, __VA_ARGS__)(__VA_ARGS__)
+#define AA_DISCARD_0() (static_cast<void>(0))
+#define AA_DISCARD_1(x) (static_cast<void>(x))
+#
+#
+#
+#define AA_NAMEOF(name) (AA_DISCARD(name), AA_STRINGIFY(name))
 #
 #
 #
 #ifdef NDEBUG
-#define AA_IF_DEBUG(...) ((void)0)
+#define AA_IF_DEBUG(...) AA_DISCARD()
 #else
 #define AA_IF_DEBUG(...) AA_EXPAND(__VA_ARGS__)
 #endif
 #
 #
 #
-#define AA_EXP2(...) AA_OVERLOAD(AA_EXP2_, __VA_ARGS__)(__VA_ARGS__)
-#define AA_EXP2_1(n) (1uz << (n))
-#define AA_EXP2_2(T, n) (std::integral_constant<T, 1>::value << (n))
-#
-#
-#
+#define AA_SHL(l, r) ((l) << (r))
+#define AA_SHR(l, r) ((l) >> (r))
 #define AA_MUL(l, r) ((l) * (r))

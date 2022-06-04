@@ -32,15 +32,22 @@ namespace aa {
 
 
 
+	// https://en.wikipedia.org/wiki/Function_object
 	template<class T>
 	concept functor = requires { T::operator(); };
 
-	template<class T, class U = T>
-	concept multipliable_with = requires(const T & t, const U & u) { (t * u); (u * t); };
+	// Vietoje requires parametrų galima naudoti declval, bet atrodo tai negražiai, nėra reikalo to daryti.
+	// https://mathworld.wolfram.com/Multiplier.html
+	template<class L, class R = L>
+	concept multiplier = requires(const L & l, const R & r) { (l * r); };
+
+	// https://mathworld.wolfram.com/Multiplicand.html
+	template<class R, class L = R>
+	concept multiplicand = multiplier<L, R>;
 
 	// AA_MUL uždeda skliaustelius apie išraišką, bet šiuo atveju tai nesvarbu, nes decltype ir su
 	// skliausteliais ir be jų nustatytų tą patį tipą, nes jam paduodama išraiška, o ne kintamojo vardas.
-	template<class L, multipliable_with<L> R = L>
+	template<class L, multiplicand<L> R = L>
 	struct product_result
 		: std::type_identity<decltype(AA_MUL(std::declval<add_lvalue_cref_t<L>>(), std::declval<add_lvalue_cref_t<R>>()))> {};
 
@@ -53,13 +60,14 @@ namespace aa {
 	concept invocable_ref = std::invocable<F &, A...>;
 
 	template<class T, class F>
-	concept convertible_from = std::is_void_v<T> || std::convertible_to<F, T>;
+	concept convertible_from = std::convertible_to<F, T>;
 
-	template<class To, class F1, class... F>
-	concept convertible_from_all = std::is_void_v<To> || (std::convertible_to<F1, To> && ... && std::convertible_to<F, To>);
+	template<class T, class F>
+	concept void_or_convertible_from = std::is_void_v<T> || std::convertible_to<F, T>;
 
-	template<class To>
-	concept convertible_from_floating_point = convertible_from_all<To, float, double, long double>;
+	template<class T>
+	concept void_or_convertible_from_floating_point = std::is_void_v<T>
+		|| (std::convertible_to<float, T> && std::convertible_to<double, T> && std::convertible_to<long double, T>);
 
 	template<class F, class T>
 	concept floating_point_and_convertible_to = std::floating_point<F> && std::convertible_to<F, T>;
@@ -141,13 +149,13 @@ namespace aa {
 
 
 	template<class...>
-	struct fist_not_void;
+	struct first_not_void;
 
 	template<class A1, class... A>
-	struct fist_not_void<A1, A...> : std::conditional_t<std::is_void_v<A1>, fist_not_void<A...>, std::type_identity<A1>> {};
+	struct first_not_void<A1, A...> : std::conditional_t<std::is_void_v<A1>, first_not_void<A...>, std::type_identity<A1>> {};
 
 	template<class... A>
-	using fist_not_void_t = fist_not_void<A...>::type;
+	using first_not_void_t = first_not_void<A...>::type;
 
 
 
@@ -169,6 +177,18 @@ namespace aa {
 
 	template<auto C>
 	inline constexpr const decltype(C) constant_v = constant<C>::value;
+
+	template<convertible_from<size_t> T = size_t>
+	struct zero : std::integral_constant<T, static_cast<T>(0uz)> {};
+
+	template<class T = size_t>
+	inline constexpr const T zero_v = zero<T>::value;
+
+	template<convertible_from<size_t> T = size_t>
+	struct one : std::integral_constant<T, static_cast<T>(1uz)> {};
+
+	template<class T = size_t>
+	inline constexpr const T one_v = one<T>::value;
 
 
 
@@ -237,7 +257,7 @@ namespace aa {
 	// Vietoje byte negalime naudoti uint8_t, nes jei sistemoje baitas būtų ne 8 bitų, tas tipas nebus apibrėžtas.
 	template<uniquely_representable T>
 	struct representable_values
-		: std::integral_constant<size_t, AA_EXP2(std::numeric_limits<std::underlying_type_t<std::byte>>::digits * sizeof(T))> {};
+		: std::integral_constant<size_t, AA_SHL(1uz, std::numeric_limits<std::underlying_type_t<std::byte>>::digits * sizeof(T))> {};
 
 	template<class T>
 	inline constexpr const size_t representable_values_v = representable_values<T>::value;

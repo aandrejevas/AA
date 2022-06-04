@@ -2,27 +2,58 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t
-#include <type_traits> // integral_constant
-#include <concepts> // unsigned_integral, integral, same_as
-#include <limits> // numeric_limits
-#include <bit> // countl_zero, has_single_bit
+#include <concepts> // integral, unsigned_integral, floating_point, same_as
+#include <bit> // bit_width, has_single_bit
 
 
 
 namespace aa {
 
-	// Darome cast'ą į size_t pagal nutylėjimą, nes kitaip negalėtume gražinamos reikšmės paduoti į int_exp2.
-	// https://en.wikipedia.org/wiki/Find_first_set
-	template<std::integral U = size_t, std::unsigned_integral T>
-	inline constexpr U int_log2(const T x) {
-		return static_cast<U>(std::numeric_limits<T>::digits - std::countl_zero(x >> 1));
+	template<std::floating_point T>
+	inline constexpr T norm(const T value, const T mag) {
+		return value / mag;
 	}
 
+	template<std::floating_point T>
+	inline constexpr T norm(const T value, const T start, const T mag) {
+		return (value - start) / mag;
+	}
+
+	template<std::floating_point T>
+	inline constexpr T map(const T value, const T mag1, const T mag2) {
+		return mag2 * norm(value, mag1);
+	}
+
+	template<zero<>, std::floating_point T>
+	inline constexpr T map(const T value, const T start1, const T mag1, const T mag2) {
+		return mag2 * norm(value, start1, mag1);
+	}
+
+	template<one<>, std::floating_point T>
+	inline constexpr T map(const T value, const T mag1, const T start2, const T mag2) {
+		return start2 + mag2 * norm(value, mag1);
+	}
+
+	template<std::floating_point T>
+	inline constexpr T map(const T value, const T start1, const T mag1, const T start2, const T mag2) {
+		return start2 + mag2 * norm(value, start1, mag1);
+	}
+
+
+
+	// https://en.wikipedia.org/wiki/Find_first_set
+	template<std::unsigned_integral T>
+	inline constexpr T int_log2(const T x) {
+		return std::bit_width(x >> 1);
+	}
+
+	// Pagal nutylėjimą, one_v yra U tipo, o ne T tipo, nes būtų neteisinga gauti rezultato tipą iš dešinės pusės tipo.
 	// x turi būti unsigned, nes undefined behavior jei dešinysis operandas neigiamas << ir >> operatoriuose.
+	// Išviso U ir T nepilnai generic, nes palaikomas toks bendras stilius, kad dirbama tik su sveikaisiais skaičiais.
 	// https://en.wikipedia.org/wiki/Power_of_two
 	template<std::integral U = size_t, std::unsigned_integral T>
 	[[gnu::always_inline]] inline constexpr U int_exp2(const T x) {
-		return std::integral_constant<U, 1>::value << x;
+		return one_v<U> << x;
 	}
 
 
@@ -80,7 +111,7 @@ namespace aa {
 
 	// product_result_t tipas gali būti void, bet nieko tokio tai, nes return sakinys gali būti naudojamas
 	// su išraišką, jei tos išraiškos tipas yra void, funkcijoje, kurios gražinamas tipas yra void.
-	template<multipliable_with T>
+	template<class T>
 	inline constexpr product_result_t<T> sq(const T &x) {
 		return x * x;
 	}
