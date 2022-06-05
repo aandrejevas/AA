@@ -9,8 +9,7 @@
 #include <cstddef> // ptrdiff_t, size_t
 #include <numeric> // accumulate
 #include <functional> // invoke
-#include <utility> // forward
-#include <iterator> // reverse_iterator
+#include <utility> // forward, as_const
 
 
 
@@ -28,7 +27,7 @@ namespace aa {
 		using const_reference = const value_type &;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
-		using container_type = static_quad_tree<L, D, N>;
+		using container_type = static_quad_tree<T, L, D, N>;
 
 		struct node_type {
 			value_type *element;
@@ -62,16 +61,16 @@ namespace aa {
 				const sf::Vector2f &s = t.sizes[decremented_depth];
 
 				if (const sf::FloatRect r_nw = {r.left /***/, r.top /***/, s.x, s.y}; contains(q, r_nw))
-					nw.query(f); else if (intersects(q, r_nw)) nw.query_range(q, f, r_nw, t);
+					nw.query(f, t); else if (intersects(q, r_nw)) nw.query_range(q, f, r_nw, t);
 
 				if (const sf::FloatRect r_ne = {r.left + s.x, r.top /***/, s.x, s.y}; contains(q, r_ne))
-					ne.query(f); else if (intersects(q, r_ne)) ne.query_range(q, f, r_ne, t);
+					ne.query(f, t); else if (intersects(q, r_ne)) ne.query_range(q, f, r_ne, t);
 
 				if (const sf::FloatRect r_sw = {r.left /***/, r.top + s.y, s.x, s.y}; contains(q, r_sw))
-					sw.query(f); else if (intersects(q, r_sw)) sw.query_range(q, f, r_sw, t);
+					sw.query(f, t); else if (intersects(q, r_sw)) sw.query_range(q, f, r_sw, t);
 
 				if (const sf::FloatRect r_se = {r.left + s.x, r.top + s.y, s.x, s.y}; contains(q, r_se))
-					se.query(f); else if (intersects(q, r_se)) se.query_range(q, f, r_se, t);
+					se.query(f, t); else if (intersects(q, r_se)) se.query_range(q, f, r_se, t);
 			}
 
 			template<invocable_ref<reference> F>
@@ -87,6 +86,9 @@ namespace aa {
 
 		// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85282#c17, GCC bug, neleidžia kompiliatorius full specialization
 		// declare'inti in class scope tai apieiname problemą declare'indami partial specialization.
+		//
+		// Reikia mintyje turėti tokį įdomų scenarijų, kad tame pačiame pass, mes įdedame elementą į lapą, po
+		// to išemame elementą ir tada kažką darome, pass bus tas pats, bet first tuo atveju bus nullptr.
 		template<size_t M>
 			requires (!M)
 		struct quad_branch<M> {
@@ -100,15 +102,20 @@ namespace aa {
 			}
 
 			inline void erase(const const_pointer e, const sf::Vector2f &, const sf::FloatRect &, container_type &t) {
-				if (pass == t.pass) {
+				if (pass == t.pass && first) {
 					if (first->element == e) {
-						first = first->next;
+						// Reikia išsaugoti sekančio elemento adresą, nes ištrynus
+						// šį elementą, bus ištrintas ir sekančio elemento adresas.
+						node_type *const next = first->next;
+						t.nodes.erase(first);
+						first = next;
 					} else {
-						const node_type *iter = first;
+						node_type *iter = first;
 						while (iter->next) {
 							if (iter->next->element == e) {
+								node_type *const next = iter->next->next;
 								t.nodes.erase(iter->next);
-								iter->next = iter->next->next;
+								iter->next = next;
 								return;
 							}
 							iter = iter->next;
@@ -119,7 +126,7 @@ namespace aa {
 
 			template<invocable_ref<reference> F>
 			inline void query_range(const sf::FloatRect &q, F &f, const sf::FloatRect &, const container_type &t) const {
-				if (pass == t.pass) {
+				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
 						if (contains(q, t.locate(*iter->element)))
@@ -130,7 +137,7 @@ namespace aa {
 
 			template<invocable_ref<reference> F>
 			inline void query(F &f, const container_type &t) const {
-				if (pass == t.pass) {
+				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
 						std::invoke(f, *iter->element);
@@ -139,7 +146,7 @@ namespace aa {
 			}
 
 			size_t pass = 0;
-			node_type *first;
+			node_type *first = nullptr;
 		};
 
 
@@ -181,12 +188,12 @@ namespace aa {
 			++pass;
 		}
 
-		inline void insert(const pointer element) {
-			trunk.insert(element, locate(*element), rect, *this);
+		inline void insert(value_type &element) {
+			trunk.insert(&element, locate(std::as_const(element)), rect, *this);
 		}
 
-		inline void erase(const const_pointer element) {
-			trunk.erase(element, locate(*element), rect, *this);
+		inline void erase(const value_type &element) {
+			trunk.erase(&element, locate(element), rect, *this);
 		}
 
 
@@ -196,7 +203,7 @@ namespace aa {
 		inline constexpr static_quad_tree(const sf::Vector2f &position, const sf::Vector2f &size, U &&u = {}) : sizes{[&]() {
 			array_t<sf::Vector2f, D> sizes;
 			if constexpr (D) {
-				std::accumulate(std::reverse_iterator{&(sizes.back() = size)}, sizes.rend(), size,
+				std::accumulate(sizes.rbegin(), sizes.rend(), size,
 					[](const sf::Vector2f &size, sf::Vector2f &s) { return (s = size * 0.5f); });
 			}
 			return sizes;
@@ -209,7 +216,7 @@ namespace aa {
 		const sf::FloatRect rect;
 
 	protected:
-		size_t pass = 1;
+		size_t pass = 0;
 		quad_branch<D> trunk;
 		static_free_vector<node_type, N> nodes;
 		[[no_unique_address]] const locator locator_func;

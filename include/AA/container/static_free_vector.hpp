@@ -25,15 +25,13 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using container_type = static_free_vector<T, N>;
 
-	protected:
-		inline static constexpr const size_t hole_index = 0, elem_index = 1;
-
 		// void* turi būti pirmas tipas, nes masyvo inicializavimo metu, bus inicializuojami visi jo elementai
 		// ir variant default kontruktorius inicializuoja pirmą alternatyvą, makes sence, kad by default aktyvi
 		// alternatyva būtų void* ir apskritai value_type gali neturėti default konstruktoriaus.
-		using internal_container_type = static_vector<std::variant<void *, value_type>, N>;
-		using internal_container_pointer = internal_container_type::pointer;
-		using internal_container_const_pointer = internal_container_type::const_pointer;
+		using node_type = std::variant<void *, value_type>;
+
+	protected:
+		inline static constexpr const size_t hole_index = 0, elem_index = 1;
 
 		template<class P1, class P2>
 		struct variant_iterator {
@@ -68,16 +66,16 @@ namespace aa {
 
 		protected:
 			friend container_type;
-			using internal_container_pointer = P2;
+			using node_type = P2;
 
-			inline constexpr variant_iterator(const internal_container_pointer p) : ptr{p} {}
+			inline constexpr variant_iterator(node_type *const p) : ptr{p} {}
 
-			internal_container_pointer ptr;
+			node_type *ptr;
 		};
 
 	public:
-		using iterator = variant_iterator<pointer, internal_container_pointer>;
-		using const_iterator = variant_iterator<const_pointer, internal_container_const_pointer>;
+		using iterator = variant_iterator<pointer, node_type>;
+		using const_iterator = variant_iterator<const_pointer, const node_type>;
 
 
 
@@ -157,8 +155,8 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		inline constexpr reference emplace(A&&... args) {
 			if (first_hole) {
-				const internal_container_pointer hole = first_hole;
-				first_hole = static_cast<internal_container_pointer>(std::get<hole_index>(*hole));
+				node_type *const hole = first_hole;
+				first_hole = static_cast<node_type *>(std::get<hole_index>(*hole));
 				return hole->template emplace<elem_index>(std::forward<A>(args)...);
 			} else {
 				elements.push_back();
@@ -167,7 +165,7 @@ namespace aa {
 		}
 
 		inline constexpr void erase(const size_type pos) {
-			const internal_container_pointer element = elements.pointer_at(pos);
+			node_type *const element = elements.pointer_at(pos);
 			if (element->index() == elem_index) {
 				element->template emplace<hole_index>(first_hole);
 				first_hole = element;
@@ -175,7 +173,7 @@ namespace aa {
 		}
 
 		inline void erase(const pointer pos) {
-			const internal_container_pointer element = reinterpret_cast<internal_container_pointer>(pos);
+			node_type *const element = reinterpret_cast<node_type *>(pos);
 			element->template emplace<hole_index>(first_hole);
 			first_hole = element;
 		}
@@ -189,8 +187,8 @@ namespace aa {
 
 		// Member objects
 	protected:
-		internal_container_type elements;
-		internal_container_pointer first_hole = nullptr;
+		static_vector<node_type, N> elements;
+		node_type *first_hole = nullptr;
 	};
 
 }

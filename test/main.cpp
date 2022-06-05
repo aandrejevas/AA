@@ -14,6 +14,7 @@ regexes:
 size_t[^y]
 */
 
+#include <AA/container/static_quad_tree.hpp>
 #include <AA/container/static_free_vector.hpp>
 #include <AA/container/static_perfect_hash_set.hpp>
 #include <AA/container/static_flat_set.hpp>
@@ -36,10 +37,11 @@ size_t[^y]
 #include <ios> // sync_with_stdio
 #include <map> // map
 #include <unordered_set> // unordered_set
-#include <ranges> // iota, random_access_range
+#include <ranges> // iota, contiguous_range, random_access_range, forward_range
 #include <algorithm> // for_each, is_sorted, is_permutation
 #include <string> // string
 #include <limits> // numeric_limits
+#include <ostream> // flush, ostream
 
 
 
@@ -51,10 +53,11 @@ int main() {
 	static_assert(std::numeric_limits<size_t>::digits == 64 && sizeof(size_t) == 8);
 	std::ios_base::sync_with_stdio(false);
 
+	pascal_lcg g;
+	println(g.curr(), std::flush<std::ostream::char_type, std::ostream::traits_type>);
 	timekeeper tttt;
 	tttt.start();
 	{
-		pascal_lcg g;
 		const pascal_lcg initial_g = g;
 		std::map<int, size_t> m;
 
@@ -72,11 +75,11 @@ int main() {
 		});
 		AA_TRACE_ASSERT(g.curr() == initial_g.curr());
 
-		/*g.seed();
-		while (true) {
-			const double a = real_distribution(g);
-			AA_TRACE_ASSERT(0 <= a && a < 1, a);
-		}*/
+		//g.seed();
+		//while (true) {
+		//	const double a = real_distribution(g);
+		//	AA_TRACE_ASSERT(0 <= a && a < 1, a);
+		//}
 	}
 	{
 		println(type_name<std::string>());
@@ -95,7 +98,6 @@ int main() {
 	{
 		array_t<int, 10> a = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, b = a;
 		array_t<bool, 10> s = {};
-		pascal_lcg g;
 
 		repeat(100, [&]() {
 			shuffle(a, g);
@@ -120,7 +122,6 @@ int main() {
 	}
 	{
 		static_flat_multiset<size_t, 500> a;
-		pascal_lcg g;
 
 		repeat(100, [&]() {
 			a.insert(g());
@@ -131,11 +132,12 @@ int main() {
 			a.erase(a[int_distribution(g, a.size())]);
 			AA_TRACE_ASSERT(std::ranges::is_sorted(a));
 		}
+
+		static_assert(std::ranges::contiguous_range<decltype(a)>);
 	}
 	{
 		std::unordered_set<size_t> b;
 		static_perfect_hash_set<size_t, 1'000> a;
-		pascal_lcg g;
 		println(a.max_bucket_count(), ' ', a.max_size());
 
 		// Insert test
@@ -180,6 +182,8 @@ int main() {
 			a.erase(*a.begin(a.index_at(int_distribution(g, a.bucket_count()))));
 		}
 		std::ranges::for_each(a.buckets(), [&](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
+
+		static_assert(std::ranges::forward_range<decltype(a)>);
 	}
 	{
 		static_free_vector<size_t, 50'000> a;
@@ -195,7 +199,35 @@ int main() {
 		std::ranges::for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == a.size()); });
 		std::ranges::for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
 
-		//static_assert(std::ranges::random_access_range<decltype(a)>);
+		static_assert(std::ranges::random_access_range<decltype(a)>);
+	}
+	{
+		struct position {
+			sf::Vector2f p;
+		};
+
+		static_quad_tree<position, decltype(&position::p), 5, 500> tree = {{0, 0}, {100, 100}, &position::p};
+		println(make_range_writer(tree.sizes, pair_inserter{}));
+		static_vector<position, tree.max_size()> positions;
+
+		{
+			repeat(tree.max_size(), [&]() {
+				positions.emplace_back(sf::Vector2f{real_to_int_distribution<float>(g, 25.), real_to_int_distribution<float>(g, 25.)});
+				tree.insert(positions.back());
+			});
+			size_t sum = 0;
+			tree.query_range({0, 0, 25, 25}, [&](const position &) { ++sum; });
+			AA_TRACE_ASSERT(tree.max_size() == sum);
+		}
+		{
+			repeat(tree.max_size() >> 1, [&]() {
+				tree.erase(positions.back());
+				positions.pop_back();
+			});
+			size_t sum = 0;
+			tree.query_range({0, 0, 25, 25}, [&](const position &) { ++sum; });
+			AA_TRACE_ASSERT((tree.max_size() >> 1) == sum);
+		}
 	}
 	tttt.stop();
 	println(tttt.elapsed());

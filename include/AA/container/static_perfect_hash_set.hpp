@@ -38,7 +38,7 @@ namespace aa {
 			using iterator_category = std::forward_iterator_tag;
 			using iterator_type = iterator;
 
-			inline constexpr size_type operator*() const {
+			inline constexpr reference operator*() const {
 				return product<N>(static_cast<size_type>(std::countr_zero(bitset))) + static_cast<size_type>(*pos - bins_begin);
 			}
 
@@ -82,7 +82,7 @@ namespace aa {
 			using iterator_category = std::forward_iterator_tag;
 			using iterator_type = local_iterator;
 
-			inline constexpr size_type operator*() const {
+			inline constexpr reference operator*() const {
 				return product<N>(static_cast<size_type>(std::countr_zero(bitset))) + index;
 			}
 
