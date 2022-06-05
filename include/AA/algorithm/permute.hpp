@@ -5,7 +5,6 @@
 #include "../metaprogramming/range.hpp"
 #include "generate.hpp"
 #include <iterator> // iter_swap, iter_value_t, sized_sentinel_for, sentinel_for
-#include <type_traits> // remove_reference_t
 #include <utility> // forward
 #include <ranges> // iterator_t, begin, end
 
@@ -29,7 +28,7 @@ namespace aa {
 	template<permutable_random_access_iterator I, std::sized_sentinel_for<I> SS, std::sentinel_for<I> S, differences_generator_for<I> G>
 	inline constexpr void partial_shuffle(I b, const SS &e, const S &m, G &&g) {
 		do {
-			std::ranges::iter_swap(b, b + int_distribution(g, static_cast<generator_modulus_t<std::remove_reference_t<G>>>(e - b)));
+			std::ranges::iter_swap(b, b + int_distribution(g, static_cast<generator_modulus_t<G>>(e - b)));
 			if (b != m) ++b; else return;
 		} while (true);
 	}
@@ -62,7 +61,7 @@ namespace aa {
 	template<permutable_random_access_iterator I, std::sized_sentinel_for<I> SS, std::sentinel_for<I> S, differences_generator_for<I> G, key_bool_iterator_for<I> R>
 	inline constexpr void partial_shuffle_counting_sort(I b, const SS &e, const S &m, G &&g, R selected) {
 		{I b2 = b; do {
-			std::ranges::iter_swap(b2, b2 + int_distribution(g, static_cast<generator_modulus_t<std::remove_reference_t<G>>>(e - b2)));
+			std::ranges::iter_swap(b2, b2 + int_distribution(g, static_cast<generator_modulus_t<G>>(e - b2)));
 			selected[*b2] = true;
 			if (b2 != m) ++b2; else break;
 		} while (true);}

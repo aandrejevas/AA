@@ -185,7 +185,7 @@ int main() {
 		static_free_vector<size_t, 50'000> a;
 
 		repeat(a.max_size(), [&]() { a.emplace(a.size()); });
-		std::ranges::for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { a.erase(i); AA_TRACE_ASSERT(!a[i]); });
+		std::ranges::for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { a.erase(a[i]); AA_TRACE_ASSERT(!a[i]); });
 		std::ranges::for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
 
 		AA_TRACE_ASSERT(a.max_size() == a.size());
@@ -195,7 +195,7 @@ int main() {
 		std::ranges::for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == a.size()); });
 		std::ranges::for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
 
-		static_assert(std::ranges::random_access_range<decltype(a)>);
+		//static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
 	tttt.stop();
 	println(tttt.elapsed());

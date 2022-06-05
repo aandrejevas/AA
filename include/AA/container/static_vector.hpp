@@ -2,7 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstring> // memmove
-#include <cstddef> // size_t, ptrdiff_t
+#include <cstddef> // size_t, ptrdiff_t, byte
 #include <memory> // construct_at
 #include <utility> // forward
 #include <concepts> // constructible_from
@@ -122,19 +122,19 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		inline void emplace(const const_iterator pos, A&&... args) {
 			std::memmove(const_cast<iterator>(pos + 1), pos,
-				static_cast<size_t>(reinterpret_cast<const char *>(++r_begin) - reinterpret_cast<const char *>(pos)));
+				static_cast<size_type>(reinterpret_cast<const std::byte *>(++r_begin) - reinterpret_cast<const std::byte *>(pos)));
 			std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
 		inline void insert(const const_iterator pos, const value_type &value) {
 			std::memmove(const_cast<iterator>(pos + 1), pos,
-				static_cast<size_t>(reinterpret_cast<const char *>(++r_begin) - reinterpret_cast<const char *>(pos)));
+				static_cast<size_type>(reinterpret_cast<const std::byte *>(++r_begin) - reinterpret_cast<const std::byte *>(pos)));
 			*const_cast<iterator>(pos) = value;
 		}
 
 		inline void erase(const const_iterator pos) {
 			std::memmove(const_cast<iterator>(pos), pos + 1,
-				static_cast<size_t>(reinterpret_cast<const char *>(r_begin--) - reinterpret_cast<const char *>(pos)));
+				static_cast<size_type>(reinterpret_cast<const std::byte *>(r_begin--) - reinterpret_cast<const std::byte *>(pos)));
 		}
 
 		template<class... A>

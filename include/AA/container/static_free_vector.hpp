@@ -174,7 +174,7 @@ namespace aa {
 			}
 		}
 
-		inline constexpr void erase(const pointer pos) {
+		inline void erase(const pointer pos) {
 			const internal_container_pointer element = reinterpret_cast<internal_container_pointer>(pos);
 			element->template emplace<hole_index>(first_hole);
 			first_hole = element;
