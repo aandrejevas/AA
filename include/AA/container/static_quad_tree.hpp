@@ -3,7 +3,7 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/sfml.hpp"
 #include "../algorithm/sfml_math.hpp"
-#include "static_free_vector.hpp"
+#include "static_fast_free_vector.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstddef> // ptrdiff_t, size_t
@@ -74,7 +74,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			inline void query(F &f, const container_type &t) const {
+			inline constexpr void query(F &f, const container_type &t) const {
 				nw.query(f, t);
 				ne.query(f, t);
 				sw.query(f, t);
@@ -92,12 +92,12 @@ namespace aa {
 		template<size_t M>
 			requires (!M)
 		struct quad_branch<M> {
-			inline void insert(const pointer e, const sf::Vector2f &, const sf::FloatRect &, container_type &t) {
+			inline constexpr void insert(const pointer e, const sf::Vector2f &, const sf::FloatRect &, container_type &t) {
 				if (pass != t.pass) {
 					pass = t.pass;
-					first = &t.nodes.emplace(e, nullptr);
+					first = t.nodes.emplace(e, nullptr);
 				} else {
-					first = &t.nodes.emplace(e, first);
+					first = t.nodes.emplace(e, first);
 				}
 			}
 
@@ -125,7 +125,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			inline void query_range(const sf::FloatRect &q, F &f, const sf::FloatRect &, const container_type &t) const {
+			inline constexpr void query_range(const sf::FloatRect &q, F &f, const sf::FloatRect &, const container_type &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
@@ -136,7 +136,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			inline void query(F &f, const container_type &t) const {
+			inline constexpr void query(F &f, const container_type &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
@@ -171,12 +171,12 @@ namespace aa {
 
 		// Lookup
 		template<invocable_ref<reference> F>
-		inline void query_range(const sf::FloatRect &range, F &&f) const {
+		inline constexpr void query_range(const sf::FloatRect &range, F &&f) const {
 			trunk.query_range(range, f, rect, *this);
 		}
 
 		template<invocable_ref<reference> F>
-		inline void query(F &&f) const {
+		inline constexpr void query(F &&f) const {
 			trunk.query(f, *this);
 		}
 
@@ -188,7 +188,7 @@ namespace aa {
 			++pass;
 		}
 
-		inline void insert(value_type &element) {
+		inline constexpr void insert(value_type &element) {
 			trunk.insert(&element, locate(std::as_const(element)), rect, *this);
 		}
 
@@ -218,7 +218,7 @@ namespace aa {
 	protected:
 		size_t pass = 0;
 		quad_branch<D> trunk;
-		static_free_vector<node_type, N> nodes;
+		static_fast_free_vector<node_type, N> nodes;
 		[[no_unique_address]] const locator locator_func;
 	};
 

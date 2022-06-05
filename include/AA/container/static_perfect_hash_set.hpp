@@ -34,7 +34,7 @@ namespace aa {
 			// Neturime pointer tipo, nes neturime operator-> metodo.
 			using value_type = size_type;
 			using difference_type = difference_type;
-			using reference = size_type;
+			using reference = value_type;
 			using iterator_category = std::forward_iterator_tag;
 			using iterator_type = iterator;
 
@@ -78,7 +78,7 @@ namespace aa {
 		struct local_iterator {
 			using value_type = size_type;
 			using difference_type = difference_type;
-			using reference = size_type;
+			using reference = value_type;
 			using iterator_category = std::forward_iterator_tag;
 			using iterator_type = local_iterator;
 

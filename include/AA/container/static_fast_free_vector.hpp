@@ -55,13 +55,12 @@ namespace aa {
 				first_hole = hole->next;
 				return std::ranges::construct_at(&hole->element, std::forward<A>(args)...);
 			} else {
-				elements.emplace_back(std::forward<A>(args)...);
-				return elements.rdata();
+				return std::ranges::construct_at(&elements.push_back()->element, std::forward<A>(args)...);
 			}
 		}
 
 		inline void erase(const pointer pos) {
-			node_type *const hole = static_cast<node_type *>(pos);
+			node_type *const hole = reinterpret_cast<node_type *>(pos);
 			hole->next = first_hole;
 			first_hole = hole;
 		}

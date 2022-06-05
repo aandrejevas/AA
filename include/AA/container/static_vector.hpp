@@ -105,25 +105,26 @@ namespace aa {
 		inline constexpr void resize(const size_type count) { r_begin = r_end + count; }
 		inline constexpr void resize(const const_iterator pos) { r_begin = const_cast<iterator>(pos); }
 
-		inline constexpr void pop_back() { --r_begin; }
-		inline constexpr void pop_back(const size_type count) { r_begin -= count; }
-		inline constexpr void push_back() { ++r_begin; }
-		inline constexpr void push_back(const size_type count) { r_begin += count; }
+		inline constexpr iterator pop_back() { return --r_begin; }
+		inline constexpr iterator push_back() { return ++r_begin; }
+
+		inline constexpr iterator pop_back(const size_type count) { return r_begin -= count; }
+		inline constexpr iterator push_back(const size_type count) { return r_begin += count; }
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		inline constexpr void emplace_back(A&&... args) {
-			std::ranges::construct_at(++r_begin, std::forward<A>(args)...);
+		inline constexpr iterator emplace_back(A&&... args) {
+			return std::ranges::construct_at(++r_begin, std::forward<A>(args)...);
 		}
 
 		inline constexpr void insert_back(const value_type &value) { *++r_begin = value; }
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		inline void emplace(const const_iterator pos, A&&... args) {
+		inline iterator emplace(const const_iterator pos, A&&... args) {
 			std::memmove(const_cast<iterator>(pos + 1), pos,
 				static_cast<size_type>(reinterpret_cast<const std::byte *>(++r_begin) - reinterpret_cast<const std::byte *>(pos)));
-			std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
+			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
 		inline void insert(const const_iterator pos, const value_type &value) {
@@ -139,9 +140,9 @@ namespace aa {
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		inline constexpr void fast_emplace(const const_iterator pos, A&&... args) {
+		inline constexpr iterator fast_emplace(const const_iterator pos, A&&... args) {
 			insert_back(*pos);
-			std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
+			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
 		inline constexpr void fast_insert(const const_iterator pos, const value_type &value) {

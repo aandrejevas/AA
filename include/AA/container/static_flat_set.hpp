@@ -107,8 +107,8 @@ namespace aa {
 		// Neturime, kaip static_vector turi, resize funkcijų, nes jomis naudotojas gali
 		// padidinti savavališkai elementų kiekį ir taip sugadinti elementų tvarką.
 
-		inline constexpr void pop_back() { elements.pop_back(); }
-		inline constexpr void pop_back(const size_type count) { elements.pop_back(count); }
+		inline constexpr iterator pop_back() { return elements.pop_back(); }
+		inline constexpr iterator pop_back(const size_type count) { return elements.pop_back(count); }
 
 		inline std::conditional_t<MULTISET, void, bool> insert(const value_type &value) {
 			if constexpr (MULTISET) {

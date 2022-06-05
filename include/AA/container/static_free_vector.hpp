@@ -159,8 +159,7 @@ namespace aa {
 				first_hole = static_cast<node_type *>(std::get<hole_index>(*hole));
 				return hole->template emplace<elem_index>(std::forward<A>(args)...);
 			} else {
-				elements.push_back();
-				return elements.back().template emplace<elem_index>(std::forward<A>(args)...);
+				return elements.push_back()->template emplace<elem_index>(std::forward<A>(args)...);
 			}
 		}
 
