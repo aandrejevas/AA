@@ -1,54 +1,85 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../metaprogramming/sfml.hpp"
+#include "../algorithm/sfml_math.hpp"
 #include "static_free_vector.hpp"
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <cstddef> // ptrdiff_t, size_t
 #include <numeric> // accumulate
 #include <functional> // invoke
 #include <utility> // forward
 #include <iterator> // reverse_iterator
-#include <SFML/Graphics/Rect.hpp>
-#include <SFML/System/Vector2.hpp>
 
 
 
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Quadtree
-	template<class L, size_t D, size_t N>
+	template<class T, storable_locator<T> L, size_t D, size_t N>
 	struct static_quad_tree {
 		// Member types
+		using value_type = T;
 		using locator = L;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
+		using reference = value_type &;
+		using const_reference = const value_type &;
+		using pointer = value_type *;
+		using const_pointer = const value_type *;
 		using container_type = static_quad_tree<L, D, N>;
 
-		struct value_type {
-			void *element;
-			value_type **leaf, *next;
+		struct node_type {
+			value_type *element;
+			node_type *next;
 		};
 
 		template<size_t M>
 		struct quad_branch {
 			inline static constexpr const size_t decremented_depth = M - 1;
 
-			inline void insert(void *const e, const sf::Vector2f &l, const sf::FloatRect &r, container_type &t) {
+			inline void insert(const pointer e, const sf::Vector2f &l, const sf::FloatRect &r, container_type &t) {
 				const sf::Vector2f &s = t.sizes[decremented_depth];
 
-				/**/ if (const sf::FloatRect r_nw = {r.left /***/, r.top /***/, s.x, s.y}; r_nw.contains(l)) nw.insert(e, l, r_nw, t);
-				else if (const sf::FloatRect r_ne = {r.left + s.x, r.top /***/, s.x, s.y}; r_ne.contains(l)) ne.insert(e, l, r_ne, t);
-				else if (const sf::FloatRect r_sw = {r.left /***/, r.top + s.y, s.x, s.y}; r_sw.contains(l)) sw.insert(e, l, r_sw, t);
-				else if (const sf::FloatRect r_se = {r.left + s.x, r.top + s.y, s.x, s.y}; r_se.contains(l)) se.insert(e, l, r_se, t);
+				/**/ if (const sf::FloatRect r_nw = {r.left /***/, r.top /***/, s.x, s.y}; contains(r_nw, l)) nw.insert(e, l, r_nw, t);
+				else if (const sf::FloatRect r_ne = {r.left + s.x, r.top /***/, s.x, s.y}; contains(r_ne, l)) ne.insert(e, l, r_ne, t);
+				else if (const sf::FloatRect r_sw = {r.left /***/, r.top + s.y, s.x, s.y}; contains(r_sw, l)) sw.insert(e, l, r_sw, t);
+				else if (const sf::FloatRect r_se = {r.left + s.x, r.top + s.y, s.x, s.y}; contains(r_se, l)) se.insert(e, l, r_se, t);
 			}
 
-			template<class F>
+			inline void erase(const const_pointer e, const sf::Vector2f &l, const sf::FloatRect &r, container_type &t) {
+				const sf::Vector2f &s = t.sizes[decremented_depth];
+
+				/**/ if (const sf::FloatRect r_nw = {r.left /***/, r.top /***/, s.x, s.y}; contains(r_nw, l)) nw.erase(e, l, r_nw, t);
+				else if (const sf::FloatRect r_ne = {r.left + s.x, r.top /***/, s.x, s.y}; contains(r_ne, l)) ne.erase(e, l, r_ne, t);
+				else if (const sf::FloatRect r_sw = {r.left /***/, r.top + s.y, s.x, s.y}; contains(r_sw, l)) sw.erase(e, l, r_sw, t);
+				else if (const sf::FloatRect r_se = {r.left + s.x, r.top + s.y, s.x, s.y}; contains(r_se, l)) se.erase(e, l, r_se, t);
+			}
+
+			template<invocable_ref<reference> F>
 			inline void query_range(const sf::FloatRect &q, F &f, const sf::FloatRect &r, const container_type &t) const {
 				const sf::Vector2f &s = t.sizes[decremented_depth];
 
-				if (const sf::FloatRect r_nw = {r.left /***/, r.top /***/, s.x, s.y}; r_nw.intersects(q)) nw.query_range(q, f, r_nw, t);
-				if (const sf::FloatRect r_ne = {r.left + s.x, r.top /***/, s.x, s.y}; r_ne.intersects(q)) ne.query_range(q, f, r_ne, t);
-				if (const sf::FloatRect r_sw = {r.left /***/, r.top + s.y, s.x, s.y}; r_sw.intersects(q)) sw.query_range(q, f, r_sw, t);
-				if (const sf::FloatRect r_se = {r.left + s.x, r.top + s.y, s.x, s.y}; r_se.intersects(q)) se.query_range(q, f, r_se, t);
+				if (const sf::FloatRect r_nw = {r.left /***/, r.top /***/, s.x, s.y}; contains(q, r_nw))
+					nw.query(f); else if (intersects(q, r_nw)) nw.query_range(q, f, r_nw, t);
+
+				if (const sf::FloatRect r_ne = {r.left + s.x, r.top /***/, s.x, s.y}; contains(q, r_ne))
+					ne.query(f); else if (intersects(q, r_ne)) ne.query_range(q, f, r_ne, t);
+
+				if (const sf::FloatRect r_sw = {r.left /***/, r.top + s.y, s.x, s.y}; contains(q, r_sw))
+					sw.query(f); else if (intersects(q, r_sw)) sw.query_range(q, f, r_sw, t);
+
+				if (const sf::FloatRect r_se = {r.left + s.x, r.top + s.y, s.x, s.y}; contains(q, r_se))
+					se.query(f); else if (intersects(q, r_se)) se.query_range(q, f, r_se, t);
+			}
+
+			template<invocable_ref<reference> F>
+			inline void query(F &f, const container_type &t) const {
+				nw.query(f, t);
+				ne.query(f, t);
+				sw.query(f, t);
+				se.query(f, t);
 			}
 
 			quad_branch<decremented_depth> nw, ne, sw, se;
@@ -59,33 +90,66 @@ namespace aa {
 		template<size_t M>
 			requires (!M)
 		struct quad_branch<M> {
-			inline void insert(void *const e, const sf::Vector2f &, const sf::FloatRect &, container_type &t) {
-				t.elements.emplace(e, &first, first);
-				first = t.elements.back();
+			inline void insert(const pointer e, const sf::Vector2f &, const sf::FloatRect &, container_type &t) {
+				if (pass != t.pass) {
+					pass = t.pass;
+					first = &t.nodes.emplace(e, nullptr);
+				} else {
+					first = &t.nodes.emplace(e, first);
+				}
 			}
 
-			template<class F>
+			inline void erase(const const_pointer e, const sf::Vector2f &, const sf::FloatRect &, container_type &t) {
+				if (pass == t.pass) {
+					if (first->element == e) {
+						first = first->next;
+					} else {
+						const node_type *iter = first;
+						while (iter->next) {
+							if (iter->next->element == e) {
+								t.nodes.erase(iter->next);
+								iter->next = iter->next->next;
+								return;
+							}
+							iter = iter->next;
+						}
+					}
+				}
+			}
+
+			template<invocable_ref<reference> F>
 			inline void query_range(const sf::FloatRect &q, F &f, const sf::FloatRect &, const container_type &t) const {
-				if (first) {
-					const value_type *iter = first;
+				if (pass == t.pass) {
+					const node_type *iter = first;
 					do {
-						if (q.contains(t.locate(iter->element)))
-							std::invoke(f, iter->element);
+						if (contains(q, t.locate(*iter->element)))
+							std::invoke(f, *iter->element);
 					} while ((iter = iter->next));
 				}
 			}
 
-			value_type *first = nullptr;
+			template<invocable_ref<reference> F>
+			inline void query(F &f, const container_type &t) const {
+				if (pass == t.pass) {
+					const node_type *iter = first;
+					do {
+						std::invoke(f, *iter->element);
+					} while ((iter = iter->next));
+				}
+			}
+
+			size_t pass = 0;
+			node_type *first;
 		};
 
 
 
 		// Capacity
-		inline constexpr bool empty() const { return elements.empty(); }
-		inline constexpr bool full() const { return elements.full(); }
+		inline constexpr bool empty() const { return nodes.empty(); }
+		inline constexpr bool full() const { return nodes.full(); }
 
-		inline constexpr difference_type ssize() const { return elements.ssize(); }
-		inline constexpr size_type size() const { return elements.size(); }
+		inline constexpr difference_type ssize() const { return nodes.ssize(); }
+		inline constexpr size_type size() const { return nodes.size(); }
 
 		static inline consteval size_type max_size() { return N; }
 
@@ -94,27 +158,35 @@ namespace aa {
 		// Observers
 		inline constexpr const locator &locator_function() const { return locator_func; }
 
-		inline constexpr const sf::Vector2f &locate(const void *const e) const { return std::invoke(locator_func, e); }
+		inline constexpr const sf::Vector2f &locate(const value_type &e) const { return std::invoke(locator_func, e); }
 
 
 
 		// Lookup
-		template<class F>
+		template<invocable_ref<reference> F>
 		inline void query_range(const sf::FloatRect &range, F &&f) const {
 			trunk.query_range(range, f, rect, *this);
+		}
+
+		template<invocable_ref<reference> F>
+		inline void query(F &&f) const {
+			trunk.query(f, *this);
 		}
 
 
 
 		// Modifiers
 		inline constexpr void clear() {
-			elements.clear([](const value_type *const p) {
-				if (p) *(p->leaf) = nullptr;
-			});
+			nodes.clear();
+			++pass;
 		}
 
-		inline void insert(void *const element) {
-			trunk.insert(element, locate(element), rect, *this);
+		inline void insert(const pointer element) {
+			trunk.insert(element, locate(*element), rect, *this);
+		}
+
+		inline void erase(const const_pointer element) {
+			trunk.erase(element, locate(*element), rect, *this);
 		}
 
 
@@ -137,8 +209,9 @@ namespace aa {
 		const sf::FloatRect rect;
 
 	protected:
+		size_t pass = 1;
 		quad_branch<D> trunk;
-		static_free_vector<value_type, N> elements;
+		static_free_vector<node_type, N> nodes;
 		[[no_unique_address]] const locator locator_func;
 	};
 
