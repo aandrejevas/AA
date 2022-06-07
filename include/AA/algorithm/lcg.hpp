@@ -28,8 +28,8 @@ namespace aa {
 		// https://cp-algorithms.com/algebra/module-inverse.html
 		// https://en.wikipedia.org/wiki/Euler%27s_totient_function
 		// https://en.wikipedia.org/wiki/Modular_multiplicative_inverse#Using_Euler's_theorem
-		inline static constexpr const modulus_type modulus = representable_values_v<result_type>;
-		inline static constexpr const result_type multiplier = A, increment = C, decremented_multiplier = multiplier - 1,
+		static AA_CONSTEXPR const modulus_type modulus = representable_values_v<result_type>;
+		static AA_CONSTEXPR const result_type multiplier = A, increment = C, decremented_multiplier = multiplier - 1,
 			inverse = power(multiplier, (modulus >> 1) - 1);
 
 		// Nedarome requires, nes tame kontekste neturėtume modulus ir decremented_multiplier konstantų.

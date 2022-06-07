@@ -31,7 +31,7 @@ namespace aa {
 		using node_type = std::variant<void *, value_type>;
 
 	protected:
-		inline static constexpr const size_t hole_index = 0, elem_index = 1;
+		static AA_CONSTEXPR const size_t hole_index = 0, elem_index = 1;
 
 		template<class P1, class P2>
 		struct variant_iterator {

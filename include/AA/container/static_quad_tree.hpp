@@ -36,7 +36,7 @@ namespace aa {
 
 		template<size_t M>
 		struct quad_branch {
-			inline static constexpr const size_t decremented_depth = M - 1;
+			static AA_CONSTEXPR const size_t decremented_depth = M - 1;
 
 			inline void insert(const pointer e, const sf::Vector2f &l, const sf::FloatRect &r, container_type &t) {
 				const sf::Vector2f &s = t.sizes[decremented_depth];
