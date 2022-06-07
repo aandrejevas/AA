@@ -166,7 +166,7 @@ namespace aa {
 	struct are_unique<T> : std::true_type {};
 
 	template<class... A>
-	inline constexpr const bool are_unique_v = are_unique<A...>::value;
+	AA_CONSTEXPR const bool are_unique_v = are_unique<A...>::value;
 
 
 
@@ -176,19 +176,19 @@ namespace aa {
 	struct constant : std::integral_constant<decltype(C), C> {};
 
 	template<auto C>
-	inline constexpr const decltype(C) constant_v = constant<C>::value;
+	AA_CONSTEXPR const decltype(C) constant_v = constant<C>::value;
 
 	template<convertible_from<size_t> T = size_t>
 	struct zero : std::integral_constant<T, static_cast<T>(0uz)> {};
 
 	template<class T = size_t>
-	inline constexpr const T zero_v = zero<T>::value;
+	AA_CONSTEXPR const T zero_v = zero<T>::value;
 
 	template<convertible_from<size_t> T = size_t>
 	struct one : std::integral_constant<T, static_cast<T>(1uz)> {};
 
 	template<class T = size_t>
-	inline constexpr const T one_v = one<T>::value;
+	AA_CONSTEXPR const T one_v = one<T>::value;
 
 
 
@@ -260,7 +260,7 @@ namespace aa {
 		: std::integral_constant<size_t, AA_SHL(1uz, std::numeric_limits<std::underlying_type_t<std::byte>>::digits * sizeof(T))> {};
 
 	template<class T>
-	inline constexpr const size_t representable_values_v = representable_values<T>::value;
+	AA_CONSTEXPR const size_t representable_values_v = representable_values<T>::value;
 
 
 

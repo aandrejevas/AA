@@ -31,59 +31,59 @@ namespace aa {
 
 
 		// Element access
-		inline constexpr const_reference operator[](const size_type pos) const { return elements[pos]; }
-		inline constexpr const_reference at(const size_type pos) const { return elements.at(pos); }
-		inline constexpr const_reference r_at(const size_type pos) const { return elements.r_at(pos); }
-		inline constexpr const_pointer pointer_at(const size_type pos) const { return elements.pointer_at(pos); }
-		inline constexpr const_pointer rpointer_at(const size_type pos) const { return elements.rpointer_at(pos); }
+		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elements[pos]; }
+		AA_CONSTEXPR const_reference at(const size_type pos) const { return elements.at(pos); }
+		AA_CONSTEXPR const_reference r_at(const size_type pos) const { return elements.r_at(pos); }
+		AA_CONSTEXPR const_pointer pointer_at(const size_type pos) const { return elements.pointer_at(pos); }
+		AA_CONSTEXPR const_pointer rpointer_at(const size_type pos) const { return elements.rpointer_at(pos); }
 
-		inline constexpr const_pointer data() const { return elements.data(); }
-		inline constexpr const_pointer rdata() const { return elements.rdata(); }
-		inline constexpr const_reference front() const { return elements.front(); }
-		inline constexpr const_reference back() const { return elements.back(); }
+		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
+		AA_CONSTEXPR const_pointer rdata() const { return elements.rdata(); }
+		AA_CONSTEXPR const_reference front() const { return elements.front(); }
+		AA_CONSTEXPR const_reference back() const { return elements.back(); }
 
 
 
 		// Iterators
-		inline constexpr const_iterator begin() const { return elements.begin(); }
-		inline constexpr const_iterator end() const { return elements.end(); }
-		inline constexpr const_iterator rbegin() const { return elements.rbegin(); }
-		inline constexpr const_iterator rend() const { return elements.rend(); }
+		AA_CONSTEXPR const_iterator begin() const { return elements.begin(); }
+		AA_CONSTEXPR const_iterator end() const { return elements.end(); }
+		AA_CONSTEXPR const_iterator rbegin() const { return elements.rbegin(); }
+		AA_CONSTEXPR const_iterator rend() const { return elements.rend(); }
 
 
 
 		// Capacity
-		inline constexpr bool empty() const { return elements.empty(); }
-		inline constexpr bool full() const { return elements.full(); }
+		AA_CONSTEXPR bool empty() const { return elements.empty(); }
+		AA_CONSTEXPR bool full() const { return elements.full(); }
 
-		inline constexpr difference_type ssize() const { return elements.ssize(); }
-		inline constexpr size_type size() const { return elements.size(); }
+		AA_CONSTEXPR difference_type ssize() const { return elements.ssize(); }
+		AA_CONSTEXPR size_type size() const { return elements.size(); }
 
 		static inline consteval size_type max_size() { return N; }
 
 
 
 		// Observers
-		inline constexpr const key_compare &key_comp() const { return comparer; }
+		AA_CONSTEXPR const key_compare &key_comp() const { return comparer; }
 
 		template<class K1, in_relation_with<K1, key_compare> K2>
-		inline constexpr bool compare(const K1 &key1, const K2 &key2) const { return std::invoke(comparer, key1, key2); }
+		AA_CONSTEXPR bool compare(const K1 &key1, const K2 &key2) const { return std::invoke(comparer, key1, key2); }
 
 
 
 		// Lookup
 		template<in_relation_with<value_type, key_compare> K>
-		inline constexpr const_iterator lower_bound(const K &key) const {
+		AA_CONSTEXPR const_iterator lower_bound(const K &key) const {
 			return aa::lower_bound(elements, key, comparer);
 		}
 
 		template<in_relation_with<value_type, key_compare> K>
-		inline constexpr const_iterator upper_bound(const K &key) const {
+		AA_CONSTEXPR const_iterator upper_bound(const K &key) const {
 			return aa::upper_bound(elements, key, comparer);
 		}
 
 		template<in_relation_with<value_type, key_compare> K>
-		inline constexpr const_iterator find(const K &key) const {
+		AA_CONSTEXPR const_iterator find(const K &key) const {
 			if (empty() || compare(back(), key)) {
 				return nullptr;
 			} else {
@@ -93,7 +93,7 @@ namespace aa {
 		}
 
 		template<in_relation_with<value_type, key_compare> K>
-		inline constexpr bool contains(const K &key) const {
+		AA_CONSTEXPR bool contains(const K &key) const {
 			return (empty() || compare(back(), key))
 				? false : !compare(key, *lower_bound(key));
 		}
@@ -101,14 +101,14 @@ namespace aa {
 
 
 		// Modifiers
-		inline constexpr void clear() { elements.clear(); }
-		inline constexpr void clear(const value_type &value) { elements.resize(elements.begin()); elements.back() = value; }
+		AA_CONSTEXPR void clear() { elements.clear(); }
+		AA_CONSTEXPR void clear(const value_type &value) { elements.resize(elements.begin()); elements.back() = value; }
 
 		// Neturime, kaip static_vector turi, resize funkcijų, nes jomis naudotojas gali
 		// padidinti savavališkai elementų kiekį ir taip sugadinti elementų tvarką.
 
-		inline constexpr iterator pop_back() { return elements.pop_back(); }
-		inline constexpr iterator pop_back(const size_type count) { return elements.pop_back(count); }
+		AA_CONSTEXPR iterator pop_back() { return elements.pop_back(); }
+		AA_CONSTEXPR iterator pop_back(const size_type count) { return elements.pop_back(count); }
 
 		inline std::conditional_t<MULTISET, void, bool> insert(const value_type &value) {
 			if constexpr (MULTISET) {
@@ -154,9 +154,9 @@ namespace aa {
 		// nes comparer tipas yra const. Perfect forwarding naudojame, kad palaikyti move semantics
 		// ir pass by reference, jei parametras būtų const& tai neišeitų palaikyti move semantics.
 		template<class U = key_compare>
-		inline constexpr static_flat_set(U &&c = {}) : comparer{std::forward<U>(c)} {}
+		AA_CONSTEXPR static_flat_set(U &&c = {}) : comparer{std::forward<U>(c)} {}
 		template<class U = key_compare>
-		inline constexpr static_flat_set(const value_type &value, U &&c = {})
+		AA_CONSTEXPR static_flat_set(const value_type &value, U &&c = {})
 			: elements{elements.begin()}, comparer{std::forward<U>(c)} { elements.back() = value; }
 
 

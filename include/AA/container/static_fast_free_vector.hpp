@@ -32,24 +32,24 @@ namespace aa {
 
 
 		// Capacity
-		inline constexpr bool has_holes() const { return first_hole; }
+		AA_CONSTEXPR bool has_holes() const { return first_hole; }
 
-		inline constexpr bool empty() const { return elements.empty(); }
-		inline constexpr bool full() const { return elements.full(); }
+		AA_CONSTEXPR bool empty() const { return elements.empty(); }
+		AA_CONSTEXPR bool full() const { return elements.full(); }
 
-		inline constexpr difference_type ssize() const { return elements.ssize(); }
-		inline constexpr size_type size() const { return elements.size(); }
+		AA_CONSTEXPR difference_type ssize() const { return elements.ssize(); }
+		AA_CONSTEXPR size_type size() const { return elements.size(); }
 
 		static inline consteval size_type max_size() { return N; }
 
 
 
 		// Modifiers
-		inline constexpr void clear() { elements.clear(); first_hole = nullptr; }
+		AA_CONSTEXPR void clear() { elements.clear(); first_hole = nullptr; }
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		inline constexpr pointer emplace(A&&... args) {
+		AA_CONSTEXPR pointer emplace(A&&... args) {
 			if (first_hole) {
 				node_type *const hole = first_hole;
 				first_hole = hole->next;
@@ -68,7 +68,7 @@ namespace aa {
 
 
 		// Special member functions
-		inline constexpr static_fast_free_vector() {}
+		AA_CONSTEXPR static_fast_free_vector() {}
 
 
 

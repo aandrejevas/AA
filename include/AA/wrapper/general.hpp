@@ -10,37 +10,37 @@ namespace aa {
 	template<auto R>
 	struct less {
 		template<std::totally_ordered_with<decltype(R)> L>
-		inline constexpr bool operator()(const L &l) const { return l < R; }
+		AA_CONSTEXPR bool operator()(const L &l) const { return l < R; }
 	};
 
 	template<auto R>
 	struct less_equal {
 		template<std::totally_ordered_with<decltype(R)> L>
-		inline constexpr bool operator()(const L &l) const { return l <= R; }
+		AA_CONSTEXPR bool operator()(const L &l) const { return l <= R; }
 	};
 
 	template<auto R>
 	struct greater {
 		template<std::totally_ordered_with<decltype(R)> L>
-		inline constexpr bool operator()(const L &l) const { return l > R; }
+		AA_CONSTEXPR bool operator()(const L &l) const { return l > R; }
 	};
 
 	template<auto R>
 	struct greater_equal {
 		template<std::totally_ordered_with<decltype(R)> L>
-		inline constexpr bool operator()(const L &l) const { return l >= R; }
+		AA_CONSTEXPR bool operator()(const L &l) const { return l >= R; }
 	};
 
 	template<auto R>
 	struct equal_to {
 		template<std::equality_comparable_with<decltype(R)> L>
-		inline constexpr bool operator()(const L &l) const { return l == R; }
+		AA_CONSTEXPR bool operator()(const L &l) const { return l == R; }
 	};
 
 	template<auto R>
 	struct not_equal_to {
 		template<std::equality_comparable_with<decltype(R)> L>
-		inline constexpr bool operator()(const L &l) const { return l != R; }
+		AA_CONSTEXPR bool operator()(const L &l) const { return l != R; }
 	};
 
 

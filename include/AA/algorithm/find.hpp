@@ -11,7 +11,7 @@
 namespace aa {
 
 	template<sized_random_access_range R, class T, std::indirect_strict_weak_order<const T *, std::ranges::iterator_t<R>> C = std::ranges::less>
-	inline constexpr std::ranges::borrowed_iterator_t<R> upper_bound(R &&r, const T &value, C &&comp = {}) {
+	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> upper_bound(R &&r, const T &value, C &&comp = {}) {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		std::ranges::range_size_t<R> len = std::ranges::size(r);
 		while (len) {
@@ -28,7 +28,7 @@ namespace aa {
 	}
 
 	template<sized_random_access_range R, class T, std::indirect_strict_weak_order<const T *, std::ranges::iterator_t<R>> C = std::ranges::less>
-	inline constexpr std::ranges::borrowed_iterator_t<R> lower_bound(R &&r, const T &value, C &&comp = {}) {
+	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> lower_bound(R &&r, const T &value, C &&comp = {}) {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		std::ranges::range_size_t<R> len = std::ranges::size(r);
 		while (len) {
@@ -46,7 +46,7 @@ namespace aa {
 
 	template<std::ranges::bidirectional_range R, class T>
 		requires (std::indirect_binary_predicate<std::ranges::equal_to, std::ranges::iterator_t<R>, const T *>)
-	inline constexpr std::ranges::borrowed_iterator_t<R> find_last(R &&r, const T &value) {
+	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> find_last(R &&r, const T &value) {
 		std::ranges::iterator_t<R> first = std::ranges::rbegin(r);
 		const std::ranges::iterator_t<R> last = std::ranges::rend(r);
 		while (first != last && (*first != value)) --first;

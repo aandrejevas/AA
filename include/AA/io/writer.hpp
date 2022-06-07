@@ -33,7 +33,7 @@ namespace aa {
 		// paduoti ne const kintamąjį. Išlieka galimybė pvz. turėti mutable lambdas ir keisti range elementus.
 		template<class C, class T>
 			requires (std::invocable<F &, std::basic_ostream<C, T> &, const std::ranges::range_value_t<R> &>)
-		friend inline constexpr std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const range_writer<R, F> &w) {
+		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const range_writer<R, F> &w) {
 			std::ranges::for_each(w.range, [&s, &w](const std::ranges::range_value_t<R> &element) -> void {
 				std::invoke(w.fun, s, element);
 			});
@@ -48,7 +48,7 @@ namespace aa {
 
 		template<class C, class T>
 			requires (std::invocable<F &, std::basic_ostream<C, T> &, const E &>)
-		friend inline constexpr std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const writer<E, F> &w) {
+		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const writer<E, F> &w) {
 			std::invoke(w.fun, s, std::as_const(w.element));
 			return s;
 		}
@@ -58,25 +58,25 @@ namespace aa {
 
 	struct identity_inserter {
 		template<class S, class T>
-		inline constexpr void operator()(S &s, const T &t) const { s << t; }
+		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << t; }
 	};
 
 	template<char D>
 	struct delim_inserter {
 		template<class S, class T>
-		inline constexpr void operator()(S &s, const T &t) const { s << t << D; }
+		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << t << D; }
 	};
 
 	template<int N>
 	struct width_inserter {
 		template<class S, class T>
-		inline constexpr void operator()(S &s, const T &t) const { s << std::setw(N) << t; }
+		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << std::setw(N) << t; }
 	};
 
 	template<char D1 = ':', char D2 = ' '>
 	struct pair_inserter {
 		template<class S, class T>
-		inline constexpr void operator()(S &s, const T &t) const {
+		AA_CONSTEXPR void operator()(S &s, const T &t) const {
 			const auto &[m1, m2] = t;
 			s << m1 << D1 << m2 << D2;
 		}
@@ -85,12 +85,12 @@ namespace aa {
 
 
 	template<class R, class F = delim_inserter<' '>>
-	inline constexpr range_writer<R, F> make_range_writer(R &&r, F &&f = {}) {
+	AA_CONSTEXPR range_writer<R, F> make_range_writer(R &&r, F &&f = {}) {
 		return {std::forward<R>(r), std::forward<F>(f)};
 	}
 
 	template<class E, class F = delim_inserter<' '>>
-	inline constexpr writer<E, F> make_writer(E &&e, F &&f = {}) {
+	AA_CONSTEXPR writer<E, F> make_writer(E &&e, F &&f = {}) {
 		return {std::forward<E>(e), std::forward<F>(f)};
 	}
 

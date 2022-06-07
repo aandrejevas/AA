@@ -61,16 +61,16 @@ namespace aa {
 
 		// Generation
 		// [0, MODULUS)
-		inline constexpr result_type next() { return (state = (state * multiplier) + increment); }
-		inline constexpr result_type prev() { return (state = inverse * (state - increment)); }
-		inline constexpr result_type curr() const { return state; }
+		AA_CONSTEXPR result_type next() { return (state = (state * multiplier) + increment); }
+		AA_CONSTEXPR result_type prev() { return (state = inverse * (state - increment)); }
+		AA_CONSTEXPR result_type curr() const { return state; }
 
-		inline constexpr result_type operator()() { return next(); }
+		AA_CONSTEXPR result_type operator()() { return next(); }
 
 		// https://www.nayuki.io/page/fast-skipping-in-a-linear-congruential-generator
 		// https://docs.rs/randomize/2.2.2/src/randomize/lcg.rs.html#99-114
 		template<std::unsigned_integral U>
-		inline constexpr result_type jump(U n) {
+		AA_CONSTEXPR result_type jump(U n) {
 			result_type acc_mult = 1, acc_plus = 0,
 				cur_mult = multiplier, cur_plus = increment;
 			do {
@@ -87,7 +87,7 @@ namespace aa {
 		}
 
 		// https://math.stackexchange.com/questions/2008585/computing-the-distance-between-two-linear-congruential-generator-states
-		inline constexpr result_type dist(const generator_type &o) const {
+		AA_CONSTEXPR result_type dist(const generator_type &o) const {
 			result_type d = 0, mask = 1, t_state = state,
 				cur_mult = multiplier, cur_plus = increment;
 			do {
@@ -105,11 +105,11 @@ namespace aa {
 		}
 
 		// Seeding
-		inline constexpr void seed() {
+		AA_CONSTEXPR void seed() {
 			state = static_cast<result_type>(std::chrono::system_clock::now().time_since_epoch().count());
 		}
 
-		inline constexpr void seed(const result_type s) {
+		AA_CONSTEXPR void seed(const result_type s) {
 			state = s;
 		}
 	};

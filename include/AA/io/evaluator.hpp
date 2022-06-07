@@ -27,7 +27,7 @@ namespace aa {
 	// Negalime turėti evaluator<std::string_view>, nes atmintis į kurią rodo token pasikeis.
 	template<>
 	struct evaluator<std::string> {
-		inline constexpr std::string operator()(const std::string_view &token) const {
+		AA_CONSTEXPR std::string operator()(const std::string_view &token) const {
 			return std::string{token};
 		}
 	};

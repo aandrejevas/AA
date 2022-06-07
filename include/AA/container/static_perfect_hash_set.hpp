@@ -38,11 +38,11 @@ namespace aa {
 			using iterator_category = std::forward_iterator_tag;
 			using iterator_type = iterator;
 
-			inline constexpr reference operator*() const {
+			AA_CONSTEXPR reference operator*() const {
 				return product<N>(static_cast<size_type>(std::countr_zero(bitset))) + static_cast<size_type>(*pos - bins_begin);
 			}
 
-			inline constexpr iterator_type &operator++() {
+			AA_CONSTEXPR iterator_type &operator++() {
 				// (0 & (0 - 1)) == 0
 				bitset &= bitset - 1;
 				if (!bitset && pos != rbegin) {
@@ -51,7 +51,7 @@ namespace aa {
 				return *this;
 			}
 
-			inline constexpr iterator_type operator++(int) {
+			AA_CONSTEXPR iterator_type operator++(int) {
 				const bucket_type b = bitset;
 				bitset &= bitset - 1;
 				if (!bitset && pos != rbegin) {
@@ -62,7 +62,7 @@ namespace aa {
 					return {b, pos, rbegin, bins_begin};
 			}
 
-			friend inline constexpr bool operator==(const iterator_type &l, const iterator_type &r) {
+			friend AA_CONSTEXPR bool operator==(const iterator_type &l, const iterator_type &r) {
 				if (l.bitset && r.bitset) {
 					return l.bitset == r.bitset && l.pos == r.pos;
 				} else {
@@ -82,22 +82,22 @@ namespace aa {
 			using iterator_category = std::forward_iterator_tag;
 			using iterator_type = local_iterator;
 
-			inline constexpr reference operator*() const {
+			AA_CONSTEXPR reference operator*() const {
 				return product<N>(static_cast<size_type>(std::countr_zero(bitset))) + index;
 			}
 
-			inline constexpr iterator_type &operator++() {
+			AA_CONSTEXPR iterator_type &operator++() {
 				bitset &= bitset - 1;
 				return *this;
 			}
 
-			inline constexpr iterator_type operator++(int) {
+			AA_CONSTEXPR iterator_type operator++(int) {
 				const bucket_type b = bitset;
 				bitset &= bitset - 1;
 				return {b, index};
 			}
 
-			friend inline constexpr bool operator==(const iterator_type &l, const iterator_type &r) {
+			friend AA_CONSTEXPR bool operator==(const iterator_type &l, const iterator_type &r) {
 				if (l.bitset && r.bitset) {
 					return l.bitset == r.bitset && l.index == r.index;
 				} else {
@@ -113,7 +113,7 @@ namespace aa {
 
 
 		// Iterators
-		inline constexpr iterator begin() const {
+		AA_CONSTEXPR iterator begin() const {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 			if (used_bins.empty()) return {};
@@ -121,15 +121,15 @@ namespace aa {
 #pragma GCC diagnostic pop
 		}
 
-		inline constexpr iterator end() const { return {}; }
+		AA_CONSTEXPR iterator end() const { return {}; }
 
 
 
 		// Capacity
-		inline constexpr bool empty() const { return used_bins.empty(); }
-		inline constexpr bool full() const { return size() == max_size(); }
+		AA_CONSTEXPR bool empty() const { return used_bins.empty(); }
+		AA_CONSTEXPR bool full() const { return size() == max_size(); }
 
-		inline constexpr size_type size() const {
+		AA_CONSTEXPR size_type size() const {
 			size_type sum = 0;
 			const bucket_type *const *pos = used_bins.rbegin(), *const *const rend = used_bins.rend();
 			while (pos != rend) sum += static_cast<size_type>(std::popcount(**pos--));
@@ -145,43 +145,43 @@ namespace aa {
 
 
 		// Bucket interface
-		inline constexpr size_type to_index(const bucket_type *const bin) const { return static_cast<size_type>(bin - bins.data()); }
+		AA_CONSTEXPR size_type to_index(const bucket_type *const bin) const { return static_cast<size_type>(bin - bins.data()); }
 
-		inline constexpr size_type index_at(const size_type pos) const { return to_index(used_bins.at(pos)); }
-		inline constexpr size_type index_rat(const size_type pos) const { return to_index(used_bins.rat(pos)); }
+		AA_CONSTEXPR size_type index_at(const size_type pos) const { return to_index(used_bins.at(pos)); }
+		AA_CONSTEXPR size_type index_rat(const size_type pos) const { return to_index(used_bins.rat(pos)); }
 
-		inline constexpr size_type front_index() const { return to_index(used_bins.front()); }
-		inline constexpr size_type back_index() const { return to_index(used_bins.back()); }
+		AA_CONSTEXPR size_type front_index() const { return to_index(used_bins.front()); }
+		AA_CONSTEXPR size_type back_index() const { return to_index(used_bins.back()); }
 
-		inline constexpr local_iterator begin(const size_type n) const { return {bins[n], n}; }
-		inline constexpr local_iterator end(const size_type) const { return {}; }
+		AA_CONSTEXPR local_iterator begin(const size_type n) const { return {bins[n], n}; }
+		AA_CONSTEXPR local_iterator end(const size_type) const { return {}; }
 
-		inline constexpr size_type bucket_size(const size_type n) const { return static_cast<size_type>(std::popcount(bins[n])); }
+		AA_CONSTEXPR size_type bucket_size(const size_type n) const { return static_cast<size_type>(std::popcount(bins[n])); }
 
-		inline constexpr size_type bucket_count() const { return used_bins.size(); }
+		AA_CONSTEXPR size_type bucket_count() const { return used_bins.size(); }
 
 		static inline consteval size_type max_bucket_count() { return M; }
 
-		[[gnu::always_inline]] static inline constexpr size_type bucket(const size_type hash) { return remainder<N>(hash); }
-		[[gnu::always_inline]] static inline constexpr bucket_type bit(const size_type hash) { return int_exp2<bucket_type>(quotient<N>(hash)); }
+		[[gnu::always_inline]] static AA_CONSTEXPR size_type bucket(const size_type hash) { return remainder<N>(hash); }
+		[[gnu::always_inline]] static AA_CONSTEXPR bucket_type bit(const size_type hash) { return int_exp2<bucket_type>(quotient<N>(hash)); }
 
 
 
 		// Observers
-		inline constexpr const hasher &hash_function() const { return hasher_func; }
+		AA_CONSTEXPR const hasher &hash_function() const { return hasher_func; }
 
 		template<hashable_by<hasher> K>
-		[[gnu::always_inline]] inline constexpr size_type hash(const K &key) const { return std::invoke(hasher_func, key); }
+		[[gnu::always_inline]] AA_CONSTEXPR size_type hash(const K &key) const { return std::invoke(hasher_func, key); }
 
 		// Kituose konteineriuose vidinio konteinerio nerodome, nes kituose konteineriuose vidinis
 		// konteineris galima sakyti yra pats konteineris tai nėra tikslo to daryti.
-		inline constexpr const array_t<bucket_type, N> &buckets() const { return bins; }
+		AA_CONSTEXPR const array_t<bucket_type, N> &buckets() const { return bins; }
 
 
 
 		// Lookup
 		template<hashable_by<hasher> K>
-		inline constexpr bool contains(const K &key) const {
+		AA_CONSTEXPR bool contains(const K &key) const {
 			const size_type hash = this->hash(key);
 			return bins[bucket(hash)] & bit(hash);
 		}
@@ -189,14 +189,14 @@ namespace aa {
 
 
 		// Modifiers
-		inline constexpr void clear() {
+		AA_CONSTEXPR void clear() {
 			// Nedarome used_bins.clear(), nes vis tiek reiktų iteruoti per visus elementus ir tam reiktų įsivesti
 			// lokalų kintamąjį, pamąsčiau kam tai daryti jei galime naudoti jau static_vector klasėje esantį kintamąjį.
 			if (!used_bins.empty())
 				unsafe_clear();
 		}
 
-		inline constexpr void unsafe_clear() {
+		AA_CONSTEXPR void unsafe_clear() {
 			do {
 				*used_bins.back() = 0;
 				used_bins.pop_back();
@@ -204,7 +204,7 @@ namespace aa {
 		}
 
 		template<hashable_by<hasher> K>
-		inline constexpr void insert(const K &key) {
+		AA_CONSTEXPR void insert(const K &key) {
 			const size_type hash = this->hash(key);
 			bucket_type &bin = bins[bucket(hash)];
 			if (!bin) used_bins.insert_back(&bin);
@@ -212,7 +212,7 @@ namespace aa {
 		}
 
 		template<hashable_by<hasher> K>
-		inline constexpr void erase(const K &key) {
+		AA_CONSTEXPR void erase(const K &key) {
 			const size_type hash = this->hash(key);
 			bucket_type &bin = bins[bucket(hash)];
 			if (bin) {
@@ -222,7 +222,7 @@ namespace aa {
 		}
 
 		template<hashable_by<hasher> K>
-		inline constexpr void insert_or_erase(const K &key) {
+		AA_CONSTEXPR void insert_or_erase(const K &key) {
 			const size_type hash = this->hash(key);
 			bucket_type &bin = bins[bucket(hash)];
 			if (bin) {
@@ -238,7 +238,7 @@ namespace aa {
 
 		// Special member functions
 		template<class U = hasher>
-		inline constexpr static_perfect_hash_set(U &&h = {}) : hasher_func{std::forward<U>(h)} {}
+		AA_CONSTEXPR static_perfect_hash_set(U &&h = {}) : hasher_func{std::forward<U>(h)} {}
 
 
 

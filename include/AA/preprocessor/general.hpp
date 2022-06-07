@@ -47,3 +47,11 @@
 #define AA_SHL(l, r) ((l) << (r))
 #define AA_SHR(l, r) ((l) >> (r))
 #define AA_MUL(l, r) ((l) * (r))
+#
+#
+#
+# // Filosofija bibliotekos tokia, visos funkcijos žymimos constexpr ir tiek. Nesvarbu gali ar negali būti funkcija
+# // naudojama constexpr kontekste, ji bus pažymėta constexpr. Gal naudotojams kiek neaišku gali būti ar jie gali
+# // funkciją naudoti constexpr kontekste, bet aš nenoriu mąstyti apie tai ar funkcijos realizacija gali būti constexpr.
+#define AA_CONSTEXPR inline constexpr
+#define AA_CONSTEVAL inline consteval

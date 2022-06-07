@@ -16,30 +16,30 @@ namespace aa {
 		// veiktų resume funkcija jei sukūrus timekeeper objektą iškarto ji būtų iškviesta.
 		C::rep begin = 0, end = 0;
 
-		static inline constexpr C::rep now() {
+		static AA_CONSTEXPR C::rep now() {
 			return C::now().time_since_epoch().count();
 		}
 
-		inline constexpr void reset() {
+		AA_CONSTEXPR void reset() {
 			begin = 0;
 			end = 0;
 		}
 
-		inline constexpr void start() {
+		AA_CONSTEXPR void start() {
 			begin = now();
 		}
 
-		inline constexpr void resume() {
+		AA_CONSTEXPR void resume() {
 			begin += (now() - end);
 		}
 
-		inline constexpr void stop() {
+		AA_CONSTEXPR void stop() {
 			end = now();
 		}
 
 		template<class F, class... A>
 			requires (std::invocable<F, A...>)
-		inline constexpr void measure(F &&f, A&&... args) {
+		AA_CONSTEXPR void measure(F &&f, A&&... args) {
 			start();
 			std::invoke(std::forward<F>(f), std::forward<A>(args)...);
 			stop();
@@ -47,7 +47,7 @@ namespace aa {
 
 		template<class F, class... A>
 			requires (std::invocable<F, A...>)
-		inline constexpr void append(F &&f, A&&... args) {
+		AA_CONSTEXPR void append(F &&f, A&&... args) {
 			resume();
 			std::invoke(std::forward<F>(f), std::forward<A>(args)...);
 			stop();
@@ -55,7 +55,7 @@ namespace aa {
 
 		// Pagal nutylėjimą, laikas pateikiamas sekundėmis.
 		template<class D = std::chrono::duration<double>>
-		inline constexpr D::rep elapsed() const {
+		AA_CONSTEXPR D::rep elapsed() const {
 			return std::chrono::duration_cast<D>(typename C::duration{end - begin}).count();
 		}
 	};

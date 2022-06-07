@@ -20,7 +20,7 @@ namespace aa {
 	// Jei reikia indekso, tada jau reikia naudoti nebe šią funkciją, o pavyzdžiui iota_view su for_each.
 	template<class F, class... A>
 		requires (std::invocable<F &, A&...>)
-	inline constexpr void repeat(size_t e, F &&f, A&&... args) {
+	AA_CONSTEXPR void repeat(size_t e, F &&f, A&&... args) {
 		do {
 			std::invoke(f, args...);
 			if (e != 1) --e; else return;

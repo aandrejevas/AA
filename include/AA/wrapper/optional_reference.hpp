@@ -19,25 +19,25 @@ namespace aa {
 		type *ptr;
 
 		// Observers
-		inline constexpr operator type &() const { return *ptr; }
-		inline constexpr type &operator*() const { return *ptr; }
-		inline constexpr type *operator->() const { return ptr; }
+		AA_CONSTEXPR operator type &() const { return *ptr; }
+		AA_CONSTEXPR type &operator*() const { return *ptr; }
+		AA_CONSTEXPR type *operator->() const { return ptr; }
 
-		inline constexpr type &get() const { return *ptr; }
-		inline constexpr type *get_pointer() const { return ptr; }
+		AA_CONSTEXPR type &get() const { return *ptr; }
+		AA_CONSTEXPR type *get_pointer() const { return ptr; }
 
-		explicit inline constexpr operator bool() const { return ptr; }
+		explicit AA_CONSTEXPR operator bool() const { return ptr; }
 
 		template<class... A>
 			requires (std::invocable<type &, A...>)
-		inline constexpr std::invoke_result_t<type &, A...> operator()(A&&... args) const {
+		AA_CONSTEXPR std::invoke_result_t<type &, A...> operator()(A&&... args) const {
 			return std::invoke(*ptr, std::forward<A>(args)...);
 		}
 
 		// Modifiers
-		inline constexpr void release() { ptr = nullptr; }
+		AA_CONSTEXPR void release() { ptr = nullptr; }
 
-		inline constexpr void reset(type *const p) { ptr = p; }
+		AA_CONSTEXPR void reset(type *const p) { ptr = p; }
 	};
 
 }

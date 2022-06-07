@@ -15,7 +15,7 @@ namespace aa {
 		const std::source_location location = std::source_location::current();
 
 		template<class... A>
-		inline constexpr void log(const A&... args) const {
+		AA_CONSTEXPR void log(const A&... args) const {
 			stream << location.file_name() << '(' << location.line() << ':' << location.column() << ") `"
 				<< location.function_name() << "`: ";
 			if constexpr (sizeof...(A)) {

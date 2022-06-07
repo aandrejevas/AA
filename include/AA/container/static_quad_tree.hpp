@@ -74,7 +74,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			inline constexpr void query(F &f, const container_type &t) const {
+			AA_CONSTEXPR void query(F &f, const container_type &t) const {
 				nw.query(f, t);
 				ne.query(f, t);
 				sw.query(f, t);
@@ -92,7 +92,7 @@ namespace aa {
 		template<size_t M>
 			requires (!M)
 		struct quad_branch<M> {
-			inline constexpr void insert(const pointer e, const sf::Vector2f &, const sf::FloatRect &, container_type &t) {
+			AA_CONSTEXPR void insert(const pointer e, const sf::Vector2f &, const sf::FloatRect &, container_type &t) {
 				if (pass != t.pass) {
 					pass = t.pass;
 					first = t.nodes.emplace(e, nullptr);
@@ -125,7 +125,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			inline constexpr void query_range(const sf::FloatRect &q, F &f, const sf::FloatRect &, const container_type &t) const {
+			AA_CONSTEXPR void query_range(const sf::FloatRect &q, F &f, const sf::FloatRect &, const container_type &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
@@ -136,7 +136,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			inline constexpr void query(F &f, const container_type &t) const {
+			AA_CONSTEXPR void query(F &f, const container_type &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
@@ -152,43 +152,43 @@ namespace aa {
 
 
 		// Capacity
-		inline constexpr bool empty() const { return nodes.empty(); }
-		inline constexpr bool full() const { return nodes.full(); }
+		AA_CONSTEXPR bool empty() const { return nodes.empty(); }
+		AA_CONSTEXPR bool full() const { return nodes.full(); }
 
-		inline constexpr difference_type ssize() const { return nodes.ssize(); }
-		inline constexpr size_type size() const { return nodes.size(); }
+		AA_CONSTEXPR difference_type ssize() const { return nodes.ssize(); }
+		AA_CONSTEXPR size_type size() const { return nodes.size(); }
 
 		static inline consteval size_type max_size() { return N; }
 
 
 
 		// Observers
-		inline constexpr const locator &locator_function() const { return locator_func; }
+		AA_CONSTEXPR const locator &locator_function() const { return locator_func; }
 
-		inline constexpr const sf::Vector2f &locate(const value_type &e) const { return std::invoke(locator_func, e); }
+		AA_CONSTEXPR const sf::Vector2f &locate(const value_type &e) const { return std::invoke(locator_func, e); }
 
 
 
 		// Lookup
 		template<invocable_ref<reference> F>
-		inline constexpr void query_range(const sf::FloatRect &range, F &&f) const {
+		AA_CONSTEXPR void query_range(const sf::FloatRect &range, F &&f) const {
 			trunk.query_range(range, f, rect, *this);
 		}
 
 		template<invocable_ref<reference> F>
-		inline constexpr void query(F &&f) const {
+		AA_CONSTEXPR void query(F &&f) const {
 			trunk.query(f, *this);
 		}
 
 
 
 		// Modifiers
-		inline constexpr void clear() {
+		AA_CONSTEXPR void clear() {
 			nodes.clear();
 			++pass;
 		}
 
-		inline constexpr void insert(value_type &element) {
+		AA_CONSTEXPR void insert(value_type &element) {
 			trunk.insert(&element, locate(std::as_const(element)), rect, *this);
 		}
 
@@ -200,7 +200,7 @@ namespace aa {
 
 		// Special member functions
 		template<class U>
-		inline constexpr static_quad_tree(const sf::Vector2f &position, const sf::Vector2f &size, U &&u = {}) : sizes{[&]() {
+		AA_CONSTEXPR static_quad_tree(const sf::Vector2f &position, const sf::Vector2f &size, U &&u = {}) : sizes{[&]() {
 			array_t<sf::Vector2f, D> sizes;
 			if constexpr (D) {
 				std::accumulate(sizes.rbegin(), sizes.rend(), size,
