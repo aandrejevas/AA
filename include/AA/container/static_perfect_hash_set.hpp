@@ -114,11 +114,8 @@ namespace aa {
 
 		// Iterators
 		AA_CONSTEXPR iterator begin() const {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 			if (used_bins.empty()) return {};
 			else return {*used_bins.front(), used_bins.begin(), used_bins.rbegin(), bins.data()};
-#pragma GCC diagnostic pop
 		}
 
 		AA_CONSTEXPR iterator end() const { return {}; }

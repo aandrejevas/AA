@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
 #include <ranges> // iterator_t, borrowed_iterator_t, range_size_t, begin, size, rbegin, rend, bidirectional_range
 #include <iterator> // indirect_strict_weak_order, indirect_binary_predicate

@@ -159,6 +159,7 @@ namespace aa {
 
 
 
+	// Klasė negali būti pakeista į concept, nes concepts negali būti recursive.
 	template<class T = void, class... A>
 	struct are_unique : std::bool_constant<!(... || std::same_as<T, A>) && are_unique<A...>::value> {};
 

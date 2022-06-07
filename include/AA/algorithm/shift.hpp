@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
 #include "../algorithm/arithmetic.hpp"
 #include <cstring> // memcpy

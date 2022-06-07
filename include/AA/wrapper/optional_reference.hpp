@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../metaprogramming/general.hpp"
 #include <type_traits> // invoke_result_t
 #include <concepts> // invocable
 #include <functional> // invoke

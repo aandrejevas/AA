@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../metaprogramming/general.hpp"
 #include "../metaprogramming/clock.hpp"
 #include <concepts> // invocable
 #include <functional> // invoke

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t
 #include <concepts> // invocable
 #include <functional> // invoke

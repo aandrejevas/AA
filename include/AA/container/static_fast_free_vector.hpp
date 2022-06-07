@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../metaprogramming/general.hpp"
 #include "static_vector.hpp"
 #include <cstddef> // size_t, ptrdiff_t
 #include <utility> // forward

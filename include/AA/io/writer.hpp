@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../metaprogramming/general.hpp"
 #include <ranges> // input_range, range_value_t
 #include <functional> // invoke
 #include <concepts> // invocable

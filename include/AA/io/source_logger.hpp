@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../metaprogramming/general.hpp"
 #include <cstdlib> // abort
 #include <ostream> // ostream
 #include <iostream> // cerr
