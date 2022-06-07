@@ -102,7 +102,7 @@ namespace aa {
 
 		// Modifiers
 		AA_CONSTEXPR void clear() { elements.clear(); }
-		AA_CONSTEXPR void clear(const value_type &value) { elements.resize(elements.begin()); elements.back() = value; }
+		AA_CONSTEXPR void clear(const value_type &value) { *elements.resize(elements.begin()) = value; }
 
 		// Neturime, kaip static_vector turi, resize funkcijų, nes jomis naudotojas gali
 		// padidinti savavališkai elementų kiekį ir taip sugadinti elementų tvarką.

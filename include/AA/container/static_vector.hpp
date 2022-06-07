@@ -102,8 +102,8 @@ namespace aa {
 		// Modifiers
 		AA_CONSTEXPR void clear() { r_begin = r_end; }
 
-		AA_CONSTEXPR void resize(const size_type count) { r_begin = r_end + count; }
-		AA_CONSTEXPR void resize(const const_iterator pos) { r_begin = const_cast<iterator>(pos); }
+		AA_CONSTEXPR iterator resize(const size_type count) { return r_begin = r_end + count; }
+		AA_CONSTEXPR iterator resize(const const_iterator pos) { return r_begin = const_cast<iterator>(pos); }
 
 		AA_CONSTEXPR iterator pop_back() { return --r_begin; }
 		AA_CONSTEXPR iterator push_back() { return ++r_begin; }
@@ -157,16 +157,15 @@ namespace aa {
 
 
 		// Special member functions
-		// GCC bug https://www.mail-archive.com/gcc-bugs@gcc.gnu.org/msg685363.html,
-		// Matą netikrą klaidą kompiliuojant su -Ofast.
+		// Kompiliatorius meta klaidą dėl to kaip kintamasis r_end yra inicializuojamas.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
 		// Nedarome = default, nes konstrukrotius vis tiek nebus trivial,
 		// nes klasė turi kintamųjų su numatytais inicializatoriais.
 		AA_CONSTEXPR static_vector() {}
-#pragma GCC diagnostic pop
 		AA_CONSTEXPR static_vector(const const_iterator pos) : r_begin{const_cast<iterator>(pos)} {}
 		AA_CONSTEXPR static_vector(const size_type count) : r_begin{r_end + count} {}
+#pragma GCC diagnostic pop
 
 
 
