@@ -138,7 +138,7 @@ namespace aa {
 
 		// Šis konteineris gali talpinti tik mažesnias reikšmes už max_size,
 		// nebent būtų naudojamas ne tas hasher, kuris yra naudojamas pagal nutylėjimą.
-		static inline consteval size_type max_size() {
+		static AA_CONSTEVAL size_type max_size() {
 			return std::numeric_limits<std::underlying_type_t<std::byte>>::digits * sizeof(bucket_type[M]);
 		}
 
@@ -160,7 +160,7 @@ namespace aa {
 
 		AA_CONSTEXPR size_type bucket_count() const { return used_bins.size(); }
 
-		static inline consteval size_type max_bucket_count() { return M; }
+		static AA_CONSTEVAL size_type max_bucket_count() { return M; }
 
 		[[gnu::always_inline]] static AA_CONSTEXPR size_type bucket(const size_type hash) { return remainder<N>(hash); }
 		[[gnu::always_inline]] static AA_CONSTEXPR bucket_type bit(const size_type hash) { return int_exp2<bucket_type>(quotient<N>(hash)); }

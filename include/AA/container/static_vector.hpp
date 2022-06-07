@@ -93,7 +93,7 @@ namespace aa {
 		AA_CONSTEXPR difference_type ssize() const { return r_begin - r_end; }
 		AA_CONSTEXPR size_type size() const { return static_cast<size_type>(ssize()); }
 
-		static inline consteval size_type max_size() { return N; }
+		static AA_CONSTEVAL size_type max_size() { return N; }
 
 
 

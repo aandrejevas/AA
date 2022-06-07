@@ -40,7 +40,7 @@ namespace aa {
 		AA_CONSTEXPR difference_type ssize() const { return elements.ssize(); }
 		AA_CONSTEXPR size_type size() const { return elements.size(); }
 
-		static inline consteval size_type max_size() { return N; }
+		static AA_CONSTEVAL size_type max_size() { return N; }
 
 
 

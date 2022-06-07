@@ -39,8 +39,8 @@ namespace aa {
 
 
 		// Characteristics
-		inline static consteval result_type min() { return std::numeric_limits<result_type>::min(); }
-		inline static consteval result_type max() { return std::numeric_limits<result_type>::max(); }
+		static AA_CONSTEVAL result_type min() { return std::numeric_limits<result_type>::min(); }
+		static AA_CONSTEVAL result_type max() { return std::numeric_limits<result_type>::max(); }
 
 
 
