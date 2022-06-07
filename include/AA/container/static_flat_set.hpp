@@ -110,7 +110,7 @@ namespace aa {
 		AA_CONSTEXPR iterator pop_back() { return elements.pop_back(); }
 		AA_CONSTEXPR iterator pop_back(const size_type count) { return elements.pop_back(count); }
 
-		inline std::conditional_t<MULTISET, void, bool> insert(const value_type &value) {
+		AA_CONSTEXPR std::conditional_t<MULTISET, void, bool> insert(const value_type &value) {
 			if constexpr (MULTISET) {
 				elements.insert(upper_bound(value), value);
 			} else {
@@ -133,7 +133,7 @@ namespace aa {
 		}
 
 		template<in_relation_with<value_type, key_compare> K>
-		inline void erase(const K &key) {
+		AA_CONSTEXPR void erase(const K &key) {
 			if (empty() || compare(back(), key)) {
 				return;
 			} else {
@@ -143,7 +143,7 @@ namespace aa {
 			}
 		}
 
-		inline void erase(const const_iterator pos) {
+		AA_CONSTEXPR void erase(const const_iterator pos) {
 			elements.erase(pos);
 		}
 

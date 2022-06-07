@@ -38,7 +38,7 @@ namespace aa {
 		struct quad_branch {
 			static AA_CONSTEXPR const size_t decremented_depth = M - 1;
 
-			inline void insert(const pointer e, const sf::Vector2f &l, const sf::FloatRect &r, container_type &t) {
+			AA_CONSTEXPR void insert(const pointer e, const sf::Vector2f &l, const sf::FloatRect &r, container_type &t) {
 				const sf::Vector2f &s = t.sizes[decremented_depth];
 
 				/**/ if (const sf::FloatRect r_nw = {r.left /***/, r.top /***/, s.x, s.y}; contains(r_nw, l)) nw.insert(e, l, r_nw, t);
@@ -47,7 +47,7 @@ namespace aa {
 				else if (const sf::FloatRect r_se = {r.left + s.x, r.top + s.y, s.x, s.y}; contains(r_se, l)) se.insert(e, l, r_se, t);
 			}
 
-			inline void erase(const const_pointer e, const sf::Vector2f &l, const sf::FloatRect &r, container_type &t) {
+			AA_CONSTEXPR void erase(const const_pointer e, const sf::Vector2f &l, const sf::FloatRect &r, container_type &t) {
 				const sf::Vector2f &s = t.sizes[decremented_depth];
 
 				/**/ if (const sf::FloatRect r_nw = {r.left /***/, r.top /***/, s.x, s.y}; contains(r_nw, l)) nw.erase(e, l, r_nw, t);
@@ -57,7 +57,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			inline void query_range(const sf::FloatRect &q, F &f, const sf::FloatRect &r, const container_type &t) const {
+			AA_CONSTEXPR void query_range(const sf::FloatRect &q, F &f, const sf::FloatRect &r, const container_type &t) const {
 				const sf::Vector2f &s = t.sizes[decremented_depth];
 
 				if (const sf::FloatRect r_nw = {r.left /***/, r.top /***/, s.x, s.y}; contains(q, r_nw))
@@ -101,7 +101,7 @@ namespace aa {
 				}
 			}
 
-			inline void erase(const const_pointer e, const sf::Vector2f &, const sf::FloatRect &, container_type &t) {
+			AA_CONSTEXPR void erase(const const_pointer e, const sf::Vector2f &, const sf::FloatRect &, container_type &t) {
 				if (pass == t.pass && first) {
 					if (first->element == e) {
 						// Reikia išsaugoti sekančio elemento adresą, nes ištrynus
@@ -192,7 +192,7 @@ namespace aa {
 			trunk.insert(&element, locate(std::as_const(element)), rect, *this);
 		}
 
-		inline void erase(const value_type &element) {
+		AA_CONSTEXPR void erase(const value_type &element) {
 			trunk.erase(&element, locate(element), rect, *this);
 		}
 

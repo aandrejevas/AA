@@ -16,7 +16,7 @@ namespace aa {
 	// nes daroma prielaida, kad naudotojas nenori, kad būtų sustabdyta programa jei buvo tokios klados aptiktos.
 	template<arithmetic T>
 	struct evaluator<T> {
-		inline T operator()(const std::string_view &token) const {
+		AA_CONSTEXPR T operator()(const std::string_view &token) const {
 			// Reikia inicializuoti kintamąjį, nes from_chars nebūtinai jį modifikuos.
 			T param = 0;
 			std::from_chars(token.data(), token.data() + token.length(), param);

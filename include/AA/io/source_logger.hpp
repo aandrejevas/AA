@@ -26,7 +26,7 @@ namespace aa {
 		}
 
 		template<class... A>
-		[[noreturn]] inline void abort(const A&... args) const {
+		[[noreturn]] AA_CONSTEXPR void abort(const A&... args) const {
 			if constexpr (sizeof...(A)) {
 				log(args...);
 			} else {

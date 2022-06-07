@@ -171,7 +171,7 @@ namespace aa {
 			}
 		}
 
-		inline void erase(const pointer pos) {
+		AA_CONSTEXPR void erase(const pointer pos) {
 			node_type *const element = reinterpret_cast<node_type *>(pos);
 			element->template emplace<hole_index>(first_hole);
 			first_hole = element;

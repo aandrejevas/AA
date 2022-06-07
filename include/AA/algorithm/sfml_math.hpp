@@ -40,12 +40,12 @@ namespace aa {
 
 
 	template<arithmetic T>
-	inline T dist(const sf::Vector2<T> &a) {
+	AA_CONSTEXPR T dist(const sf::Vector2<T> &a) {
 		return std::hypot(a.x, a.y);
 	}
 
 	template<arithmetic T>
-	inline T dist(const sf::Vector2<T> &a, const sf::Vector2<T> &b) {
+	AA_CONSTEXPR T dist(const sf::Vector2<T> &a, const sf::Vector2<T> &b) {
 		return std::hypot(a.x - b.x, a.y - b.y);
 	}
 

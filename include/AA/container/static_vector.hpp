@@ -121,19 +121,19 @@ namespace aa {
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		inline iterator emplace(const const_iterator pos, A&&... args) {
+		AA_CONSTEXPR iterator emplace(const const_iterator pos, A&&... args) {
 			std::memmove(const_cast<iterator>(pos + 1), pos,
 				static_cast<size_type>(reinterpret_cast<const std::byte *>(++r_begin) - reinterpret_cast<const std::byte *>(pos)));
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
-		inline void insert(const const_iterator pos, const value_type &value) {
+		AA_CONSTEXPR void insert(const const_iterator pos, const value_type &value) {
 			std::memmove(const_cast<iterator>(pos + 1), pos,
 				static_cast<size_type>(reinterpret_cast<const std::byte *>(++r_begin) - reinterpret_cast<const std::byte *>(pos)));
 			*const_cast<iterator>(pos) = value;
 		}
 
-		inline void erase(const const_iterator pos) {
+		AA_CONSTEXPR void erase(const const_iterator pos) {
 			std::memmove(const_cast<iterator>(pos), pos + 1,
 				static_cast<size_type>(reinterpret_cast<const std::byte *>(r_begin--) - reinterpret_cast<const std::byte *>(pos)));
 		}

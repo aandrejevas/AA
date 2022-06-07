@@ -34,7 +34,7 @@ namespace aa {
 			params_map &params;
 
 			template<class T>
-			inline void evaluate() const {
+			AA_CONSTEXPR void evaluate() const {
 				params_iter->second.template emplace<evaluator_result_t<T>>(
 					std::invoke(std::get<T>(evaluators), token.operator std::string_view()));
 			}
@@ -61,19 +61,19 @@ namespace aa {
 
 
 
-			inline void init_type() {
+			AA_CONSTEXPR void init_type() {
 				state = lexing_state::BEFORE_KEY;
 				types_iter = types.template find<std::string>(token);
 				token.clear();
 			}
 
-			inline void init_key() {
+			AA_CONSTEXPR void init_key() {
 				state = lexing_state::VALUE;
 				params_iter = params.try_emplace(token).first;
 				token.clear();
 			}
 
-			inline void operator()(const int character) {
+			AA_CONSTEXPR void operator()(const int character) {
 				switch (state) {
 					case lexing_state::BEFORE_TYPE:
 						switch (character) {
@@ -166,7 +166,7 @@ namespace aa {
 			}
 		};
 
-		inline lexer(const std::string_view &filename, params_lexer &&p_lexer) {
+		AA_CONSTEXPR lexer(const std::string_view &filename, params_lexer &&p_lexer) {
 			std::ifstream file = std::ifstream{filename.data()};
 			AA_TRACE_ASSERT(file.is_open(), "Error while openning file `", filename, "`.");
 
@@ -243,16 +243,16 @@ namespace aa {
 		}
 
 	public:
-		inline lexer(const std::string_view &filename) : lexer{filename, {params, {}}} {}
+		AA_CONSTEXPR lexer(const std::string_view &filename) : lexer{filename, {params, {}}} {}
 		template<class... U>
-		inline lexer(const std::string_view &filename, U&&... args) : lexer{filename, {params, {std::forward<U>(args)...}}} {}
+		AA_CONSTEXPR lexer(const std::string_view &filename, U&&... args) : lexer{filename, {params, {std::forward<U>(args)...}}} {}
 
-		inline const params_map &get_params() const {
+		AA_CONSTEXPR const params_map &get_params() const {
 			return params;
 		}
 
 		template<class T>
-		inline const T &get_param(const std::string_view &name) const {
+		AA_CONSTEXPR const T &get_param(const std::string_view &name) const {
 			const typename params_map::const_iterator iter = params.template find<std::string_view>(name);
 			AA_TRACE_ASSERT(iter != params.cend(), "Parameter `", type_name<T>(), " - ", name, "` not found.");
 
@@ -263,7 +263,7 @@ namespace aa {
 	};
 
 	template<class... A>
-	inline lexer<A...> make_lexer(const std::string_view &filename, A&&... args) {
+	AA_CONSTEXPR lexer<A...> make_lexer(const std::string_view &filename, A&&... args) {
 		return {filename, std::forward<A>(args)...};
 	}
 
