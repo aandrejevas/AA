@@ -26,7 +26,7 @@ namespace aa {
 
 
 	// Naudotojas turėtų naudoti g(), nebent tikrai nuo 0 kažkodėl jam reiktų reikšmės.
-	// [0, MODULUS - MIN)
+	// [0, MAX - MIN + 1)
 	template<class T = void, uniform_random_bit_generator G>
 		requires (void_or_convertible_from<T, generator_result_t<G>>)
 	AA_CONSTEXPR first_not_void_t<T, generator_result_t<G>> int_distribution(G &g) {
@@ -67,7 +67,7 @@ namespace aa {
 
 	// [0, 1)
 	template<std::floating_point T = double, uniform_random_bit_generator G>
-		requires (std::numeric_limits<T>::digits > std::bit_width(G::max()))
+		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
 	AA_CONSTEXPR T real_distribution(G &g) {
 		if constexpr (G::min() != std::numeric_limits<generator_result_t<G>>::min()) {
 			return static_cast<T>(g() - G::min()) * constant_v<one_v<T> / ((G::max() - G::min()) + 1)>;
@@ -78,14 +78,14 @@ namespace aa {
 
 	// [0, mag)
 	template<std::floating_point T = double, uniform_random_bit_generator G>
-		requires (std::numeric_limits<T>::digits > std::bit_width(G::max()))
+		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
 	AA_CONSTEXPR T real_distribution(G &g, const T mag) {
 		return real_distribution<T>(g) * mag;
 	}
 
 	// [off, mag + off)
 	template<std::floating_point T = double, uniform_random_bit_generator G>
-		requires (std::numeric_limits<T>::digits > std::bit_width(G::max()))
+		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
 	AA_CONSTEXPR T real_distribution(G &g, const T off, const T mag) {
 		return real_distribution<T>(g, mag) + off;
 	}
@@ -94,14 +94,14 @@ namespace aa {
 
 	// [0, mag)
 	template<class U, floating_point_and_convertible_to<U> T = double, uniform_random_bit_generator G>
-		requires (std::numeric_limits<T>::digits > std::bit_width(G::max()))
+		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
 	AA_CONSTEXPR U real_to_int_distribution(G &g, const T mag) {
 		return static_cast<U>(real_distribution<T>(g, mag));
 	}
 
 	// [off, mag + off)
 	template<class U, floating_point_and_convertible_to<U> T = double, uniform_random_bit_generator G>
-		requires (std::numeric_limits<T>::digits > std::bit_width(G::max()))
+		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
 	AA_CONSTEXPR U real_to_int_distribution(G &g, const T off, const T mag) {
 		return static_cast<U>(real_distribution<T>(g, off, mag));
 	}
