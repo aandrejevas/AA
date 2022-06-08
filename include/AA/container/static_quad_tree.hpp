@@ -163,6 +163,8 @@ namespace aa {
 
 
 		// Observers
+		AA_CONSTEXPR size_t get_pass() const { return pass; }
+
 		AA_CONSTEXPR const locator &locator_function() const { return locator_func; }
 
 		AA_CONSTEXPR const sf::Vector2f &locate(const value_type &e) const { return std::invoke(locator_func, e); }

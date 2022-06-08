@@ -60,6 +60,16 @@ namespace aa {
 			}
 		}
 
+		AA_CONSTEXPR void insert(const value_type &value) {
+			if (first_hole) {
+				node_type *const hole = first_hole;
+				first_hole = hole->next;
+				hole->element = value;
+			} else {
+				elements.push_back()->element = value;
+			}
+		}
+
 		AA_CONSTEXPR void erase(const pointer pos) {
 			node_type *const hole = reinterpret_cast<node_type *>(pos);
 			hole->next = first_hole;
