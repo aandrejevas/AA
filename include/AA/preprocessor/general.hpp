@@ -55,3 +55,5 @@
 # // funkciją naudoti constexpr kontekste, bet aš nenoriu mąstyti apie tai ar funkcijos realizacija gali būti constexpr.
 #define AA_CONSTEXPR inline constexpr
 #define AA_CONSTEVAL inline consteval
+# // Kartais kompiliatorius pastebi, kad funkcija negali būti constexpr.
+#define AA_INLINE inline
