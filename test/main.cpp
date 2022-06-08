@@ -38,7 +38,7 @@ size_t[^y]
 #include <map> // map
 #include <unordered_set> // unordered_set
 #include <ranges> // iota, contiguous_range, random_access_range, forward_range
-#include <algorithm> // for_each, is_sorted, is_permutation
+#include <algorithm> // is_sorted, is_permutation
 #include <string> // string
 #include <limits> // numeric_limits
 #include <ostream> // flush, ostream
@@ -61,7 +61,7 @@ int main() {
 		const pascal_lcg initial_g = g;
 		std::map<int, size_t> m;
 
-		std::ranges::for_each(std::views::iota(1uz, 5001uz), [&](const size_t i) -> void {
+		unsafe_for_each(std::views::iota(1uz, 5001uz), [&](const size_t i) -> void {
 			++m[int_distribution<int>(g, static_cast<size_t>(-5), 10)];
 			pascal_lcg copy_g = initial_g;
 			copy_g.jump(i);
@@ -114,7 +114,7 @@ int main() {
 
 		counting_sort(a, s.data());
 		cshift_right(a, b);
-		std::ranges::for_each(std::views::iota(0uz, 10uz), [&](const size_t i) -> void {
+		unsafe_for_each(std::views::iota(0uz, 10uz), [&](const size_t i) -> void {
 			AA_TRACE_ASSERT(a[i] == b[(i + 1) % 10]);
 		});
 
@@ -149,7 +149,7 @@ int main() {
 		AA_TRACE_ASSERT(b.size() == a.size());
 
 		// Iterator test
-		std::ranges::for_each(a, [&](const size_t c) {
+		unsafe_for_each(a, [&](const size_t c) {
 			AA_TRACE_ASSERT(b.contains(c));
 			b.erase(c);
 		});
@@ -157,7 +157,7 @@ int main() {
 
 		// Clear test
 		a.unsafe_clear();
-		std::ranges::for_each(a.buckets(), [&](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
+		unsafe_for_each(a.buckets(), [&](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
 
 		// Bucket test
 		repeat(100, [&]() {
@@ -168,7 +168,7 @@ int main() {
 		AA_TRACE_ASSERT(b.size() == a.bucket_size(0));
 
 		// Local iterator test
-		std::ranges::for_each(a.begin(0), a.end(0), [&](const size_t c) {
+		unsafe_for_each(a.begin(0), a.end(0), [&](const size_t c) {
 			AA_TRACE_ASSERT(b.contains(c));
 			b.erase(c);
 		});
@@ -181,7 +181,7 @@ int main() {
 		while (!a.empty()) {
 			a.erase(*a.begin(a.index_at(int_distribution(g, a.bucket_count()))));
 		}
-		std::ranges::for_each(a.buckets(), [&](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
+		unsafe_for_each(a.buckets(), [&](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
 
 		static_assert(std::ranges::forward_range<decltype(a)>);
 	}
@@ -189,15 +189,15 @@ int main() {
 		static_free_vector<size_t, 50'000> a;
 
 		repeat(a.max_size(), [&]() { a.emplace(a.size()); });
-		std::ranges::for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { a.erase(a[i]); AA_TRACE_ASSERT(!a[i]); });
-		std::ranges::for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
+		unsafe_for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { a.erase(a[i]); AA_TRACE_ASSERT(!a[i]); });
+		unsafe_for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
 
 		AA_TRACE_ASSERT(a.max_size() == a.size());
 		repeat(a.size() >> 1, [&]() { a.emplace(a.size()); });
 		AA_TRACE_ASSERT(a.max_size() == a.size());
 
-		std::ranges::for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == a.size()); });
-		std::ranges::for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
+		unsafe_for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == a.size()); });
+		unsafe_for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
 
 		static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
