@@ -14,7 +14,7 @@
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 #include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, add_lvalue_reference
-#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, unsigned_integral, floating_point, relation, invocable
+#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, unsigned_integral, relation, invocable
 #include <limits> // numeric_limits
 #include <string_view> // string_view
 #include <array> // array
@@ -68,9 +68,6 @@ namespace aa {
 	template<class T>
 	concept void_or_convertible_from_floating_point = std::is_void_v<T>
 		|| (std::convertible_to<float, T> && std::convertible_to<double, T> && std::convertible_to<long double, T>);
-
-	template<class F, class T>
-	concept floating_point_and_convertible_to = std::floating_point<F> && std::convertible_to<F, T>;
 
 
 

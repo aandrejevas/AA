@@ -65,6 +65,7 @@ namespace aa {
 
 
 
+	// Čia nėra daromas atsitiktinio skaičiaus cast į kažkokį paduotą tipą, nes T negalime nustatyti iš paduoto argumento tipo.
 	// [0, 1)
 	template<std::floating_point T = double, uniform_random_bit_generator G>
 		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
@@ -77,33 +78,17 @@ namespace aa {
 	}
 
 	// [0, mag)
-	template<std::floating_point T = double, uniform_random_bit_generator G>
+	template<void_or_convertible_from_floating_point U = void, std::floating_point T, uniform_random_bit_generator G>
 		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
-	AA_CONSTEXPR T real_distribution(G &g, const T mag) {
-		return real_distribution<T>(g) * mag;
+	AA_CONSTEXPR first_not_void_t<U, T> real_distribution(G &g, const T mag) {
+		return static_cast<first_not_void_t<U, T>>(real_distribution<T>(g) * mag);
 	}
 
 	// [off, mag + off)
-	template<std::floating_point T = double, uniform_random_bit_generator G>
+	template<void_or_convertible_from_floating_point U = void, std::floating_point T, uniform_random_bit_generator G>
 		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
-	AA_CONSTEXPR T real_distribution(G &g, const T off, const T mag) {
-		return real_distribution<T>(g, mag) + off;
-	}
-
-
-
-	// [0, mag)
-	template<class U, floating_point_and_convertible_to<U> T = double, uniform_random_bit_generator G>
-		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
-	AA_CONSTEXPR U real_to_int_distribution(G &g, const T mag) {
-		return static_cast<U>(real_distribution<T>(g, mag));
-	}
-
-	// [off, mag + off)
-	template<class U, floating_point_and_convertible_to<U> T = double, uniform_random_bit_generator G>
-		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
-	AA_CONSTEXPR U real_to_int_distribution(G &g, const T off, const T mag) {
-		return static_cast<U>(real_distribution<T>(g, off, mag));
+	AA_CONSTEXPR first_not_void_t<U, T> real_distribution(G &g, const T off, const T mag) {
+		return static_cast<first_not_void_t<U, T>>(real_distribution<void, T>(g, mag) + off);
 	}
 
 }

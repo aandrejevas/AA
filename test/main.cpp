@@ -212,7 +212,7 @@ int main() {
 
 		{
 			repeat(tree.max_size(), [&]() {
-				positions.emplace_back(sf::Vector2f{real_to_int_distribution<float>(g, 25.), real_to_int_distribution<float>(g, 25.)});
+				positions.emplace_back(sf::Vector2f{real_distribution<float>(g, 25.), real_distribution<float>(g, 25.)});
 				tree.insert(positions.back());
 			});
 			size_t sum = 0;
