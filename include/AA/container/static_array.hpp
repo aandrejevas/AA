@@ -97,7 +97,7 @@ namespace aa {
 		// Member objects
 	protected:
 		array_t<value_type, N> elements;
-		value_type *const r_begin = elements.data() + N - 1;
+		value_type *const r_begin = elements.data() + constant_v<N - 1>;
 	};
 
 }

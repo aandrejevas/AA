@@ -23,12 +23,14 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using container_type = static_fast_free_vector<T, N>;
 
+	protected:
 		struct node_type {
 			union {
 				node_type *next;
 				value_type element;
 			};
 		};
+	public:
 
 
 

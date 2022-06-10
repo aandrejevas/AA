@@ -26,12 +26,14 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using container_type = static_free_vector<T, N>;
 
+	protected:
+		// node_type tipas paslepiamas, nes nėra jokio viešo funkcionalumo kuriame dalyvautų tipas.
+		//
 		// void* turi būti pirmas tipas, nes masyvo inicializavimo metu, bus inicializuojami visi jo elementai
 		// ir variant default kontruktorius inicializuoja pirmą alternatyvą, makes sence, kad by default aktyvi
 		// alternatyva būtų void* ir apskritai value_type gali neturėti default konstruktoriaus.
 		using node_type = std::variant<void *, value_type>;
 
-	protected:
 		static AA_CONSTEXPR const size_t hole_index = 0, elem_index = 1;
 
 		template<class P1, class P2>

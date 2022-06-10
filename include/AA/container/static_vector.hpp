@@ -6,7 +6,6 @@
 #include <memory> // construct_at
 #include <utility> // forward
 #include <concepts> // constructible_from
-#include <type_traits> // conditional_t
 
 
 
@@ -170,7 +169,7 @@ namespace aa {
 
 
 		// Member objects
-	protected: // protected, kad r_end nebūtų galima sugadinti
+	protected:
 		array_t<value_type, N> elements;
 		value_type *const r_end = elements.data() - 1, *r_begin = r_end;
 	};
