@@ -160,7 +160,7 @@ namespace aa {
 		static AA_CONSTEVAL size_type max_bucket_count() { return M; }
 
 		[[gnu::always_inline]] static AA_CONSTEXPR size_type bucket(const size_type hash) { return remainder<N>(hash); }
-		[[gnu::always_inline]] static AA_CONSTEXPR bucket_type bit(const size_type hash) { return int_exp2<bucket_type>(quotient<N>(hash)); }
+		[[gnu::always_inline]] static AA_CONSTEXPR bucket_type bit(const size_type hash) { return int_exp2N<1, bucket_type>(quotient<N>(hash)); }
 
 
 

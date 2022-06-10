@@ -51,9 +51,9 @@ namespace aa {
 	// x turi būti unsigned, nes undefined behavior jei dešinysis operandas neigiamas << ir >> operatoriuose.
 	// Išviso U ir T nepilnai generic, nes palaikomas toks bendras stilius, kad dirbama tik su sveikaisiais skaičiais.
 	// https://en.wikipedia.org/wiki/Power_of_two
-	template<std::integral U = size_t, std::unsigned_integral T>
-	[[gnu::always_inline]] AA_CONSTEXPR U int_exp2(const T x) {
-		return one_v<U> << x;
+	template<auto N, std::integral U = size_t, std::unsigned_integral T>
+	[[gnu::always_inline]] AA_CONSTEXPR U int_exp2N(const T x) {
+		return one_v<U> << product<N>(x);
 	}
 
 

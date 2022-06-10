@@ -128,10 +128,10 @@ int main() {
 			AA_TRACE_ASSERT(std::ranges::is_sorted(a));
 		});
 
-		while (!a.empty()) {
+		do {
 			a.erase(a[int_distribution(g, a.size())]);
 			AA_TRACE_ASSERT(std::ranges::is_sorted(a));
-		}
+		} while (!a.empty());
 
 		static_assert(std::ranges::contiguous_range<decltype(a)>);
 	}
@@ -178,9 +178,9 @@ int main() {
 		repeat(100'000, [&]() {
 			a.insert(int_distribution(g, a.max_size()));
 		});
-		while (!a.empty()) {
+		do {
 			a.erase(*a.begin(a.index_at(int_distribution(g, a.bucket_count()))));
-		}
+		} while (!a.empty());
 		unsafe_for_each(a.buckets(), [&](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
 
 		static_assert(std::ranges::forward_range<decltype(a)>);
