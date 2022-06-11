@@ -10,7 +10,7 @@
 namespace aa {
 
 	template<class T, class U>
-	concept storable_locator = storable<T>
+	concept storable_vec2_getter = storable<T>
 		&& std::invocable<const T &, const U &> && std::same_as<std::invoke_result_t<const T &, const U &>, const sf::Vector2f &>;
 
 }

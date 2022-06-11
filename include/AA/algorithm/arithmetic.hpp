@@ -47,15 +47,6 @@ namespace aa {
 		return std::bit_width(x >> 1);
 	}
 
-	// Pagal nutylėjimą, one_v yra U tipo, o ne T tipo, nes būtų neteisinga gauti rezultato tipą iš dešinės pusės tipo.
-	// x turi būti unsigned, nes undefined behavior jei dešinysis operandas neigiamas << ir >> operatoriuose.
-	// Išviso U ir T nepilnai generic, nes palaikomas toks bendras stilius, kad dirbama tik su sveikaisiais skaičiais.
-	// https://en.wikipedia.org/wiki/Power_of_two
-	template<auto N, std::integral U = size_t, std::unsigned_integral T>
-	[[gnu::always_inline]] AA_CONSTEXPR U int_exp2N(const T x) {
-		return one_v<U> << product<N>(x);
-	}
-
 
 
 	// https://en.wikipedia.org/wiki/Remainder
@@ -95,7 +86,14 @@ namespace aa {
 		return product<sizeof(T)>(n);
 	}
 
-
+	// Pagal nutylėjimą, one_v yra U tipo, o ne T tipo, nes būtų neteisinga gauti rezultato tipą iš dešinės pusės tipo.
+	// x turi būti unsigned, nes undefined behavior jei dešinysis operandas neigiamas << ir >> operatoriuose.
+	// Išviso U ir T nepilnai generic, nes palaikomas toks bendras stilius, kad dirbama tik su sveikaisiais skaičiais.
+	// https://en.wikipedia.org/wiki/Power_of_two
+	template<auto N, std::integral U = size_t, std::unsigned_integral T>
+	[[gnu::always_inline]] AA_CONSTEXPR U int_exp2N(const T x) {
+		return one_v<U> << product<N>(x);
+	}
 
 	// https://cp-algorithms.com/algebra/binary-exp.html
 	// https://en.wikipedia.org/wiki/Modular_exponentiation

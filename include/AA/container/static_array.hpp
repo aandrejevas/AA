@@ -82,7 +82,7 @@ namespace aa {
 
 
 		// Capacity
-		static AA_CONSTEVAL bool empty() { return elements.empty(); }
+		static AA_CONSTEVAL bool empty() { return !N; }
 		static AA_CONSTEVAL difference_type ssize() { return N; }
 		static AA_CONSTEVAL size_type size() { return N; }
 		static AA_CONSTEVAL size_type max_size() { return N; }
