@@ -202,21 +202,18 @@ int main() {
 		static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
 	{
-		struct position {
-			sf::Vector2f p;
-		};
-
-		static_quad_tree<position, decltype(&position::p), 5, 500> tree = {{0, 0}, {100, 100}, &position::p};
+		using quad_tree_type = static_quad_tree<array_t<float, 2>, std::identity, 5, 500>;
+		quad_tree_type tree = {{0, 0}, {100, 100}};
 		println(make_range_writer(tree.sizes, pair_inserter{}));
-		static_vector<position, tree.max_size()> positions;
+		static_vector<quad_tree_type::value_type, tree.max_size()> positions;
 
 		{
 			repeat(tree.max_size(), [&]() {
-				positions.emplace_back(sf::Vector2f{real_distribution<float>(g, 25.), real_distribution<float>(g, 25.)});
+				positions.emplace_back(quad_tree_type::value_type{real_distribution<float>(g, 25.), real_distribution<float>(g, 25.)});
 				tree.insert(positions.back());
 			});
 			size_t sum = 0;
-			tree.query_range({0, 0}, {25, 25}, [&](const position &) { ++sum; });
+			tree.query_range({0, 0}, {25, 25}, [&](const quad_tree_type::value_type &) { ++sum; });
 			AA_TRACE_ASSERT(tree.max_size() == sum);
 		}
 		{
@@ -225,7 +222,7 @@ int main() {
 				positions.pop_back();
 			});
 			size_t sum = 0;
-			tree.query_range({0, 0}, {25, 25}, [&](const position &) { ++sum; });
+			tree.query_range({0, 0}, {25, 25}, [&](const quad_tree_type::value_type &) { ++sum; });
 			AA_TRACE_ASSERT((tree.max_size() >> 1) == sum);
 		}
 	}

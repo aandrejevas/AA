@@ -49,6 +49,7 @@ namespace aa {
 
 
 
+	// Nenaudojame dirbdami su pamatiniais tipais common_type, nes biblioteka nepalaiko promotions.
 	// https://en.wikipedia.org/wiki/Remainder
 	template<auto X, unsigned_integral_same_as<decltype(X)> T>
 	[[gnu::always_inline]] AA_CONSTEXPR T remainder(const T x) {
@@ -110,7 +111,7 @@ namespace aa {
 	// product_result_t tipas gali būti void, bet nieko tokio tai, nes return sakinys gali būti naudojamas
 	// su išraišką, jei tos išraiškos tipas yra void, funkcijoje, kurios gražinamas tipas yra void.
 	template<class T>
-	AA_CONSTEXPR product_result_t<T> sq(const T &x) {
+	AA_CONSTEXPR product_result_t<const T &> sq(const T &x) {
 		return x * x;
 	}
 

@@ -76,7 +76,7 @@ namespace aa {
 
 	template<char D1 = ':', char D2 = ' '>
 	struct pair_inserter {
-		template<class S, class T>
+		template<class S, pair_like T>
 		AA_CONSTEXPR void operator()(S &s, const T &t) const {
 			const auto &[m1, m2] = t;
 			s << m1 << D1 << m2 << D2;

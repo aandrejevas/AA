@@ -13,22 +13,68 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, add_lvalue_reference
-#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, unsigned_integral, relation, invocable
+#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t
+#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, unsigned_integral, relation, invocable, derived_from, copyable
 #include <limits> // numeric_limits
 #include <string_view> // string_view
 #include <array> // array
-#include <utility> // declval
+#include <utility> // forward, declval, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence
 
 
 
 namespace aa {
 
-	template<class T>
-	struct add_lvalue_cref : std::add_lvalue_reference<std::add_const_t<T>> {};
+	template<template<class...> class F, class... A1>
+	struct bind_types {
+		template<class... A2>
+		struct front : std::type_identity<F<A1..., A2...>> {};
+
+		template<class... A2>
+		using front_t = front<A2...>::type;
+	};
+
+
+
+	// Klasė negali būti pakeista į concept, nes concepts negali būti recursive.
+	template<class T = void, class... A>
+	struct are_unique : std::bool_constant<!(... || std::same_as<T, A>) && are_unique<A...>::value> {};
 
 	template<class T>
-	using add_lvalue_cref_t = add_lvalue_cref<T>::type;
+	struct are_unique<T> : std::true_type {};
+
+	template<class... A>
+	AA_CONSTEXPR const bool are_unique_v = are_unique<A...>::value;
+
+	// Klasė galėtų būti pakeista į concept, bet nėra logiška, kad concept'as galėtų būti naudojamas su 0 template parametrų.
+	template<class T = void, class... A>
+	struct are_same : std::bool_constant<!sizeof...(A) || (... && std::same_as<T, A>)> {};
+
+	template<class... A>
+	AA_CONSTEXPR const bool are_same_v = are_same<A...>::value;
+
+
+
+	template<class T>
+	concept arithmetic = std::is_arithmetic_v<T>;
+
+	template<class T>
+	concept uniquely_representable = std::has_unique_object_representations_v<T>;
+
+	template<class T>
+	concept trivially_copyable = std::is_trivially_copyable_v<T>;
+
+	template<class T, class U>
+	concept unsigned_integral_same_as = std::unsigned_integral<T> && std::same_as<T, U>;
+
+	template<class T, class... A>
+	struct is_list_constructible : std::false_type {};
+
+	template<class T, class... A>
+		requires requires(A&&... args) { T{std::forward<A>(args)...}; }
+	struct is_list_constructible<T, A...> : std::true_type {};
+
+	template<class T, class... A>
+	AA_CONSTEXPR const bool is_list_constructible_v = is_list_constructible<T, A...>::value;
 
 
 
@@ -39,7 +85,7 @@ namespace aa {
 	// Vietoje requires parametrų galima naudoti declval, bet atrodo tai negražiai, nėra reikalo to daryti.
 	// https://mathworld.wolfram.com/Multiplier.html
 	template<class L, class R = L>
-	concept multiplier = requires(const L & l, const R & r) { (l * r); };
+	concept multiplier = requires(L && l, R && r) { (std::forward<L>(l) * std::forward<R>(r)); };
 
 	// https://mathworld.wolfram.com/Multiplicand.html
 	template<class R, class L = R>
@@ -49,10 +95,56 @@ namespace aa {
 	// skliausteliais ir be jų nustatytų tą patį tipą, nes jam paduodama išraiška, o ne kintamojo vardas.
 	template<class L, multiplicand<L> R = L>
 	struct product_result
-		: std::type_identity<decltype(AA_MUL(std::declval<add_lvalue_cref_t<L>>(), std::declval<add_lvalue_cref_t<R>>()))> {};
+		: std::type_identity<decltype(AA_MUL(std::declval<L>(), std::declval<R>()))> {};
 
 	template<class L, class R = L>
 	using product_result_t = product_result<L, R>::type;
+
+
+
+	template<class T>
+	concept tuple_like = std::derived_from<std::tuple_size<T>, std::integral_constant<size_t, std::tuple_size_v<T>>>
+		&& ([]<size_t... I>(const std::index_sequence<I...>) consteval -> bool {
+		return (... && (requires { typename std::tuple_element_t<I, T>; }));
+	})(std::make_index_sequence<std::tuple_size_v<T>>{});
+
+	template<template<class...> class F, tuple_like T>
+	struct apply_types : decltype(([]<size_t... I>(const std::index_sequence<I...>) consteval ->
+		std::type_identity<F<std::tuple_element_t<I, T>...>> { return {}; })(std::make_index_sequence<std::tuple_size_v<T>>{})) {};
+
+	template<template<class...> class F, class T>
+	using apply_types_t = apply_types<F, T>::type;
+
+	template<class T>
+	concept array_like = tuple_like<T> && apply_types_t<are_same, T>::value;
+
+	template<array_like T>
+	struct array_element : std::tuple_element<0, T> {};
+
+	template<class T>
+	using array_element_t = array_element<T>::type;
+
+	template<class T>
+	concept vector_like = array_like<T> && arithmetic<array_element_t<T>> && std::copyable<T>
+		&& apply_types_t<bind_types<is_list_constructible, T>::template front_t, T>::value;
+
+	template<size_t N, class T>
+	concept tupleN_like = tuple_like<T> && (std::tuple_size_v<T> == N);
+
+	template<class T>
+	concept pair_like = tupleN_like<2, T>;
+
+	template<size_t N, class T>
+	concept arrayN_like = array_like<T> && (std::tuple_size_v<T> == N);
+
+	template<class T>
+	concept array2_like = arrayN_like<2, T>;
+
+	template<size_t N, class T>
+	concept vectorN_like = vector_like<T> && (std::tuple_size_v<T> == N);
+
+	template<class T>
+	concept vector2_like = vectorN_like<2, T>;
 
 
 
@@ -68,20 +160,6 @@ namespace aa {
 	template<class T>
 	concept void_or_convertible_from_floating_point = std::is_void_v<T>
 		|| (std::convertible_to<float, T> && std::convertible_to<double, T> && std::convertible_to<long double, T>);
-
-
-
-	template<class T>
-	concept arithmetic = std::is_arithmetic_v<T>;
-
-	template<class T>
-	concept uniquely_representable = std::has_unique_object_representations_v<T>;
-
-	template<class T>
-	concept trivially_copyable = std::is_trivially_copyable_v<T>;
-
-	template<class T, class U>
-	concept unsigned_integral_same_as = std::unsigned_integral<T> && std::same_as<T, U>;
 
 
 
@@ -111,6 +189,16 @@ namespace aa {
 
 	template<class T>
 	using evaluator_result_t = evaluator_result<T>::type;
+
+	template<class T, class U>
+	concept storable_vector2_getter = storable<T>
+		&& std::invocable<const T &, const U &> && vector2_like<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>>;
+
+	template<class U, storable_vector2_getter<U> T>
+	struct vector2_getter_result : std::remove_cvref<std::invoke_result_t<const T &, const U &>> {};
+
+	template<class U, class T>
+	using vector2_getter_result_t = vector2_getter_result<U, T>::type;
 
 
 
@@ -156,18 +244,6 @@ namespace aa {
 
 
 
-	// Klasė negali būti pakeista į concept, nes concepts negali būti recursive.
-	template<class T = void, class... A>
-	struct are_unique : std::bool_constant<!(... || std::same_as<T, A>) && are_unique<A...>::value> {};
-
-	template<class T>
-	struct are_unique<T> : std::true_type {};
-
-	template<class... A>
-	AA_CONSTEXPR const bool are_unique_v = are_unique<A...>::value;
-
-
-
 	// C yra objektas, galėtume jį padavinėti per const&, o ne per value, bet nusprendžiau, kad kompiliavimo
 	// metu nėra skirtumo kaip tas objektas bus padavinėjamas, net jei jis būtų labai didelis.
 	template<auto C>
@@ -187,6 +263,12 @@ namespace aa {
 
 	template<class T = size_t>
 	AA_CONSTEXPR const T one_v = one<T>::value;
+
+	template<convertible_from<size_t> T = size_t>
+	struct two : std::integral_constant<T, static_cast<T>(2uz)> {};
+
+	template<class T = size_t>
+	AA_CONSTEXPR const T two_v = two<T>::value;
 
 
 
