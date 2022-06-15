@@ -23,6 +23,8 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using iterator = std::vector<value_type, allocator_type>::iterator;
 		using const_iterator = std::vector<value_type, allocator_type>::const_iterator;
+		using reverse_iterator = std::vector<value_type, allocator_type>::reverse_iterator;
+		using const_reverse_iterator = std::vector<value_type, allocator_type>::const_reverse_iterator;
 		using container_type = queue<T, A>;
 
 
@@ -61,6 +63,14 @@ namespace aa {
 		AA_CONSTEXPR iterator end() { return elements.end(); }
 		AA_CONSTEXPR const_iterator end() const { return elements.end(); }
 		AA_CONSTEXPR const_iterator cend() const { return end(); }
+
+		AA_CONSTEXPR reverse_iterator rbegin() { return elements.rbegin(); }
+		AA_CONSTEXPR const_reverse_iterator rbegin() const { return elements.rbegin(); }
+		AA_CONSTEXPR const_reverse_iterator crbegin() const { return rbegin(); }
+
+		AA_CONSTEXPR reverse_iterator rend() { return reverse_iterator{begin()}; }
+		AA_CONSTEXPR const_reverse_iterator rend() const { return const_reverse_iterator{begin()}; }
+		AA_CONSTEXPR const_reverse_iterator crend() const { return rend(); }
 
 
 
