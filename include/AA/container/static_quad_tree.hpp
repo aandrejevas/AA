@@ -5,6 +5,7 @@
 #include "../algorithm/find.hpp"
 #include "static_fast_free_vector.hpp"
 #include "static_array.hpp"
+#include "queue.hpp"
 #include <cstddef> // ptrdiff_t, size_t
 #include <functional> // invoke
 #include <utility> // forward
@@ -14,8 +15,16 @@
 
 namespace aa {
 
+	template<class T, storable_vector2_getter<T> L>
+	struct query_result {
+		using position_type = vector2_getter_result_t<T, L>;
+
+		size_t i;
+		position_type q;
+	};
+
 	// https://en.wikipedia.org/wiki/Quadtree
-	template<class T, storable_vector2_getter<T> L, size_t H, size_t N>
+	template<class T, storable_vector2_getter<T> L, size_t H, size_t N, class C = queue<query_result<T, L>>>
 	struct static_quad_tree {
 		// Member types
 		using value_type = T;
@@ -26,16 +35,12 @@ namespace aa {
 		using const_reference = const value_type &;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
-		using position_type = vector2_getter_result_t<value_type, locator>;
+		using query_result = query_result<value_type, locator>;
+		using position_type = query_result::position_type;
 		using container_type = static_quad_tree<T, L, H, N>;
 
 	protected:
 		static AA_CONSTEXPR const size_t leaves_count = int_exp2N<2uz>(H), phantoms_count = (leaves_count - 1) / 3;
-
-		struct query_type {
-			size_t i;
-			position_type q;
-		};
 
 		struct node_type {
 			value_type *element;
@@ -175,7 +180,7 @@ namespace aa {
 					const position_type &s = *size;
 					size_t count = queries.size();
 					do {
-						const query_type &q = queries.front();
+						const query_result &q = queries.front();
 						const position_type m = position_type{get_x(q.q) + get_x(s), get_y(q.q) + get_y(s)};
 
 						if (get_y(tl) < get_y(m)) {
@@ -260,7 +265,7 @@ namespace aa {
 
 	protected:
 		size_t pass = 0;
-		mutable std::queue<query_type> queries;
+		mutable std::queue<query_result, C> queries;
 		array_t<leaf, leaves_count> leaves;
 		static_fast_free_vector<node_type, N> nodes;
 		[[no_unique_address]] const locator locator_func;

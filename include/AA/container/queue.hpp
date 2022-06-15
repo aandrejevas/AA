@@ -10,11 +10,11 @@
 
 namespace aa {
 
-	template<class T, class A = std::allocator<T>>
+	template<class T, class M = std::allocator<T>>
 	struct queue {
 		// Member types
 		using value_type = T;
-		using allocator_type = A;
+		using allocator_type = M;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using reference = value_type &;
@@ -25,7 +25,7 @@ namespace aa {
 		using const_iterator = std::vector<value_type, allocator_type>::const_iterator;
 		using reverse_iterator = std::vector<value_type, allocator_type>::reverse_iterator;
 		using const_reverse_iterator = std::vector<value_type, allocator_type>::const_reverse_iterator;
-		using container_type = queue<T, A>;
+		using container_type = queue<T, M>;
 
 
 
