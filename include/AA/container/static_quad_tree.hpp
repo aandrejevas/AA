@@ -80,12 +80,11 @@ namespace aa {
 			template<invocable_ref<reference> F>
 			AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &f, const container_type &t) const {
 				if (pass == t.pass && first) {
-					const auto &[tl_x, tl_y] = tl;
-					const auto &[br_x, br_y] = br;
 					const node_type *iter = first;
 					do {
-						const auto &[lx, ly] = t.locate(*iter->element);
-						if ((tl_x <= lx) && (lx < br_x) && (tl_y <= ly) && (ly < br_y))
+						const position_type &l = t.locate(*iter->element);
+						if ((get_x(tl) <= get_x(l)) && (get_x(l) < get_x(br))
+						 && (get_y(tl) <= get_y(l)) && (get_y(l) < get_y(br)))
 							std::invoke(f, *iter->element);
 					} while ((iter = iter->next));
 				}
@@ -131,30 +130,28 @@ namespace aa {
 		// Lookup
 	protected:
 		AA_CONSTEXPR size_t find(const value_type &element) const {
-			const auto &[l_x, l_y] = locate(element);
+			const position_type &l = locate(element);
 			size_t i = 0;
 
 			if constexpr (H) {
 				const position_type *size = sizes.data();
 				position_type q = position;
-				auto &[q_x, q_y] = q;
 				do {
-					const auto &[s_x, s_y] = *size;
-					const position_type m = position_type{q_x + s_x, q_y + s_y};
-					const auto &[m_x, m_y] = m;
+					const position_type &s = *size;
+					const position_type m = position_type{get_x(q) + get_x(s), get_y(q) + get_y(s)};
 
-					if (l_y < m_y) {
-						if (l_x < m_x) {
+					if (get_y(l) < get_y(m)) {
+						if (get_x(l) < get_x(m)) {
 							i = (i << 2) + 1;
 							// q = q;
 						} else {
 							i = (i << 2) + 2;
-							q_x = m_x;
+							get_x(q) = get_x(m);
 						}
 					} else {
-						if (l_x < m_x) {
+						if (get_x(l) < get_x(m)) {
 							i = (i << 2) + 3;
-							q_y = m_y;
+							get_y(q) = get_y(m);
 						} else {
 							i = (i << 2) + 4;
 							q = m;
@@ -170,31 +167,27 @@ namespace aa {
 	public:
 		template<invocable_ref<reference> F>
 		AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &&f) {
-			const auto &[tl_x, tl_y] = tl;
-			const auto &[br_x, br_y] = br;
 			queries.emplace(0, position);
 
 			if constexpr (H) {
 				const position_type *size = sizes.data();
 				do {
-					const auto &[s_x, s_y] = *size;
+					const position_type &s = *size;
 					size_t count = queries.size();
 					do {
 						const query_type &q = queries.front();
-						const auto &[q_x, q_y] = q.q;
-						const position_type m = position_type{q_x + s_x, q_y + s_y};
-						const auto &[m_x, m_y] = m;
+						const position_type m = position_type{get_x(q.q) + get_x(s), get_y(q.q) + get_y(s)};
 
-						if (tl_y < m_y) {
-							if (tl_x < m_x)
+						if (get_y(tl) < get_y(m)) {
+							if (get_x(tl) < get_x(m))
 								queries.emplace((q.i << 2) + 1, q.q);
-							if (br_x > m_x)
-								queries.emplace((q.i << 2) + 2, position_type{m_x, q_y});
+							if (get_x(br) > get_x(m))
+								queries.emplace((q.i << 2) + 2, position_type{get_x(m), get_y(q.q)});
 						}
-						if (br_y > m_y) {
-							if (tl_x < m_x)
-								queries.emplace((q.i << 2) + 3, position_type{q_x, m_y});
-							if (br_x > m_x)
+						if (get_y(br) > get_y(m)) {
+							if (get_x(tl) < get_x(m))
+								queries.emplace((q.i << 2) + 3, position_type{get_x(q.q), get_y(m)});
+							if (get_x(br) > get_x(m))
 								queries.emplace((q.i << 2) + 4, m);
 						}
 						queries.pop();
@@ -240,16 +233,19 @@ namespace aa {
 		AA_CONSTEXPR static_quad_tree(const position_type &pos, const position_type &size, U &&u = {}) : sizes{[&]() {
 			static_array<position_type, H> sizes;
 			if constexpr (H) {
-				{
-					const auto &[s_x, s_y] = size;
-					sizes.front() = position_type{s_x / two_v<array_element_t<position_type>>, s_y / two_v<array_element_t<position_type>>};
-				}
+				sizes.front() = position_type{
+					get_x(size) / two_v<array_element_t<position_type>>,
+					get_y(size) / two_v<array_element_t<position_type>>
+				};
 				if constexpr (H != 1) {
-					position_type *s = sizes.data() + 1;
+					position_type *size = sizes.data() + 1;
 					do {
-						const auto &[s_x, s_y] = s[-1];
-						*s = position_type{s_x / two_v<array_element_t<position_type>>, s_y / two_v<array_element_t<position_type>>};
-						if (s != sizes.rdata()) ++s; else break;
+						const position_type &s = size[-1];
+						*size = position_type{
+							get_x(s) / two_v<array_element_t<position_type>>,
+							get_y(s) / two_v<array_element_t<position_type>>
+						};
+						if (size != sizes.rdata()) ++size; else break;
 					} while (true);
 				}
 			}

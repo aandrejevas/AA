@@ -13,12 +13,12 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t
+#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, remove_const_t
 #include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, unsigned_integral, relation, invocable, derived_from, copyable
 #include <limits> // numeric_limits
 #include <string_view> // string_view
 #include <array> // array
-#include <utility> // forward, declval, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence
+#include <utility> // forward, declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence
 
 
 
@@ -32,6 +32,13 @@ namespace aa {
 		template<class... A2>
 		using front_t = front<A2...>::type;
 	};
+
+	template<template<size_t...> class F, size_t N>
+	struct apply_indices : decltype(([]<size_t... I>(const std::index_sequence<I...>) consteval ->
+		std::type_identity<F<I...>> { return {}; })(std::make_index_sequence<N>{})) {};
+
+	template<template<size_t...> class F, size_t N>
+	using apply_indices_t = apply_indices<F, N>::type;
 
 
 
@@ -66,6 +73,10 @@ namespace aa {
 	template<class T, class U>
 	concept unsigned_integral_same_as = std::unsigned_integral<T> && std::same_as<T, U>;
 
+	template<class L, class R>
+	concept remove_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
+
+	// Klasės reikia, nes is_constructible tikrina ar klasę galima sukonstruoti naudojant lenktinius skliaustelius, o ne riestinius.
 	template<class T, class... A>
 	struct is_list_constructible : std::false_type {};
 
@@ -102,15 +113,84 @@ namespace aa {
 
 
 
+	// T čia nebūtinai turi būti tuple_like, nes tiesiog sakome, kad šias deklaracijas galime naudoti su visais tipais.
+	template<class T, size_t I>
+	concept member_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(T & t) {
+		{ t.template get<I>() } -> remove_ref_same_as<std::tuple_element_t<I, std::remove_reference_t<T>>>;
+	};
+
+	template<class T, size_t I>
+	concept adl_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(T & t) {
+		{ get<I>(t) } -> remove_ref_same_as<std::tuple_element_t<I, std::remove_reference_t<T>>>;
+	};
+
+	template<class T, size_t I>
+	concept gettable = member_get<T, I> || adl_get<T, I>;
+
+	namespace detail {
+		template<size_t I>
+		struct getter {
+			template<gettable<I> T>
+			[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) operator()(T &&t) const {
+				if constexpr (member_get<T, I>) {
+					return t.template get<I>();
+				} else {
+					return get<I>(t);
+				}
+			}
+		};
+	}
+
+	AA_CONSTEXPR const detail::getter<0> get_0 = {}, get_x = {};
+	AA_CONSTEXPR const detail::getter<1> get_1 = {}, get_y = {};
+
+	template<class T, size_t I>
+	concept normal_get = requires(std::remove_const_t<T> &t) {
+		{ detail::getter<I>{}(t) } -> std::same_as<std::tuple_element_t<I, std::remove_cvref_t<T>> &>;
+		{ detail::getter<I>{}(std::as_const(t)) } -> std::same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>> &>;
+	};
+
 	template<class T>
-	concept tuple_like = std::derived_from<std::tuple_size<T>, std::integral_constant<size_t, std::tuple_size_v<T>>>
-		&& ([]<size_t... I>(const std::index_sequence<I...>) consteval -> bool {
-		return (... && (requires { typename std::tuple_element_t<I, T>; }));
-	})(std::make_index_sequence<std::tuple_size_v<T>>{});
+	struct is_tuple {
+		template<size_t... I>
+		struct normal : std::false_type {};
+
+		template<size_t... I>
+			requires (... && normal_get<T, I>)
+		struct normal<I...> : std::true_type {};
+
+		template<size_t... I>
+		static AA_CONSTEXPR const bool normal_v = normal<I...>::value;
+
+		template<size_t... I>
+		struct valid : std::false_type {};
+
+		template<size_t... I>
+			requires (... && gettable<T, I>)
+		struct valid<I...> : std::true_type {};
+
+		template<size_t... I>
+		static AA_CONSTEXPR const bool valid_v = valid<I...>::value;
+	};
+
+	template<class T>
+	concept tuple_like = std::derived_from<std::tuple_size<std::remove_reference_t<T>>,
+		std::integral_constant<size_t, std::tuple_size_v<std::remove_reference_t<T>>>>
+		&& apply_indices_t<is_tuple<T>::template valid, std::tuple_size_v<std::remove_reference_t<T>>>::value;
+
+	// Tokia klasė, nes neeina nurodyti/naudoti type parameter pack ir non-type parameter pack šalia vienas kito,
+	// o to reikia, kad išeitų sukurti bendrą binder klasę, kuri pirma bind'intų tipus, o tada likusius indeksus.
+	template<template<class...> class F, tuple_like T>
+	struct map_to_types {
+		template<size_t... I>
+		struct from_indices : std::type_identity<F<std::tuple_element_t<I, std::remove_reference_t<T>>...>> {};
+
+		template<size_t... I>
+		using from_indices_t = from_indices<I...>::type;
+	};
 
 	template<template<class...> class F, tuple_like T>
-	struct apply_types : decltype(([]<size_t... I>(const std::index_sequence<I...>) consteval ->
-		std::type_identity<F<std::tuple_element_t<I, T>...>> { return {}; })(std::make_index_sequence<std::tuple_size_v<T>>{})) {};
+	struct apply_types : apply_indices<map_to_types<F, T>::template from_indices_t, std::tuple_size_v<std::remove_reference_t<T>>> {};
 
 	template<template<class...> class F, class T>
 	using apply_types_t = apply_types<F, T>::type;
@@ -119,14 +199,15 @@ namespace aa {
 	concept array_like = tuple_like<T> && apply_types_t<are_same, T>::value;
 
 	template<array_like T>
-	struct array_element : std::tuple_element<0, T> {};
+	struct array_element : std::tuple_element<0, std::remove_reference_t<T>> {};
 
 	template<class T>
 	using array_element_t = array_element<T>::type;
 
 	template<class T>
-	concept vector_like = array_like<T> && arithmetic<array_element_t<T>> && std::copyable<T>
-		&& apply_types_t<bind_types<is_list_constructible, T>::template front_t, T>::value;
+	concept vector_like = array_like<T> && arithmetic<array_element_t<T>> && std::copyable<std::remove_reference_t<T>>
+		&& apply_types_t<bind_types<is_list_constructible, std::remove_reference_t<T>>::template front_t, T>::value
+		&& apply_indices_t<is_tuple<T>::template normal, std::tuple_size_v<std::remove_reference_t<T>>>::value;
 
 	template<size_t N, class T>
 	concept tupleN_like = tuple_like<T> && (std::tuple_size_v<T> == N);
