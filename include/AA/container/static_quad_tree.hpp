@@ -166,7 +166,7 @@ namespace aa {
 
 	public:
 		template<invocable_ref<reference> F>
-		AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &&f) {
+		AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &&f) const {
 			queries.emplace(0, position);
 
 			if constexpr (H) {
@@ -260,7 +260,7 @@ namespace aa {
 
 	protected:
 		size_t pass = 0;
-		std::queue<query_type> queries;
+		mutable std::queue<query_type> queries;
 		array_t<leaf, leaves_count> leaves;
 		static_fast_free_vector<node_type, N> nodes;
 		[[no_unique_address]] const locator locator_func;
