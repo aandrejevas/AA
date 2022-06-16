@@ -17,9 +17,10 @@ namespace aa {
 
 	template<class T, storable_vector2_getter<T> L>
 	struct query_result {
+		using size_type = size_t;
 		using position_type = vector2_getter_result_t<T, L>;
 
-		size_t i;
+		size_type i;
 		position_type q;
 	};
 
@@ -40,7 +41,7 @@ namespace aa {
 		using container_type = static_quad_tree<T, L, H, N>;
 
 	protected:
-		static AA_CONSTEXPR const size_t leaves_count = int_exp2N<2uz>(H), phantoms_count = (leaves_count - 1) / 3;
+		static AA_CONSTEXPR const size_type leaves_count = int_exp2N<2uz>(H), phantoms_count = (leaves_count - 1) / 3;
 
 		struct node_type {
 			value_type *element;
@@ -105,7 +106,7 @@ namespace aa {
 				}
 			}
 
-			size_t pass = 0;
+			size_type pass = 0;
 			node_type *first = nullptr;
 		};
 	public:
@@ -124,7 +125,7 @@ namespace aa {
 
 
 		// Observers
-		AA_CONSTEXPR size_t get_pass() const { return pass; }
+		AA_CONSTEXPR size_type get_pass() const { return pass; }
 
 		AA_CONSTEXPR const locator &locator_function() const { return locator_func; }
 
@@ -134,13 +135,12 @@ namespace aa {
 
 		// Lookup
 	protected:
-		AA_CONSTEXPR size_t find(const value_type &element) const {
-			const position_type &l = locate(element);
-			size_t i = 0;
-
+		AA_CONSTEXPR size_type find_leaf(const value_type &element) const {
 			if constexpr (H) {
-				const position_type *size = sizes.data();
+				size_type i = 0;
 				position_type q = position;
+				const position_type &l = locate(element);
+				const position_type *size = sizes.data();
 				do {
 					const position_type &s = *size;
 					const position_type m = position_type{get_x(q) + get_x(s), get_y(q) + get_y(s)};
@@ -164,21 +164,20 @@ namespace aa {
 					}
 					if (size != sizes.rdata()) ++size; else break;
 				} while (true);
-			}
 
-			return i - phantoms_count;
+				return i - phantoms_count;
+			} else
+				return 0;
 		}
 
-	public:
-		template<invocable_ref<reference> F>
-		AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &&f) const {
+		AA_CONSTEXPR void find_leaves(const position_type &tl, const position_type &br) const {
 			queries.emplace(0, position);
 
 			if constexpr (H) {
 				const position_type *size = sizes.data();
 				do {
 					const position_type &s = *size;
-					size_t count = queries.size();
+					size_type count = queries.size();
 					do {
 						const query_result &q = queries.front();
 						const position_type m = position_type{get_x(q.q) + get_x(s), get_y(q.q) + get_y(s)};
@@ -201,9 +200,23 @@ namespace aa {
 					if (size != sizes.rdata()) ++size; else break;
 				} while (true);
 			}
+		}
 
+	public:
+		template<invocable_ref<reference> F>
+		AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &&f) const {
+			find_leaves(tl, br);
 			do {
 				leaves[queries.front().i - phantoms_count].query_range(tl, br, f, *this);
+				queries.pop();
+			} while (!queries.empty());
+		}
+
+		template<invocable_ref<reference> F>
+		AA_CONSTEXPR void query_loose_range(const position_type &tl, const position_type &br, F &&f) const {
+			find_leaves(tl, br);
+			do {
+				leaves[queries.front().i - phantoms_count].query(f, *this);
 				queries.pop();
 			} while (!queries.empty());
 		}
@@ -224,11 +237,11 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR void insert(value_type &element) {
-			leaves[find(element)].insert(&element, *this);
+			leaves[find_leaf(element)].insert(&element, *this);
 		}
 
 		AA_CONSTEXPR void erase(const value_type &element) {
-			leaves[find(element)].erase(&element, *this);
+			leaves[find_leaf(element)].erase(&element, *this);
 		}
 
 
@@ -264,7 +277,7 @@ namespace aa {
 		const position_type position;
 
 	protected:
-		size_t pass = 0;
+		size_type pass = 0;
 		mutable std::queue<query_result, C> queries;
 		array_t<leaf, leaves_count> leaves;
 		static_fast_free_vector<node_type, N> nodes;
