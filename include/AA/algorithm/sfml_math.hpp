@@ -4,9 +4,43 @@
 #include "arithmetic.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <cstddef> // size_t
 #include <cmath> // hypot
+#include <utility> // tuple_size, tuple_size_v, tuple_element, tuple_element_t
+#include <type_traits> // integral_constant, type_identity
 
 
+
+namespace std {
+
+	template<class T>
+	struct tuple_size<sf::Vector2<T>> : std::integral_constant<size_t, 2> {};
+
+	template<size_t I, class T>
+		requires (I < std::tuple_size_v<sf::Vector2<T>>)
+	struct tuple_element<I, sf::Vector2<T>> : std::type_identity<T> {};
+
+}
+
+namespace sf {
+
+	template<size_t I, class T>
+	std::tuple_element_t<I, sf::Vector2<T>> &get(sf::Vector2<T> &v) {
+		if constexpr (!I)
+			return v.x;
+		else
+			return v.y;
+	}
+
+	template<size_t I, class T>
+	const std::tuple_element_t<I, sf::Vector2<T>> &get(const sf::Vector2<T> &v) {
+		if constexpr (!I)
+			return v.x;
+		else
+			return v.y;
+	}
+
+}
 
 namespace aa {
 
