@@ -55,7 +55,7 @@ int main() {
 
 	pascal_lcg g;
 	println(g.curr(), std::flush<std::ostream::char_type, std::ostream::traits_type>);
-	timekeeper tttt;
+	timekeeper<> tttt;
 	tttt.start();
 	{
 		const pascal_lcg initial_g = g;
@@ -68,7 +68,7 @@ int main() {
 			const size_t d = initial_g.dist(copy_g);
 			AA_TRACE_ASSERT(copy_g.curr() == g.curr() && i == d, i, ' ', d);
 		});
-		println(make_range_writer(m, pair_inserter{}));
+		println(make_range_writer(m, pair_inserter<>{}));
 
 		repeat(5000, [&]() {
 			g.prev();
@@ -204,7 +204,7 @@ int main() {
 	{
 		using quad_tree_type = static_quad_tree<array_t<float, 2>, std::identity, 5, 500>;
 		quad_tree_type tree = {{0, 0}, {100, 100}};
-		println(make_range_writer(tree.sizes, pair_inserter{}));
+		println(make_range_writer(tree.sizes, pair_inserter<>{}));
 		static_vector<quad_tree_type::value_type, tree.max_size()> positions;
 
 		{
