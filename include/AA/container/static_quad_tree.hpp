@@ -249,25 +249,25 @@ namespace aa {
 		// Special member functions
 		template<class U = locator>
 		AA_CONSTEXPR static_quad_tree(const position_type &pos, const position_type &size, U &&u = {}) : sizes{[&]() {
-			static_array<position_type, H> sizes;
+			static_array<position_type, H> init_sizes;
 			if constexpr (H) {
-				sizes.front() = position_type{
+				init_sizes.front() = position_type{
 					get_x(size) / two_v<array_element_t<position_type>>,
 					get_y(size) / two_v<array_element_t<position_type>>
 				};
 				if constexpr (H != 1) {
-					position_type *size = sizes.data() + 1;
+					position_type *iter_s = init_sizes.data() + 1;
 					do {
-						const position_type &s = size[-1];
-						*size = position_type{
+						const position_type &s = iter_s[-1];
+						*iter_s = position_type{
 							get_x(s) / two_v<array_element_t<position_type>>,
 							get_y(s) / two_v<array_element_t<position_type>>
 						};
-						if (size != sizes.rdata()) ++size; else break;
+						if (iter_s != init_sizes.rdata()) ++iter_s; else break;
 					} while (true);
 				}
 			}
-			return sizes;
+			return init_sizes;
 		}()}, position{pos}, locator_func{std::forward<U>(u)} {}
 
 
