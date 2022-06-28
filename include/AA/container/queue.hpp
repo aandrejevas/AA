@@ -25,7 +25,6 @@ namespace aa {
 		using const_iterator = std::vector<value_type, allocator_type>::const_iterator;
 		using reverse_iterator = std::vector<value_type, allocator_type>::reverse_iterator;
 		using const_reverse_iterator = std::vector<value_type, allocator_type>::const_reverse_iterator;
-		using container_type = queue<T, M>;
 
 
 

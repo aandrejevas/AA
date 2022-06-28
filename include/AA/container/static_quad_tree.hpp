@@ -38,7 +38,6 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using query_result = query_result<value_type, locator>;
 		using position_type = query_result::position_type;
-		using container_type = static_quad_tree<T, L, H, N>;
 
 	protected:
 		static AA_CONSTEXPR const size_type leaves_count = int_exp2N<2uz>(H), phantoms_count = (leaves_count - 1) / 3;
@@ -51,7 +50,7 @@ namespace aa {
 		// Reikia mintyje turėti tokį įdomų scenarijų, kad tame pačiame pass, mes įdedame elementą į lapą, po
 		// to išemame elementą ir tada kažką darome, pass bus tas pats, bet first tuo atveju bus nullptr.
 		struct leaf {
-			AA_CONSTEXPR void insert(const pointer e, container_type &t) {
+			AA_CONSTEXPR void insert(const pointer e, static_quad_tree &t) {
 				if (pass != t.pass) {
 					pass = t.pass;
 					first = t.nodes.emplace(e, nullptr);
@@ -60,7 +59,7 @@ namespace aa {
 				}
 			}
 
-			AA_CONSTEXPR void erase(const const_pointer e, container_type &t) {
+			AA_CONSTEXPR void erase(const const_pointer e, static_quad_tree &t) {
 				if (pass == t.pass && first) {
 					if (first->element == e) {
 						// Reikia išsaugoti sekančio elemento adresą, nes ištrynus
@@ -84,7 +83,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &f, const container_type &t) const {
+			AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &f, const static_quad_tree &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
@@ -97,7 +96,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			AA_CONSTEXPR void query(F &f, const container_type &t) const {
+			AA_CONSTEXPR void query(F &f, const static_quad_tree &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {

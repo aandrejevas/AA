@@ -20,7 +20,6 @@ namespace aa {
 		// Member types
 		using result_type = T;
 		using modulus_type = next_unsigned_t<result_type>;
-		using generator_type = lcg<T, A, C>;
 
 
 
@@ -87,7 +86,7 @@ namespace aa {
 		}
 
 		// https://math.stackexchange.com/questions/2008585/computing-the-distance-between-two-linear-congruential-generator-states
-		AA_CONSTEXPR result_type dist(const generator_type &o) const {
+		AA_CONSTEXPR result_type dist(const lcg &o) const {
 			result_type d = 0, mask = 1, t_state = state,
 				cur_mult = multiplier, cur_plus = increment;
 			do {

@@ -21,7 +21,6 @@ namespace aa {
 		using const_reference = const value_type &;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
-		using container_type = static_fast_free_vector<T, N>;
 
 	protected:
 		struct node_type {

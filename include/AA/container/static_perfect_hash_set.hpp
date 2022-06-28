@@ -27,7 +27,6 @@ namespace aa {
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using hasher = H;
-		using container_type = static_perfect_hash_set<T, N, M, H>;
 
 		// Iteratorius skirtas iteruoti pro maišos kodus.
 		struct iterator {
@@ -36,13 +35,12 @@ namespace aa {
 			using difference_type = difference_type;
 			using reference = value_type;
 			using iterator_category = std::forward_iterator_tag;
-			using iterator_type = iterator;
 
 			AA_CONSTEXPR reference operator*() const {
 				return product<N>(static_cast<size_type>(std::countr_zero(bitset))) + static_cast<size_type>(*pos - bins_begin);
 			}
 
-			AA_CONSTEXPR iterator_type &operator++() {
+			AA_CONSTEXPR iterator &operator++() {
 				// (0 & (0 - 1)) == 0
 				bitset &= bitset - 1;
 				if (!bitset && pos != rbegin) {
@@ -51,7 +49,7 @@ namespace aa {
 				return *this;
 			}
 
-			AA_CONSTEXPR iterator_type operator++(int) {
+			AA_CONSTEXPR iterator operator++(int) {
 				const bucket_type b = bitset;
 				bitset &= bitset - 1;
 				if (!bitset && pos != rbegin) {
@@ -62,7 +60,7 @@ namespace aa {
 					return {b, pos, rbegin, bins_begin};
 			}
 
-			friend AA_CONSTEXPR bool operator==(const iterator_type &l, const iterator_type &r) {
+			friend AA_CONSTEXPR bool operator==(const iterator &l, const iterator &r) {
 				if (l.bitset && r.bitset) {
 					return l.bitset == r.bitset && l.pos == r.pos;
 				} else {
@@ -80,24 +78,23 @@ namespace aa {
 			using difference_type = difference_type;
 			using reference = value_type;
 			using iterator_category = std::forward_iterator_tag;
-			using iterator_type = local_iterator;
 
 			AA_CONSTEXPR reference operator*() const {
 				return product<N>(static_cast<size_type>(std::countr_zero(bitset))) + index;
 			}
 
-			AA_CONSTEXPR iterator_type &operator++() {
+			AA_CONSTEXPR local_iterator &operator++() {
 				bitset &= bitset - 1;
 				return *this;
 			}
 
-			AA_CONSTEXPR iterator_type operator++(int) {
+			AA_CONSTEXPR local_iterator operator++(int) {
 				const bucket_type b = bitset;
 				bitset &= bitset - 1;
 				return {b, index};
 			}
 
-			friend AA_CONSTEXPR bool operator==(const iterator_type &l, const iterator_type &r) {
+			friend AA_CONSTEXPR bool operator==(const local_iterator &l, const local_iterator &r) {
 				if (l.bitset && r.bitset) {
 					return l.bitset == r.bitset && l.index == r.index;
 				} else {

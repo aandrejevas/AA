@@ -24,7 +24,6 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using iterator = pointer;
 		using const_iterator = const_pointer;
-		using container_type = static_vector<T, N>;
 
 
 

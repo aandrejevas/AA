@@ -26,7 +26,6 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using iterator = const_pointer;
 		using const_iterator = const_pointer;
-		using container_type = static_flat_set<T, N, C, MULTISET>;
 
 
 

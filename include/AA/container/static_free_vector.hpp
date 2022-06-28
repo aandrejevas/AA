@@ -24,7 +24,6 @@ namespace aa {
 		using const_reference = const value_type &;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
-		using container_type = static_free_vector<T, N>;
 
 	protected:
 		// node_type tipas paslepiamas, nes nėra jokio viešo funkcionalumo kuriame dalyvautų tipas.
@@ -43,32 +42,31 @@ namespace aa {
 			using reference = value_type;
 			using pointer = value_type;
 			using iterator_category = std::random_access_iterator_tag;
-			using iterator_type = variant_iterator<P1, P2>;
 
 			AA_CONSTEXPR reference operator*() const { return std::get_if<elem_index>(ptr); }
 			AA_CONSTEXPR pointer operator->() const { return std::get_if<elem_index>(ptr); }
 
-			AA_CONSTEXPR iterator_type &operator++() { ++ptr; return *this; }
-			AA_CONSTEXPR iterator_type operator++(int) { return {ptr++}; }
-			AA_CONSTEXPR iterator_type &operator--() { --ptr; return *this; }
-			AA_CONSTEXPR iterator_type operator--(int) { return {ptr--}; }
+			AA_CONSTEXPR variant_iterator &operator++() { ++ptr; return *this; }
+			AA_CONSTEXPR variant_iterator operator++(int) { return {ptr++}; }
+			AA_CONSTEXPR variant_iterator &operator--() { --ptr; return *this; }
+			AA_CONSTEXPR variant_iterator operator--(int) { return {ptr--}; }
 
-			friend AA_CONSTEXPR bool operator==(const iterator_type &l, const iterator_type &r) { return l.ptr == r.ptr; }
-			friend AA_CONSTEXPR std::strong_ordering operator<=>(const iterator_type &l, const iterator_type &r) { return l.ptr <=> r.ptr; }
+			friend AA_CONSTEXPR bool operator==(const variant_iterator &l, const variant_iterator &r) { return l.ptr == r.ptr; }
+			friend AA_CONSTEXPR std::strong_ordering operator<=>(const variant_iterator &l, const variant_iterator &r) { return l.ptr <=> r.ptr; }
 
-			AA_CONSTEXPR difference_type operator-(const iterator_type &r) const { return ptr - r.ptr; }
+			AA_CONSTEXPR difference_type operator-(const variant_iterator &r) const { return ptr - r.ptr; }
 			AA_CONSTEXPR reference operator[](const difference_type n) const { return std::get_if<elem_index>(ptr + n); }
-			AA_CONSTEXPR iterator_type operator+(const difference_type n) const { return {ptr + n}; }
-			AA_CONSTEXPR iterator_type operator-(const difference_type n) const { return {ptr - n}; }
-			AA_CONSTEXPR iterator_type &operator+=(const difference_type n) { ptr += n; return *this; }
-			AA_CONSTEXPR iterator_type &operator-=(const difference_type n) { ptr -= n; return *this; }
-			friend AA_CONSTEXPR iterator_type operator+(const difference_type n, const iterator_type &r) { return {n + r.ptr}; }
+			AA_CONSTEXPR variant_iterator operator+(const difference_type n) const { return {ptr + n}; }
+			AA_CONSTEXPR variant_iterator operator-(const difference_type n) const { return {ptr - n}; }
+			AA_CONSTEXPR variant_iterator &operator+=(const difference_type n) { ptr += n; return *this; }
+			AA_CONSTEXPR variant_iterator &operator-=(const difference_type n) { ptr -= n; return *this; }
+			friend AA_CONSTEXPR variant_iterator operator+(const difference_type n, const variant_iterator &r) { return {n + r.ptr}; }
 
 			AA_CONSTEXPR variant_iterator() = default;
-			AA_CONSTEXPR variant_iterator(const iterator_type &) = default;
+			AA_CONSTEXPR variant_iterator(const variant_iterator &) = default;
 
 		protected:
-			friend container_type;
+			friend static_free_vector;
 			using node_type = P2;
 
 			AA_CONSTEXPR variant_iterator(node_type *const p) : ptr{p} {}

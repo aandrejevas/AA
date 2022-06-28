@@ -16,8 +16,7 @@ namespace aa {
 		// Member types
 		using type = T;
 
-		// Member objects
-		type *ptr;
+
 
 		// Observers
 		AA_CONSTEXPR operator type &() const { return *ptr; }
@@ -35,10 +34,17 @@ namespace aa {
 			return std::invoke(*ptr, std::forward<A>(args)...);
 		}
 
+
+
 		// Modifiers
 		AA_CONSTEXPR void release() { ptr = nullptr; }
 
 		AA_CONSTEXPR void reset(type *const p) { ptr = p; }
+
+
+
+		// Member objects
+		type *ptr;
 	};
 
 }
