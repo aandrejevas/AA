@@ -11,7 +11,7 @@
 #include <type_traits> // underlying_type_t
 #include <utility> // forward
 #include <iterator> // forward_iterator_tag
-#include <bit> // countr_zero, popcount
+#include <bit> // countr_zero, popcount, bit_cast
 
 
 
@@ -37,7 +37,7 @@ namespace aa {
 			using iterator_category = std::forward_iterator_tag;
 
 			AA_CONSTEXPR reference operator*() const {
-				return product<N>(static_cast<size_type>(std::countr_zero(bitset))) + static_cast<size_type>(*pos - bins_begin);
+				return product<N>(static_cast<size_type>(std::countr_zero(bitset))) + std::bit_cast<size_type>(*pos - bins_begin);
 			}
 
 			AA_CONSTEXPR iterator &operator++() {
@@ -139,7 +139,7 @@ namespace aa {
 
 
 		// Bucket interface
-		AA_CONSTEXPR size_type to_index(const bucket_type *const bin) const { return static_cast<size_type>(bin - bins.data()); }
+		AA_CONSTEXPR size_type to_index(const bucket_type *const bin) const { return std::bit_cast<size_type>(bin - bins.data()); }
 
 		AA_CONSTEXPR size_type index_at(const size_type pos) const { return to_index(used_bins.at(pos)); }
 		AA_CONSTEXPR size_type index_rat(const size_type pos) const { return to_index(used_bins.rat(pos)); }

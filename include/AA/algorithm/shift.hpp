@@ -16,6 +16,7 @@ namespace aa {
 
 	// Dėl suvaržymų copy konstruktorius turi būti trivial todėl operatorius = veiks gerai.
 	// Turime naudoti bit_cast, nes pvz. jei I value būtų int, o O float tai darydami reinterpret_cast susidurtume su u. b.
+	// Geriau niekur tiesiog nenaudoti reinterpret_cast, nes bit_cast gali daryti tą patį ir yra saugesnis variantas.
 	template<std::contiguous_iterator I, trivial_output_iterator_for<I> O>
 	AA_CONSTEXPR void cshift_right(const I &b, const I &b_An_S1, const O &b2, const O &b2_A1, const size_t n_S1_MS) {
 		std::memcpy(std::to_address(b2_A1), std::to_address(b), n_S1_MS);

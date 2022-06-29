@@ -13,6 +13,7 @@
 #include <string_view> // string_view, hash
 #include <tuple> // tuple, get
 #include <utility> // unreachable, forward
+#include <bit> // bit_cast
 
 
 
@@ -81,17 +82,17 @@ namespace aa {
 							case ' ': case '\t': case '\n': case '\r': return;
 							default:
 								state = lexing_state::TYPE;
-								token.push_back(reinterpret_cast<const char &>(character));
+								token.push_back(*std::bit_cast<const char *>(&character));
 								return;
 						}
 					case lexing_state::TYPE:
 						switch (character) {
 							default:
-								token.push_back(reinterpret_cast<const char &>(character));
+								token.push_back(*std::bit_cast<const char *>(&character));
 								return;
 							case ' ': case '\t':
 								state = lexing_state::TYPE_SPACE;
-								whitespace.push_back(reinterpret_cast<const char &>(character));
+								whitespace.push_back(*std::bit_cast<const char *>(&character));
 								return;
 							case '-':
 								init_type();
@@ -101,11 +102,11 @@ namespace aa {
 						switch (character) {
 							default:
 								state = lexing_state::TYPE;
-								token.append(whitespace).push_back(reinterpret_cast<const char &>(character));
+								token.append(whitespace).push_back(*std::bit_cast<const char *>(&character));
 								whitespace.clear();
 								return;
 							case ' ': case '\t':
-								whitespace.push_back(reinterpret_cast<const char &>(character));
+								whitespace.push_back(*std::bit_cast<const char *>(&character));
 								return;
 							case '-':
 								init_type();
@@ -118,17 +119,17 @@ namespace aa {
 							case ' ': case '\t': case '\n': case '\r': return;
 							default:
 								state = lexing_state::KEY;
-								token.push_back(reinterpret_cast<const char &>(character));
+								token.push_back(*std::bit_cast<const char *>(&character));
 								return;
 						}
 					case lexing_state::KEY:
 						switch (character) {
 							default:
-								token.push_back(reinterpret_cast<const char &>(character));
+								token.push_back(*std::bit_cast<const char *>(&character));
 								return;
 							case ' ': case '\t':
 								state = lexing_state::KEY_SPACE;
-								whitespace.push_back(reinterpret_cast<const char &>(character));
+								whitespace.push_back(*std::bit_cast<const char *>(&character));
 								return;
 							case '=':
 								init_key();
@@ -138,11 +139,11 @@ namespace aa {
 						switch (character) {
 							default:
 								state = lexing_state::KEY;
-								token.append(whitespace).push_back(reinterpret_cast<const char &>(character));
+								token.append(whitespace).push_back(*std::bit_cast<const char *>(&character));
 								whitespace.clear();
 								return;
 							case ' ': case '\t':
-								whitespace.push_back(reinterpret_cast<const char &>(character));
+								whitespace.push_back(*std::bit_cast<const char *>(&character));
 								return;
 							case '=':
 								init_key();
@@ -152,7 +153,7 @@ namespace aa {
 					case lexing_state::VALUE:
 						switch (character) {
 							default:
-								token.push_back(reinterpret_cast<const char &>(character));
+								token.push_back(*std::bit_cast<const char *>(&character));
 								return;
 							case '\n':
 								state = lexing_state::BEFORE_TYPE;

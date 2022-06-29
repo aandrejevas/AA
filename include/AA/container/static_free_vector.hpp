@@ -9,6 +9,7 @@
 #include <iterator> // random_access_iterator_tag
 #include <compare> // strong_ordering
 #include <functional> // invoke
+#include <bit> // bit_cast
 
 
 
@@ -173,7 +174,7 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR void erase(const pointer pos) {
-			node_type *const element = reinterpret_cast<node_type *>(pos);
+			node_type *const element = std::bit_cast<node_type *>(pos);
 			element->template emplace<hole_index>(first_hole);
 			first_hole = element;
 		}

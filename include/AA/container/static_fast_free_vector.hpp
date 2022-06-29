@@ -6,6 +6,7 @@
 #include <utility> // forward
 #include <concepts> // constructible_from
 #include <memory> // construct_at
+#include <bit> // bit_cast
 
 
 
@@ -72,7 +73,7 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR void erase(const pointer pos) {
-			node_type *const hole = reinterpret_cast<node_type *>(pos);
+			node_type *const hole = std::bit_cast<node_type *>(pos);
 			hole->next = first_hole;
 			first_hole = hole;
 		}
