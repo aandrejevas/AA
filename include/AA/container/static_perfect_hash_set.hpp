@@ -11,7 +11,7 @@
 #include <type_traits> // underlying_type_t
 #include <utility> // forward
 #include <iterator> // forward_iterator_tag
-#include <bit> // countr_zero, popcount, bit_cast
+#include <bit> // countr_zero, popcount
 
 
 
@@ -37,7 +37,7 @@ namespace aa {
 			using iterator_category = std::forward_iterator_tag;
 
 			AA_CONSTEXPR reference operator*() const {
-				return product<N>(static_cast<size_type>(std::countr_zero(bitset))) + std::bit_cast<size_type>(*pos - bins_begin);
+				return product<N>(unsign<size_type>(std::countr_zero(bitset))) + unsign<size_type>(*pos - bins_begin);
 			}
 
 			AA_CONSTEXPR iterator &operator++() {
@@ -80,7 +80,7 @@ namespace aa {
 			using iterator_category = std::forward_iterator_tag;
 
 			AA_CONSTEXPR reference operator*() const {
-				return product<N>(static_cast<size_type>(std::countr_zero(bitset))) + index;
+				return product<N>(unsign<size_type>(std::countr_zero(bitset))) + index;
 			}
 
 			AA_CONSTEXPR local_iterator &operator++() {
@@ -126,7 +126,7 @@ namespace aa {
 		AA_CONSTEXPR size_type size() const {
 			size_type sum = 0;
 			const bucket_type *const *pos = used_bins.rbegin(), *const *const rend = used_bins.rend();
-			while (pos != rend) sum += static_cast<size_type>(std::popcount(**pos--));
+			while (pos != rend) sum += unsign<size_type>(std::popcount(**pos--));
 			return sum;
 		}
 
@@ -139,7 +139,7 @@ namespace aa {
 
 
 		// Bucket interface
-		AA_CONSTEXPR size_type to_index(const bucket_type *const bin) const { return std::bit_cast<size_type>(bin - bins.data()); }
+		AA_CONSTEXPR size_type to_index(const bucket_type *const bin) const { return unsign<size_type>(bin - bins.data()); }
 
 		AA_CONSTEXPR size_type index_at(const size_type pos) const { return to_index(used_bins.at(pos)); }
 		AA_CONSTEXPR size_type index_rat(const size_type pos) const { return to_index(used_bins.rat(pos)); }
@@ -150,7 +150,7 @@ namespace aa {
 		AA_CONSTEXPR local_iterator begin(const size_type n) const { return {bins[n], n}; }
 		AA_CONSTEXPR local_iterator end(const size_type) const { return {}; }
 
-		AA_CONSTEXPR size_type bucket_size(const size_type n) const { return static_cast<size_type>(std::popcount(bins[n])); }
+		AA_CONSTEXPR size_type bucket_size(const size_type n) const { return unsign<size_type>(std::popcount(bins[n])); }
 
 		AA_CONSTEXPR size_type bucket_count() const { return used_bins.size(); }
 

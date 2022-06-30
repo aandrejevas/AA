@@ -2,12 +2,29 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t
-#include <concepts> // integral, unsigned_integral, floating_point, same_as
-#include <bit> // bit_width, has_single_bit
+#include <type_traits> // make_unsigned_t
+#include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as, convertible_to
+#include <bit> // bit_width, has_single_bit, bit_cast
 
 
 
 namespace aa {
+
+	template<std::unsigned_integral T, std::signed_integral X>
+	AA_CONSTEXPR T unsign(const X x) {
+		return static_cast<T>(std::bit_cast<std::make_unsigned_t<X>>(x));
+	}
+
+	template<class T, std::convertible_to<T> X>
+	AA_CONSTEXPR T unsign_cast(const X &x) {
+		if constexpr (std::unsigned_integral<T> && std::signed_integral<X>) {
+			return unsign<T>(x);
+		} else {
+			return static_cast<T>(x);
+		}
+	}
+
+
 
 	template<std::floating_point T>
 	AA_CONSTEXPR T norm(const T value, const T mag) {

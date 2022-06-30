@@ -158,7 +158,7 @@ namespace aa {
 		AA_CONSTEXPR reference emplace(A&&... args) {
 			if (first_hole) {
 				node_type *const hole = first_hole;
-				first_hole = static_cast<node_type *>(std::get<hole_index>(*hole));
+				first_hole = std::bit_cast<node_type *>(std::get<hole_index>(*hole));
 				return hole->template emplace<elem_index>(std::forward<A>(args)...);
 			} else {
 				return elements.push_back()->template emplace<elem_index>(std::forward<A>(args)...);

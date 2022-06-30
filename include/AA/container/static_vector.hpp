@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../algorithm/arithmetic.hpp"
 #include <cstring> // memmove
 #include <cstddef> // size_t, ptrdiff_t, byte
 #include <memory> // construct_at
@@ -90,7 +91,7 @@ namespace aa {
 		AA_CONSTEXPR bool full() const { return size() == N; }
 
 		AA_CONSTEXPR difference_type ssize() const { return r_begin - r_end; }
-		AA_CONSTEXPR size_type size() const { return std::bit_cast<size_type>(ssize()); }
+		AA_CONSTEXPR size_type size() const { return unsign<size_type>(ssize()); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
 
@@ -122,19 +123,19 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		AA_CONSTEXPR iterator emplace(const const_iterator pos, A&&... args) {
 			std::memmove(const_cast<iterator>(pos + 1), pos,
-				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
+				unsign<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
 		AA_CONSTEXPR void insert(const const_iterator pos, const value_type &value) {
 			std::memmove(const_cast<iterator>(pos + 1), pos,
-				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
+				unsign<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
 			*const_cast<iterator>(pos) = value;
 		}
 
 		AA_CONSTEXPR void erase(const const_iterator pos) {
 			std::memmove(const_cast<iterator>(pos), pos + 1,
-				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(r_begin--) - std::bit_cast<const std::byte *>(pos)));
+				unsign<size_type>(std::bit_cast<const std::byte *>(r_begin--) - std::bit_cast<const std::byte *>(pos)));
 		}
 
 		template<class... A>

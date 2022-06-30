@@ -54,7 +54,7 @@ namespace aa {
 		// bet nors šališkumas metodo toks pat kaip ir dabar naudojamo metodo, jo greitaveika yra mažesnė.
 		// Greičiausias būdas kaip generuoti nešališkus atsitiktinius skaičius intervale: https://arxiv.org/abs/1805.10941.
 		// Naudojami metodai su šališkumu, nes mums svarbiausia greitaveika, o šališkumas nėra didelis.
-		result_type state = static_cast<result_type>(std::chrono::system_clock::now().time_since_epoch().count());
+		result_type state = unsign<result_type>(std::chrono::system_clock::now().time_since_epoch().count());
 
 
 
@@ -105,7 +105,7 @@ namespace aa {
 
 		// Seeding
 		AA_CONSTEXPR void seed() {
-			state = static_cast<result_type>(std::chrono::system_clock::now().time_since_epoch().count());
+			state = unsign<result_type>(std::chrono::system_clock::now().time_since_epoch().count());
 		}
 
 		AA_CONSTEXPR void seed(const result_type s) {
