@@ -11,12 +11,12 @@
 namespace aa {
 
 	template<std::unsigned_integral T, std::signed_integral X>
-	AA_CONSTEXPR T unsign(const X x) {
+	[[gnu::always_inline]] AA_CONSTEXPR T unsign(const X x) {
 		return static_cast<T>(std::bit_cast<std::make_unsigned_t<X>>(x));
 	}
 
 	template<class T, std::convertible_to<T> X>
-	AA_CONSTEXPR T unsign_cast(const X &x) {
+	[[gnu::always_inline]] AA_CONSTEXPR T unsign_cast(const X &x) {
 		if constexpr (std::unsigned_integral<T> && std::signed_integral<X>) {
 			return unsign<T>(x);
 		} else {
