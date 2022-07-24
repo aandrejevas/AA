@@ -1,6 +1,7 @@
 #pragma once
 
 #include "source_logger.hpp"
+#include "../preprocessor/assert.hpp"
 #include "../metaprogramming/general.hpp"
 #include "../wrapper/general.hpp"
 #include "../wrapper/range.hpp"
