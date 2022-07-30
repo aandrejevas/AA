@@ -13,7 +13,7 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, remove_const_t
+#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, remove_const_t
 #include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, unsigned_integral, relation, invocable, derived_from, copyable
 #include <limits> // numeric_limits
 #include <string_view> // string_view
@@ -66,6 +66,9 @@ namespace aa {
 
 	template<class T>
 	concept uniquely_representable = std::has_unique_object_representations_v<T>;
+
+	template<class T>
+	concept trivial = std::is_trivial_v<T>;
 
 	template<class T>
 	concept trivially_copyable = std::is_trivially_copyable_v<T>;
