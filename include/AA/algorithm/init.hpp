@@ -30,7 +30,7 @@ namespace aa {
 	}
 
 	template<trivially_default_constructible D, std::invocable<std::remove_const_t<D> &> F>
-	[[gnu::always_inline]] AA_CONSTEXPR std::remove_const_t<D> create_with_lambda(F &&f) {
+	[[gnu::always_inline]] AA_CONSTEXPR std::remove_const_t<D> create_with_invocable(F &&f) {
 		std::remove_const_t<D> d;
 		std::invoke(std::forward<F>(f), d);
 		return d;
