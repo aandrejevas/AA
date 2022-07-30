@@ -2,7 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t
-#include <cstring> // memcpy
+#include <cstring> // memcpy, memset
 #include <type_traits> // remove_const_t
 #include <memory> // addressof
 
