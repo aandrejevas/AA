@@ -13,7 +13,7 @@
 
 namespace aa {
 
-	template<class S>
+	template<class S = std::ostream>
 	struct source_logger {
 		S &stream = std::cerr;
 		const std::source_location &location = std::source_location::current();

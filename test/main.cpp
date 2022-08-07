@@ -2,6 +2,7 @@
 #include <AA/container/static_free_vector.hpp>
 #include <AA/container/static_perfect_hash_set.hpp>
 #include <AA/container/static_flat_set.hpp>
+#include <AA/algorithm/arithmetic.hpp>
 #include <AA/algorithm/find.hpp>
 #include <AA/algorithm/shift.hpp>
 #include <AA/algorithm/permute.hpp>
@@ -196,7 +197,8 @@ int main() {
 
 		{
 			repeat(tree.max_size(), [&]() {
-				positions.emplace_back(quad_tree_type::value_type{real_distribution<float>(g, 25.), real_distribution<float>(g, 25.)});
+				positions.emplace_back(quad_tree_type::value_type{real_distribution<float>(g, 25.),
+					map<0>(real_distribution<float>(g, 50., 10.), 50.f, 10.f, 25.f)});
 				tree.insert(positions.back());
 			});
 			size_t sum = 0;

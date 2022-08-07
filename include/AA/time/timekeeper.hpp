@@ -11,7 +11,7 @@
 
 namespace aa {
 
-	template<clock C>
+	template<clock C = std::chrono::steady_clock>
 	struct timekeeper {
 		// Turi būti inicializuoti šitie kintamieji su ta pačia reikšme, nes kitaip neteisingai
 		// veiktų resume funkcija jei sukūrus timekeeper objektą iškarto ji būtų iškviesta.
