@@ -80,7 +80,7 @@ namespace aa {
 				switch (state) {
 					case lexing_state::BEFORE_TYPE:
 						switch (character) {
-							case '-': source_logger<>{}.abort();
+							case '-': source_logger{}.abort();
 							case ' ': case '\t': case '\n': case '\r': return;
 							default:
 								state = lexing_state::TYPE;
@@ -117,7 +117,7 @@ namespace aa {
 						}
 					case lexing_state::BEFORE_KEY:
 						switch (character) {
-							case '=': source_logger<>{}.abort();
+							case '=': source_logger{}.abort();
 							case ' ': case '\t': case '\n': case '\r': return;
 							default:
 								state = lexing_state::KEY;

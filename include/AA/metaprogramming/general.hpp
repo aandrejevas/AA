@@ -339,20 +339,26 @@ namespace aa {
 	template<auto C>
 	AA_CONSTEXPR const decltype(C) constant_v = constant<C>::value;
 
-	template<convertible_from<size_t> T = size_t>
+	template<convertible_from<size_t> T>
 	struct zero : std::integral_constant<T, static_cast<T>(0uz)> {};
+
+	zero()->zero<size_t>;
 
 	template<class T = size_t>
 	AA_CONSTEXPR const T zero_v = zero<T>::value;
 
-	template<convertible_from<size_t> T = size_t>
+	template<convertible_from<size_t> T>
 	struct one : std::integral_constant<T, static_cast<T>(1uz)> {};
+
+	one()->one<size_t>;
 
 	template<class T = size_t>
 	AA_CONSTEXPR const T one_v = one<T>::value;
 
-	template<convertible_from<size_t> T = size_t>
+	template<convertible_from<size_t> T>
 	struct two : std::integral_constant<T, static_cast<T>(2uz)> {};
+
+	two()->two<size_t>;
 
 	template<class T = size_t>
 	AA_CONSTEXPR const T two_v = two<T>::value;

@@ -41,12 +41,12 @@ namespace aa {
 		return mag2 * norm(value, mag1);
 	}
 
-	template<zero<>, std::floating_point T>
+	template<zero, std::floating_point T>
 	AA_CONSTEXPR T map(const T value, const T start1, const T mag1, const T mag2) {
 		return mag2 * norm(value, start1, mag1);
 	}
 
-	template<one<>, std::floating_point T>
+	template<one, std::floating_point T>
 	AA_CONSTEXPR T map(const T value, const T mag1, const T start2, const T mag2) {
 		return start2 + mag2 * norm(value, mag1);
 	}

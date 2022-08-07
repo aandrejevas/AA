@@ -11,7 +11,7 @@
 
 namespace aa {
 
-	template<clock C = std::chrono::steady_clock>
+	template<clock C>
 	struct timekeeper {
 		// Turi būti inicializuoti šitie kintamieji su ta pačia reikšme, nes kitaip neteisingai
 		// veiktų resume funkcija jei sukūrus timekeeper objektą iškarto ji būtų iškviesta.
@@ -60,5 +60,7 @@ namespace aa {
 			return std::chrono::duration_cast<D>(typename C::duration{end - begin}).count();
 		}
 	};
+
+	timekeeper()->timekeeper<std::chrono::steady_clock>;
 
 }

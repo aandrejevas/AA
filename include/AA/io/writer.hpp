@@ -68,13 +68,15 @@ namespace aa {
 		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << t << D; }
 	};
 
+	delim_inserter()->delim_inserter<' '>;
+
 	template<int N>
 	struct width_inserter {
 		template<class S, class T>
 		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << std::setw(N) << t; }
 	};
 
-	template<char D1 = ':', char D2 = ' '>
+	template<char D1, char D2>
 	struct pair_inserter {
 		template<class S, pair_like T>
 		AA_CONSTEXPR void operator()(S &s, const T &t) const {
@@ -83,14 +85,16 @@ namespace aa {
 		}
 	};
 
+	pair_inserter()->pair_inserter<':', ' '>;
 
 
-	template<class R, class F = delim_inserter<' '>>
+
+	template<class R, class F = delim_inserter>
 	AA_CONSTEXPR range_writer<R, F> make_range_writer(R &&r, F &&f = {}) {
 		return {std::forward<R>(r), std::forward<F>(f)};
 	}
 
-	template<class E, class F = delim_inserter<' '>>
+	template<class E, class F = delim_inserter>
 	AA_CONSTEXPR writer<E, F> make_writer(E &&e, F &&f = {}) {
 		return {std::forward<E>(e), std::forward<F>(f)};
 	}
