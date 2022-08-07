@@ -1,19 +1,3 @@
-/*
-cd coverage
-gcov -k ../main.cpp
-del *.gcov
-
-ištrinti:
--nolibc -DNDEBUG
-pridėti:
--UNDEBUG -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_FORTIFY_SOURCE=3 -fanalyzer -Wanalyzer-too-complex -fanalyzer-call-summaries -fanalyzer-verbosity=0 --coverage -fstack-protector
-neveikia (https://github.com/msys2/MINGW-packages/issues/3163):
--fsanitize=address -fsanitize=undefined
-
-regexes:
-size_t[^y]
-*/
-
 #include <AA/container/static_quad_tree.hpp>
 #include <AA/container/static_free_vector.hpp>
 #include <AA/container/static_perfect_hash_set.hpp>
