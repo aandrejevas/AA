@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "print.hpp"
 #include <cstdlib> // abort
 #include <ostream> // ostream
-#include <iostream> // cerr
 #include <source_location> // source_location
 #include <concepts> // invocable
 #include <functional> // invoke
@@ -13,13 +13,16 @@
 
 namespace aa {
 
-	template<class S = std::ostream>
+	// Negalime šios klasės metodų paversti funkcijomis, nes neišeitų
+	// suderinti numatyto source_location parametro su parametrų grupe.
+	template<auto S = &get_cerr>
+		requires (function_pointer<decltype(S)>)
 	struct source_logger {
-		S &stream = std::cerr;
 		const std::source_location &location = std::source_location::current();
 
 		template<class... A>
 		AA_CONSTEXPR void log(const A&... args) const {
+			std::ostream &stream = S();
 			stream << location.file_name() << '(' << location.line() << ':' << location.column() << ") `"
 				<< location.function_name() << "`: ";
 			if constexpr (sizeof...(A)) {
@@ -62,6 +65,6 @@ namespace aa {
 		}
 	};
 
-	source_logger()->source_logger<std::ostream>;
+	source_logger()->source_logger<&get_cerr>;
 
 }
