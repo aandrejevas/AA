@@ -3,8 +3,8 @@
 #include "../metaprogramming/general.hpp"
 #include "print.hpp"
 #include <cstdlib> // abort
-#include <ostream> // ostream
 #include <source_location> // source_location
+#include <type_traits> // invoke_result_t
 #include <concepts> // invocable
 #include <functional> // invoke
 #include <utility> // forward
@@ -22,7 +22,7 @@ namespace aa {
 
 		template<class... A>
 		AA_CONSTEXPR void log(const A&... args) const {
-			std::ostream &stream = S();
+			std::invoke_result_t<decltype(S)> stream = S();
 			stream << location.file_name() << '(' << location.line() << ':' << location.column() << ") `"
 				<< location.function_name() << "`: ";
 			if constexpr (sizeof...(A)) {
