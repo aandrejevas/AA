@@ -15,12 +15,14 @@ namespace aa {
 
 	// Negalime šios klasės metodų paversti funkcijomis, nes neišeitų
 	// suderinti numatyto source_location parametro su parametrų grupe.
-	template<auto S = &get_cerr>
-		requires (function_pointer<decltype(S)>)
+	//
+	// Klasės metodai yra templated, o ne pati klasė, nes įsivaizduokime scenarijų, kad reikia
+	// į du failus surašyti informaciją, to neeitų lengvai padaryti jei klasė būtų templated.
 	struct source_logger {
 		const std::source_location &location = std::source_location::current();
 
-		template<class... A>
+		template<auto S = &get_clog, class... A>
+			requires (function_pointer<decltype(S)>)
 		AA_CONSTEXPR void log(const A&... args) const {
 			std::invoke_result_t<decltype(S)> stream = S();
 			stream << location.file_name() << '(' << location.line() << ':' << location.column() << ") `"
@@ -32,12 +34,13 @@ namespace aa {
 			}
 		}
 
-		template<class... A>
+		template<auto S = &get_cerr, class... A>
+			requires (function_pointer<decltype(S)>)
 		[[noreturn]] AA_CONSTEXPR void abort(const A&... args) const {
 			if constexpr (sizeof...(A)) {
-				log(args...);
+				log<S>(args...);
 			} else {
-				log("Program aborted.");
+				log<S>("Program aborted.");
 			}
 			std::abort();
 		}
@@ -51,20 +54,19 @@ namespace aa {
 			}
 		}
 
-		template<bool T = true, class... A>
+		template<auto S = &get_cerr, bool T = true, class... A>
+			requires (function_pointer<decltype(S)>)
 		AA_CONSTEXPR void assert(const bool condition, const A&... args) const {
 			if constexpr (T || !AA_ISDEF_NDEBUG) {
 				if (!condition) {
 					if constexpr (sizeof...(A)) {
-						abort(args...);
+						abort<S>(args...);
 					} else {
-						abort("Assertion failed.");
+						abort<S>("Assertion failed.");
 					}
 				}
 			}
 		}
 	};
-
-	source_logger()->source_logger<&get_cerr>;
 
 }
