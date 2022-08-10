@@ -1,6 +1,5 @@
 #pragma once
 
-#include "source_logger.hpp"
 #include "../preprocessor/assert.hpp"
 #include "../metaprogramming/general.hpp"
 #include "../wrapper/general.hpp"
@@ -80,7 +79,7 @@ namespace aa {
 				switch (state) {
 					case lexing_state::BEFORE_TYPE:
 						switch (character) {
-							case '-': source_logger{}.abort();
+							case '-': AA_LOGGER::abort();
 							case ' ': case '\t': case '\n': case '\r': return;
 							default:
 								state = lexing_state::TYPE;
@@ -117,7 +116,7 @@ namespace aa {
 						}
 					case lexing_state::BEFORE_KEY:
 						switch (character) {
-							case '=': source_logger{}.abort();
+							case '=': AA_LOGGER::abort();
 							case ' ': case '\t': case '\n': case '\r': return;
 							default:
 								state = lexing_state::KEY;
