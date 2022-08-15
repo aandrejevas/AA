@@ -64,7 +64,6 @@ namespace aa {
 			friend AA_CONSTEXPR variant_iterator operator+(const difference_type n, const variant_iterator &r) { return {n + r.ptr}; }
 
 			AA_CONSTEXPR variant_iterator() = default;
-			AA_CONSTEXPR variant_iterator(const variant_iterator &) = default;
 
 		protected:
 			friend fixed_free_vector;

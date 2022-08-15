@@ -29,14 +29,14 @@ namespace aa {
 	struct fixed_quad_tree {
 		// Member types
 		using value_type = T;
-		using locator = L;
+		using locator_type = L;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using reference = value_type &;
 		using const_reference = const value_type &;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
-		using query_result = query_result<value_type, locator>;
+		using query_result = query_result<value_type, locator_type>;
 		using position_type = query_result::position_type;
 
 	protected:
@@ -126,7 +126,9 @@ namespace aa {
 		// Observers
 		AA_CONSTEXPR size_type get_pass() const { return pass; }
 
-		AA_CONSTEXPR const position_type &locate(const value_type &e) const { return std::invoke(locator_func, e); }
+		[[gnu::always_inline]] AA_CONSTEXPR const position_type &locate(const value_type &e) const {
+			return std::invoke(locator, e);
+		}
 
 
 
@@ -244,7 +246,7 @@ namespace aa {
 
 
 		// Special member functions
-		template<class U = locator>
+		template<class U = locator_type>
 		AA_CONSTEXPR fixed_quad_tree(const position_type &pos, const position_type &size, U &&u = {})
 			: sizes{[&](fixed_array<position_type, H> &init_sizes) -> void
 		{
@@ -265,7 +267,7 @@ namespace aa {
 					} while (true);
 				}
 			}
-		}}, position{pos}, locator_func{std::forward<U>(u)} {}
+		}}, position{pos}, locator{std::forward<U>(u)} {}
 
 
 
@@ -280,7 +282,7 @@ namespace aa {
 		fixed_fast_free_vector<node_type, N> nodes;
 
 	public:
-		[[no_unique_address]] const locator locator_func;
+		[[no_unique_address]] const locator_type locator;
 	};
 
 }

@@ -19,7 +19,7 @@ namespace aa {
 		using value_type = T;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
-		using key_compare = C;
+		using comparer_type = C;
 		using reference = value_type &;
 		using const_reference = const value_type &;
 		using pointer = value_type *;
@@ -63,23 +63,25 @@ namespace aa {
 
 
 		// Observers
-		template<class K1, in_relation_with<K1, key_compare> K2>
-		AA_CONSTEXPR bool compare(const K1 &key1, const K2 &key2) const { return std::invoke(comparer, key1, key2); }
+		template<class K1, in_relation_with<K1, comparer_type> K2>
+		[[gnu::always_inline]] AA_CONSTEXPR bool compare(const K1 &key1, const K2 &key2) const {
+			return std::invoke(comparer, key1, key2);
+		}
 
 
 
 		// Lookup
-		template<in_relation_with<value_type, key_compare> K>
+		template<in_relation_with<value_type, comparer_type> K>
 		AA_CONSTEXPR const_iterator lower_bound(const K &key) const {
 			return aa::lower_bound(elements, key, comparer);
 		}
 
-		template<in_relation_with<value_type, key_compare> K>
+		template<in_relation_with<value_type, comparer_type> K>
 		AA_CONSTEXPR const_iterator upper_bound(const K &key) const {
 			return aa::upper_bound(elements, key, comparer);
 		}
 
-		template<in_relation_with<value_type, key_compare> K>
+		template<in_relation_with<value_type, comparer_type> K>
 		AA_CONSTEXPR const_iterator find(const K &key) const {
 			if (empty() || compare(back(), key)) {
 				return nullptr;
@@ -89,7 +91,7 @@ namespace aa {
 			}
 		}
 
-		template<in_relation_with<value_type, key_compare> K>
+		template<in_relation_with<value_type, comparer_type> K>
 		AA_CONSTEXPR bool contains(const K &key) const {
 			return (empty() || compare(back(), key))
 				? false : !compare(key, *lower_bound(key));
@@ -129,7 +131,7 @@ namespace aa {
 			}
 		}
 
-		template<in_relation_with<value_type, key_compare> K>
+		template<in_relation_with<value_type, comparer_type> K>
 		AA_CONSTEXPR void erase(const K &key) {
 			if (empty() || compare(back(), key)) {
 				return;
@@ -150,10 +152,10 @@ namespace aa {
 		// Nėra esmės turėti default konstruktoriaus, nes comparer vis tiek reikėtų inicializuoti,
 		// nes comparer tipas yra const. Perfect forwarding naudojame, kad palaikyti move semantics
 		// ir pass by reference, jei parametras būtų const& tai neišeitų palaikyti move semantics.
-		template<class U = key_compare>
+		template<class U = comparer_type>
 		AA_CONSTEXPR fixed_flat_set(U &&c = {}) : comparer{std::forward<U>(c)} {}
 
-		template<class U = key_compare>
+		template<class U = comparer_type>
 		AA_CONSTEXPR fixed_flat_set(const value_type &value, U &&c = {})
 			: elements{elements.begin()}, comparer{std::forward<U>(c)} { elements.back() = value; }
 
@@ -164,7 +166,7 @@ namespace aa {
 		fixed_vector<T, N> elements;
 
 	public:
-		[[no_unique_address]] const key_compare comparer;
+		[[no_unique_address]] const comparer_type comparer;
 	};
 
 	template<class T, size_t N, class C = std::ranges::less>

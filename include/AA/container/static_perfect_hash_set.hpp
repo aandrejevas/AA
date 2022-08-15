@@ -26,7 +26,7 @@ namespace aa {
 		using bucket_type = T;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
-		using hasher = H;
+		using hasher_type = H;
 
 		// Iteratorius skirtas iteruoti pro maišos kodus.
 		struct iterator {
@@ -162,8 +162,10 @@ namespace aa {
 
 
 		// Observers
-		template<hashable_by<hasher> K>
-		[[gnu::always_inline]] AA_CONSTEXPR size_type hash(const K &key) const { return std::invoke(hasher_func, key); }
+		template<hashable_by<hasher_type> K>
+		[[gnu::always_inline]] AA_CONSTEXPR size_type hash(const K &key) const {
+			return std::invoke(hasher, key);
+		}
 
 		// Kituose konteineriuose vidinio konteinerio nerodome, nes kituose konteineriuose vidinis
 		// konteineris galima sakyti yra pats konteineris tai nėra tikslo to daryti.
@@ -172,7 +174,7 @@ namespace aa {
 
 
 		// Lookup
-		template<hashable_by<hasher> K>
+		template<hashable_by<hasher_type> K>
 		AA_CONSTEXPR bool contains(const K &key) const {
 			const size_type hash = this->hash(key);
 			return bins[bucket(hash)] & bit(hash);
@@ -195,7 +197,7 @@ namespace aa {
 			} while (!used_bins.empty());
 		}
 
-		template<hashable_by<hasher> K>
+		template<hashable_by<hasher_type> K>
 		AA_CONSTEXPR void insert(const K &key) {
 			const size_type hash = this->hash(key);
 			bucket_type &bin = bins[bucket(hash)];
@@ -203,7 +205,7 @@ namespace aa {
 			bin |= bit(hash);
 		}
 
-		template<hashable_by<hasher> K>
+		template<hashable_by<hasher_type> K>
 		AA_CONSTEXPR void erase(const K &key) {
 			const size_type hash = this->hash(key);
 			bucket_type &bin = bins[bucket(hash)];
@@ -213,7 +215,7 @@ namespace aa {
 			}
 		}
 
-		template<hashable_by<hasher> K>
+		template<hashable_by<hasher_type> K>
 		AA_CONSTEXPR void insert_or_erase(const K &key) {
 			const size_type hash = this->hash(key);
 			bucket_type &bin = bins[bucket(hash)];
@@ -229,18 +231,18 @@ namespace aa {
 
 
 		// Special member functions
-		template<class U = hasher>
-		AA_CONSTEXPR fixed_perfect_hash_set(U &&h = {}) : hasher_func{std::forward<U>(h)} {}
+		template<class U = hasher_type>
+		AA_CONSTEXPR fixed_perfect_hash_set(U &&h = {}) : hasher{std::forward<U>(h)} {}
 
 
 
 		// Member objects
 	protected:
-		fixed_vector<bucket_type *, M> used_bins;
 		array_t<bucket_type, N> bins = {};
+		fixed_vector<bucket_type *, M> used_bins;
 
 	public:
-		[[no_unique_address]] const hasher hasher_func;
+		[[no_unique_address]] const hasher_type hasher;
 	};
 
 }
