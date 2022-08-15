@@ -3,7 +3,7 @@
 #include "../metaprogramming/general.hpp"
 #include "../algorithm/arithmetic.hpp"
 #include "../algorithm/find.hpp"
-#include "static_vector.hpp"
+#include "fixed_vector.hpp"
 #include <cstddef> // byte, size_t, ptrdiff_t
 #include <limits> // numeric_limits
 #include <functional> // hash, invoke

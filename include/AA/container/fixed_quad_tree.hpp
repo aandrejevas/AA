@@ -3,8 +3,8 @@
 #include "../metaprogramming/general.hpp"
 #include "../algorithm/arithmetic.hpp"
 #include "../algorithm/find.hpp"
-#include "static_fast_free_vector.hpp"
-#include "static_array.hpp"
+#include "fixed_fast_free_vector.hpp"
+#include "fixed_array.hpp"
 #include "queue.hpp"
 #include <cstddef> // ptrdiff_t, size_t
 #include <functional> // invoke

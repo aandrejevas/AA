@@ -1,7 +1,7 @@
-#include <AA/container/static_quad_tree.hpp>
-#include <AA/container/static_free_vector.hpp>
-#include <AA/container/static_perfect_hash_set.hpp>
-#include <AA/container/static_flat_set.hpp>
+#include <AA/container/fixed_quad_tree.hpp>
+#include <AA/container/fixed_free_vector.hpp>
+#include <AA/container/fixed_perfect_hash_set.hpp>
+#include <AA/container/fixed_flat_set.hpp>
 #include <AA/algorithm/arithmetic.hpp>
 #include <AA/algorithm/find.hpp>
 #include <AA/algorithm/shift.hpp>
