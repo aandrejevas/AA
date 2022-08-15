@@ -24,12 +24,6 @@ namespace aa {
 		const uint32_t column, line;
 		const fixed_string<N> file_name;
 		const fixed_string<M> function_name;
-
-
-
-		// Special member functions
-		AA_CONSTEVAL source_data(const uint32_t c, const uint32_t l, const char *const fi, const char *const fu)
-			: column{c}, line{l}, file_name{fi}, function_name{fu} {}
 	};
 
 	template<size_t N, size_t M>
@@ -66,7 +60,8 @@ namespace aa {
 		std::abort();
 	}
 
-	template<source_data D, bool T = true, class F>
+	// TODO: Su c++23 čia galima bus naudoti static operator().
+	template<source_data D, bool T = true, nttp_functor<D> F>
 	[[gnu::always_inline]] AA_CONSTEXPR void trace(const bool condition, F &&f) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {

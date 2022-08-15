@@ -99,6 +99,9 @@ namespace aa {
 	template<class T>
 	concept functor = requires { T::operator(); };
 
+	template<class F, auto... A>
+	concept nttp_functor = std::invocable<decltype(&(std::remove_reference_t<F>::template AA_CALL_OPERATOR<A...>)), F>;
+
 	// Vietoje requires parametrų galima naudoti declval, bet atrodo tai negražiai, nėra reikalo to daryti.
 	// https://mathworld.wolfram.com/Multiplier.html
 	template<class L, class R = L>

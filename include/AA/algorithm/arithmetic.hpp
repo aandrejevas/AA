@@ -3,7 +3,7 @@
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t
 #include <type_traits> // make_unsigned_t
-#include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as, convertible_to
+#include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as, convertible_to, equality_comparable
 #include <bit> // bit_width, has_single_bit, bit_cast
 #include <limits> // numeric_limits
 
@@ -137,12 +137,12 @@ namespace aa {
 
 
 
-	template<class T>
+	template<std::equality_comparable T>
 	AA_CONSTEXPR bool is_max(const T &x) {
 		return x == std::numeric_limits<T>::max();
 	}
 
-	template<class T>
+	template<std::equality_comparable T>
 	AA_CONSTEXPR bool is_min(const T &x) {
 		return x == std::numeric_limits<T>::min();
 	}
