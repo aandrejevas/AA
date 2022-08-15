@@ -1,9 +1,9 @@
 #pragma once
 
+#include "../algorithm/arithmetic.hpp"
 #include "general.hpp"
 #include <random> // uniform_random_bit_generator
-#include <limits> // numeric_limits
-#include <type_traits> // invoke_result, remove_reference_t, conditional_t
+#include <type_traits> // invoke_result, remove_reference_t
 #include <iterator> // iter_difference_t
 #include <concepts> // convertible_to
 
@@ -24,10 +24,7 @@ namespace aa {
 	using generator_result_t = generator_result<G>::type;
 
 	template<uniform_random_bit_generator G>
-	struct generator_modulus : std::conditional_t<
-		std::remove_reference_t<G>::max() != std::numeric_limits<generator_result_t<G>>::max(),
-		generator_result<G>, next_unsigned<generator_result_t<G>>
-	> {};
+	struct generator_modulus : apply_if<next_unsigned_t, is_max(std::remove_reference_t<G>::max()), generator_result_t<G>> {};
 
 	template<class G>
 	using generator_modulus_t = generator_modulus<G>::type;
@@ -36,8 +33,7 @@ namespace aa {
 
 	template<class G>
 	concept full_range_generator = uniform_random_bit_generator<G>
-		&& std::remove_reference_t<G>::min() == std::numeric_limits<generator_result_t<G>>::min()
-		&& std::remove_reference_t<G>::max() == std::numeric_limits<generator_result_t<G>>::max();
+		&& is_min(std::remove_reference_t<G>::min()) && is_max(std::remove_reference_t<G>::max());
 
 	template<class G, class I>
 	concept differences_generator_for = full_range_generator<G>

@@ -11,6 +11,7 @@
 namespace aa {
 
 	// Prireikė šitos klasės, nes reference_wrapper negali būti default constructed.
+	// https://en.wikipedia.org/wiki/Smart_pointer
 	template<class T>
 	struct optional_reference {
 		// Member types

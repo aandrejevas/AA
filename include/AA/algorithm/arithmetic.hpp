@@ -5,6 +5,7 @@
 #include <type_traits> // make_unsigned_t
 #include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as, convertible_to
 #include <bit> // bit_width, has_single_bit, bit_cast
+#include <limits> // numeric_limits
 
 
 
@@ -132,6 +133,18 @@ namespace aa {
 	template<class T>
 	AA_CONSTEXPR product_result_t<const T &> sq(const T &x) {
 		return x * x;
+	}
+
+
+
+	template<class T>
+	AA_CONSTEXPR bool is_max(const T &x) {
+		return x == std::numeric_limits<T>::max();
+	}
+
+	template<class T>
+	AA_CONSTEXPR bool is_min(const T &x) {
+		return x == std::numeric_limits<T>::min();
 	}
 
 }

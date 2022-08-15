@@ -4,7 +4,7 @@
 // sklandžiai programuoti naudojantis esminėmis c++ kalbos savybėmis. Tie failai yra ir jų įterpimo priežastys:
 // • <cstddef> ir <cstdint>, failai įterpti, kad nereiktų naudoti daug raktažodžių, kad aprašyti pamatinius tipus.
 // • <array> (<compare>, <initializer_list>), failas įterptas, kad nereiktų naudoti C stiliaus masyvų.
-// • <string_view> (<compare>) ir <string> (<compare>, <initializer_list>), failai įterpti, kad nereiktų naudoti C stiliaus teksto eilučių.
+// • <string_view> (<compare>), failas įterptas, kad nereiktų naudoti C stiliaus teksto eilučių.
 // • <type_traits> ir <concepts>, failai įterpti, kad išeitų lengvai protauti apie tipus.
 // • <utility> (<compare>, <initializer_list>), failas įterptas, kad išeitų lengvai protauti apie išraiškas.
 // • <limits>, failas įterptas, kad išeitų lengvai nautotis pamatinių tipų savybėmis.
@@ -427,10 +427,22 @@ namespace aa {
 	// Vietoje byte negalime naudoti uint8_t, nes jei sistemoje baitas būtų ne 8 bitų, tas tipas nebus apibrėžtas.
 	template<uniquely_representable T>
 	struct representable_values
-		: std::integral_constant<size_t, AA_SHL(1uz, std::numeric_limits<std::underlying_type_t<std::byte>>::digits * sizeof(T))> {};
+		: std::integral_constant<size_t, AA_SHL(1uz, sizeof(T[std::numeric_limits<std::underlying_type_t<std::byte>>::digits]))> {};
 
 	template<class T>
 	AA_CONSTEXPR const size_t representable_values_v = representable_values<T>::value;
+
+
+
+	AA_CONSTEXPR const struct {
+		template<class T>
+		AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::max(); }
+	} numeric_max;
+
+	AA_CONSTEXPR const struct {
+		template<class T>
+		AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::min(); }
+	} numeric_min;
 
 
 

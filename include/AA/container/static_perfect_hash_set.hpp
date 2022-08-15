@@ -133,7 +133,7 @@ namespace aa {
 		// Šis konteineris gali talpinti tik mažesnias reikšmes už max_size,
 		// nebent būtų naudojamas ne tas hasher, kuris yra naudojamas pagal nutylėjimą.
 		static AA_CONSTEVAL size_type max_size() {
-			return std::numeric_limits<std::underlying_type_t<std::byte>>::digits * sizeof(bucket_type[M]);
+			return sizeof(bucket_type[M][std::numeric_limits<std::underlying_type_t<std::byte>>::digits]);
 		}
 
 

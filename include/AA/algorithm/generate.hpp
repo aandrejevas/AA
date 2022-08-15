@@ -2,6 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/generator.hpp"
+#include "arithmetic.hpp"
 #include <random> // uniform_real_distribution, uniform_int_distribution
 #include <limits> // numeric_limits
 #include <concepts> // floating_point
@@ -30,7 +31,7 @@ namespace aa {
 	template<class T = void, uniform_random_bit_generator G>
 		requires (void_or_convertible_from<T, generator_result_t<G>>)
 	AA_CONSTEXPR first_not_void_t<T, generator_result_t<G>> int_distribution(G &g) {
-		if constexpr (G::min() != std::numeric_limits<generator_result_t<G>>::min()) {
+		if constexpr (!is_min(G::min())) {
 			return static_cast<first_not_void_t<T, generator_result_t<G>>>(g() - G::min());
 		} else {
 			return static_cast<first_not_void_t<T, generator_result_t<G>>>(g());
@@ -70,7 +71,7 @@ namespace aa {
 	template<std::floating_point T = double, uniform_random_bit_generator G>
 		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
 	AA_CONSTEXPR T real_distribution(G &g) {
-		if constexpr (G::min() != std::numeric_limits<generator_result_t<G>>::min()) {
+		if constexpr (!is_min(G::min())) {
 			return static_cast<T>(g() - G::min()) * constant_v<one_v<T> / ((G::max() - G::min()) + 1)>;
 		} else {
 			return static_cast<T>(g()) * constant_v<one_v<T> / (static_cast<generator_modulus_t<G>>(G::max()) + 1)>;

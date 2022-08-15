@@ -38,6 +38,9 @@ int main() {
 	// Galima būtų naudoti funkcijų atributus (pvz. const, pure) ir restricted kvalifikatorių, bet visą tai yra compiler extensions.
 	// Sakykime nenaudojimas minėtų galimybių skatina ieškoti kitų būdų kaip gauti tokį patį performance.
 
+	trace<AA_SOURCE_DATA>(false, []<source_data D>() { abort<D>(); });
+
+
 	static_assert(std::numeric_limits<size_t>::digits == 64 && sizeof(size_t) == 8);
 	std::ios_base::sync_with_stdio(false);
 

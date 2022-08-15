@@ -2,14 +2,16 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t, ptrdiff_t
-#include <cstring> // memcpy
 #include <iterator> // reverse_iterator
+#include <algorithm> // copy_n
+#include <string_view> // basic_string_view
+#include <ostream> // basic_ostream
 
 
 
 namespace aa {
 
-	// https://en.wikipedia.org/wiki/Array_data_structure
+	// https://en.wikipedia.org/wiki/Null-terminated_string
 	template<trivially_copyable T, size_t N>
 	struct basic_fixed_string {
 		// Member types
@@ -24,6 +26,7 @@ namespace aa {
 		using const_iterator = const_pointer;
 		using reverse_iterator = std::reverse_iterator<iterator>;
 		using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+		using view_type = std::basic_string_view<value_type>;
 
 
 
@@ -50,6 +53,8 @@ namespace aa {
 		AA_CONSTEXPR reference back() { return at(constant_v<N - 1>); }
 		AA_CONSTEXPR const_reference back() const { return at(constant_v<N - 1>); }
 		AA_CONSTEXPR const_reference cback() const { return back(); }
+
+		AA_CONSTEXPR operator view_type() const { return view_type{data(), N}; }
 
 
 
@@ -80,15 +85,22 @@ namespace aa {
 
 
 
+		// Input/output
+		template<class C, class CT>
+		friend AA_CONSTEXPR std::basic_ostream<C, CT> &operator<<(std::basic_ostream<C, CT> &os, const basic_fixed_string &str) {
+			return os.write(str.data(), N);
+		}
+
+
+
 		// Special member functions
-		AA_CONSTEXPR basic_fixed_string(const value_type(&cstring)[N + 1]) {
-			std::memcpy(elements.data(), cstring, constant_v<(N + 1) * sizeof(value_type)>);
+		AA_CONSTEXPR basic_fixed_string(const value_type *const cstring) {
+			std::ranges::copy_n(cstring, constant_v<N + 1>, elements.data());
 		}
 
 
 
 		// Member objects
-	protected:
 		array_t<value_type, N + 1> elements;
 	};
 
