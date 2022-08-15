@@ -12,19 +12,20 @@
 namespace aa {
 
 	template<class G>
-	concept uniform_random_bit_generator = std::uniform_random_bit_generator<std::remove_reference_t<G>>;
+	concept random_bit_generator = std::uniform_random_bit_generator<std::remove_reference_t<G>>;
 
 
 
 	// Viduje invoke_result_t nėra naudojamas remove_reference_t<G>, nes tiesiog pasinaudojama reference collapse taisyklėmis.
-	template<uniform_random_bit_generator G>
+	template<random_bit_generator G>
 	struct generator_result : std::invoke_result<G &> {};
 
 	template<class G>
 	using generator_result_t = generator_result<G>::type;
 
-	template<uniform_random_bit_generator G>
-	struct generator_modulus : apply_if<next_unsigned_t, is_max(std::remove_reference_t<G>::max()), generator_result_t<G>> {};
+	template<random_bit_generator G>
+	struct generator_modulus : apply_if<next_unsigned_t,
+		is_numeric_max(std::remove_reference_t<G>::max()), generator_result_t<G>> {};
 
 	template<class G>
 	using generator_modulus_t = generator_modulus<G>::type;
@@ -32,8 +33,8 @@ namespace aa {
 
 
 	template<class G>
-	concept full_range_generator = uniform_random_bit_generator<G>
-		&& is_min(std::remove_reference_t<G>::min()) && is_max(std::remove_reference_t<G>::max());
+	concept full_range_generator = random_bit_generator<G>
+		&& is_numeric_min(std::remove_reference_t<G>::min()) && is_numeric_max(std::remove_reference_t<G>::max());
 
 	template<class G, class I>
 	concept differences_generator_for = full_range_generator<G>

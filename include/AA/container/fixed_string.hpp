@@ -50,11 +50,11 @@ namespace aa {
 		AA_CONSTEXPR const_reference front() const { return *data(); }
 		AA_CONSTEXPR const_reference cfront() const { return front(); }
 
-		AA_CONSTEXPR reference back() { return at(constant_v<N - 1>); }
-		AA_CONSTEXPR const_reference back() const { return at(constant_v<N - 1>); }
+		AA_CONSTEXPR reference back() { return at(constant_v<N - 2>); }
+		AA_CONSTEXPR const_reference back() const { return at(constant_v<N - 2>); }
 		AA_CONSTEXPR const_reference cback() const { return back(); }
 
-		AA_CONSTEXPR operator view_type() const { return view_type{data(), N}; }
+		AA_CONSTEXPR operator view_type() const { return view_type{data(), size()}; }
 
 
 
@@ -63,8 +63,8 @@ namespace aa {
 		AA_CONSTEXPR const_iterator begin() const { return elements.begin(); }
 		AA_CONSTEXPR const_iterator cbegin() const { return begin(); }
 
-		AA_CONSTEXPR iterator end() { return elements.begin() + N; }
-		AA_CONSTEXPR const_iterator end() const { return elements.begin() + N; }
+		AA_CONSTEXPR iterator end() { return elements.begin() + size(); }
+		AA_CONSTEXPR const_iterator end() const { return elements.begin() + size(); }
 		AA_CONSTEXPR const_iterator cend() const { return end(); }
 
 		AA_CONSTEXPR reverse_iterator rbegin() { return reverse_iterator{end()}; }
@@ -78,9 +78,9 @@ namespace aa {
 
 
 		// Capacity
-		static AA_CONSTEVAL bool empty() { return !N; }
-		static AA_CONSTEVAL difference_type ssize() { return N; }
-		static AA_CONSTEVAL size_type size() { return N; }
+		static AA_CONSTEVAL bool empty() { return !size(); }
+		static AA_CONSTEVAL difference_type ssize() { return size(); }
+		static AA_CONSTEVAL size_type size() { return constant_v<N - 1>; }
 		static AA_CONSTEVAL size_type max_size() { return N; }
 
 
@@ -88,26 +88,26 @@ namespace aa {
 		// Input/output
 		template<class C, class CT>
 		friend AA_CONSTEXPR std::basic_ostream<C, CT> &operator<<(std::basic_ostream<C, CT> &os, const basic_fixed_string &str) {
-			return os.write(str.data(), N);
+			return os.write(str.data(), str.size());
 		}
 
 
 
 		// Special member functions
 		AA_CONSTEXPR basic_fixed_string(const value_type *const cstring) {
-			std::ranges::copy_n(cstring, constant_v<N + 1>, elements.data());
+			std::ranges::copy_n(cstring, N, elements.data());
 		}
 
 
 
 		// Member objects
-		array_t<value_type, N + 1> elements;
+		array_t<value_type, N> elements;
 	};
 
 
 
 	template<class T, size_t N>
-	basic_fixed_string(const T(&)[N])->basic_fixed_string<T, N - 1>;
+	basic_fixed_string(const T(&)[N])->basic_fixed_string<T, N>;
 
 	template<size_t N>
 	using fixed_string = basic_fixed_string<char, N>;

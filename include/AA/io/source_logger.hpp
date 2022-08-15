@@ -27,7 +27,7 @@ namespace aa {
 	};
 
 	template<size_t N, size_t M>
-	source_data(const uint32_t, const uint32_t, const char(&)[N], const char(&)[M])->source_data<N - 1, M - 1>;
+	source_data(const uint32_t, const uint32_t, const char(&)[N], const char(&)[M])->source_data<N, M>;
 
 
 
@@ -37,7 +37,7 @@ namespace aa {
 		std::invoke_result_t<decltype(S)> stream = S();
 
 		stream << D.file_name << '(' << D.line;
-		if constexpr (!is_max(D.column)) {
+		if constexpr (!is_numeric_max(D.column)) {
 			stream << ':' << D.column;
 		}
 		stream << ") `" << D.function_name << "`: ";
@@ -61,7 +61,7 @@ namespace aa {
 	}
 
 	// TODO: Su c++23 čia galima bus naudoti static operator().
-	template<source_data D, bool T = true, nttp_functor<D> F>
+	template<source_data D, bool T = true, nttp_accepting_functor<D> F>
 	[[gnu::always_inline]] AA_CONSTEXPR void trace(const bool condition, F &&f) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {

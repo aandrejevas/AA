@@ -13,7 +13,7 @@
 namespace aa {
 
 	template<trivially_copyable T, size_t N>
-	struct static_fast_free_vector {
+	struct fixed_fast_free_vector {
 		// Member types
 		using value_type = T;
 		using size_type = size_t;
@@ -81,13 +81,13 @@ namespace aa {
 
 
 		// Special member functions
-		AA_CONSTEXPR static_fast_free_vector() {}
+		AA_CONSTEXPR fixed_fast_free_vector() {}
 
 
 
 		// Member objects
 	protected:
-		static_vector<node_type, N> elements;
+		fixed_vector<node_type, N> elements;
 		node_type *first_hole = nullptr;
 	};
 

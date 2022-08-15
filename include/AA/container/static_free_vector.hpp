@@ -16,7 +16,7 @@
 namespace aa {
 
 	template<trivially_copyable T, size_t N>
-	struct static_free_vector {
+	struct fixed_free_vector {
 		// Member types
 		using value_type = T;
 		using size_type = size_t;
@@ -67,7 +67,7 @@ namespace aa {
 			AA_CONSTEXPR variant_iterator(const variant_iterator &) = default;
 
 		protected:
-			friend static_free_vector;
+			friend fixed_free_vector;
 			using node_type = P2;
 
 			AA_CONSTEXPR variant_iterator(node_type *const p) : ptr{p} {}
@@ -182,13 +182,13 @@ namespace aa {
 
 
 		// Special member functions
-		AA_CONSTEXPR static_free_vector() {}
+		AA_CONSTEXPR fixed_free_vector() {}
 
 
 
 		// Member objects
 	protected:
-		static_vector<node_type, N> elements;
+		fixed_vector<node_type, N> elements;
 		node_type *first_hole = nullptr;
 	};
 

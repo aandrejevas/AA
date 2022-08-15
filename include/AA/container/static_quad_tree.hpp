@@ -26,7 +26,7 @@ namespace aa {
 
 	// https://en.wikipedia.org/wiki/Quadtree
 	template<class T, storable_vector2_getter<T> L, size_t H, size_t N, class C = queue<query_result<T, L>>>
-	struct static_quad_tree {
+	struct fixed_quad_tree {
 		// Member types
 		using value_type = T;
 		using locator = L;
@@ -50,7 +50,7 @@ namespace aa {
 		// Reikia mintyje turėti tokį įdomų scenarijų, kad tame pačiame pass, mes įdedame elementą į lapą, po
 		// to išemame elementą ir tada kažką darome, pass bus tas pats, bet first tuo atveju bus nullptr.
 		struct leaf {
-			AA_CONSTEXPR void insert(const pointer e, static_quad_tree &t) {
+			AA_CONSTEXPR void insert(const pointer e, fixed_quad_tree &t) {
 				if (pass != t.pass) {
 					pass = t.pass;
 					first = t.nodes.emplace(e, nullptr);
@@ -59,7 +59,7 @@ namespace aa {
 				}
 			}
 
-			AA_CONSTEXPR void erase(const const_pointer e, static_quad_tree &t) {
+			AA_CONSTEXPR void erase(const const_pointer e, fixed_quad_tree &t) {
 				if (pass == t.pass && first) {
 					if (first->element == e) {
 						// Reikia išsaugoti sekančio elemento adresą, nes ištrynus
@@ -83,7 +83,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &f, const static_quad_tree &t) const {
+			AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &f, const fixed_quad_tree &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
@@ -96,7 +96,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			AA_CONSTEXPR void query(F &f, const static_quad_tree &t) const {
+			AA_CONSTEXPR void query(F &f, const fixed_quad_tree &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
@@ -125,8 +125,6 @@ namespace aa {
 
 		// Observers
 		AA_CONSTEXPR size_type get_pass() const { return pass; }
-
-		AA_CONSTEXPR const locator &locator_function() const { return locator_func; }
 
 		AA_CONSTEXPR const position_type &locate(const value_type &e) const { return std::invoke(locator_func, e); }
 
@@ -247,8 +245,9 @@ namespace aa {
 
 		// Special member functions
 		template<class U = locator>
-		AA_CONSTEXPR static_quad_tree(const position_type &pos, const position_type &size, U &&u = {}) : sizes{[&]() {
-			static_array<position_type, H> init_sizes;
+		AA_CONSTEXPR fixed_quad_tree(const position_type &pos, const position_type &size, U &&u = {})
+			: sizes{[&](fixed_array<position_type, H> &init_sizes) -> void
+		{
 			if constexpr (H) {
 				init_sizes.front() = position_type{
 					get_x(size) / two_v<array_element_t<position_type>>,
@@ -266,20 +265,21 @@ namespace aa {
 					} while (true);
 				}
 			}
-			return init_sizes;
-		}()}, position{pos}, locator_func{std::forward<U>(u)} {}
+		}}, position{pos}, locator_func{std::forward<U>(u)} {}
 
 
 
 		// Member objects
-		const static_array<position_type, H> sizes;
+		const fixed_array<position_type, H> sizes;
 		const position_type position;
 
 	protected:
 		size_type pass = 0;
 		mutable std::queue<query_result, C> queries;
 		array_t<leaf, leaves_count> leaves;
-		static_fast_free_vector<node_type, N> nodes;
+		fixed_fast_free_vector<node_type, N> nodes;
+
+	public:
 		[[no_unique_address]] const locator locator_func;
 	};
 

@@ -14,7 +14,7 @@ namespace aa {
 
 	// https://en.wikipedia.org/wiki/Set_(abstract_data_type)
 	template<trivially_copyable T, size_t N, storable_relation<T> C = std::ranges::less, bool MULTISET = false>
-	struct static_flat_set {
+	struct fixed_flat_set {
 		// Member types
 		using value_type = T;
 		using size_type = size_t;
@@ -63,8 +63,6 @@ namespace aa {
 
 
 		// Observers
-		AA_CONSTEXPR const key_compare &key_comp() const { return comparer; }
-
 		template<class K1, in_relation_with<K1, key_compare> K2>
 		AA_CONSTEXPR bool compare(const K1 &key1, const K2 &key2) const { return std::invoke(comparer, key1, key2); }
 
@@ -103,7 +101,7 @@ namespace aa {
 		AA_CONSTEXPR void clear() { elements.clear(); }
 		AA_CONSTEXPR void clear(const value_type &value) { *elements.resize(elements.begin()) = value; }
 
-		// Neturime, kaip static_vector turi, resize funkcijų, nes jomis naudotojas gali
+		// Neturime, kaip fixed_vector turi, resize funkcijų, nes jomis naudotojas galėtų
 		// padidinti savavališkai elementų kiekį ir taip sugadinti elementų tvarką.
 
 		AA_CONSTEXPR const_iterator pop_back() { return elements.pop_back(); }
@@ -153,20 +151,23 @@ namespace aa {
 		// nes comparer tipas yra const. Perfect forwarding naudojame, kad palaikyti move semantics
 		// ir pass by reference, jei parametras būtų const& tai neišeitų palaikyti move semantics.
 		template<class U = key_compare>
-		AA_CONSTEXPR static_flat_set(U &&c = {}) : comparer{std::forward<U>(c)} {}
+		AA_CONSTEXPR fixed_flat_set(U &&c = {}) : comparer{std::forward<U>(c)} {}
+
 		template<class U = key_compare>
-		AA_CONSTEXPR static_flat_set(const value_type &value, U &&c = {})
+		AA_CONSTEXPR fixed_flat_set(const value_type &value, U &&c = {})
 			: elements{elements.begin()}, comparer{std::forward<U>(c)} { elements.back() = value; }
 
 
 
 		// Member objects
 	protected:
-		static_vector<T, N> elements;
+		fixed_vector<T, N> elements;
+
+	public:
 		[[no_unique_address]] const key_compare comparer;
 	};
 
 	template<class T, size_t N, class C = std::ranges::less>
-	using static_flat_multiset = static_flat_set<T, N, C, true>;
+	using fixed_flat_multiset = fixed_flat_set<T, N, C, true>;
 
 }

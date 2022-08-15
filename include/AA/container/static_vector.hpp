@@ -15,7 +15,7 @@ namespace aa {
 
 	// https://en.wikipedia.org/wiki/Dynamic_array
 	template<trivially_copyable T, size_t N>
-	struct static_vector {
+	struct fixed_vector {
 		// Member types
 		using value_type = T;
 		using size_type = size_t;
@@ -162,16 +162,17 @@ namespace aa {
 #pragma GCC diagnostic ignored "-Warray-bounds"
 		// Nedarome = default, nes konstrukrotius vis tiek nebus trivial,
 		// nes klasė turi kintamųjų su numatytais inicializatoriais.
-		AA_CONSTEXPR static_vector() {}
-		AA_CONSTEXPR static_vector(const const_iterator pos) : r_begin{const_cast<iterator>(pos)} {}
-		AA_CONSTEXPR static_vector(const size_type count) : r_begin{r_end + count} {}
+		AA_CONSTEXPR fixed_vector() {}
+		AA_CONSTEXPR fixed_vector(const const_iterator pos) : r_begin{const_cast<iterator>(pos)} {}
+		AA_CONSTEXPR fixed_vector(const size_type count) : r_begin{r_end + count} {}
 #pragma GCC diagnostic pop
 
 
 
 		// Member objects
-	protected:
 		array_t<value_type, N> elements;
+
+	protected:
 		value_type *const r_end = elements.data() - 1, *r_begin = r_end;
 	};
 

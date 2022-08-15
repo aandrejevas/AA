@@ -20,7 +20,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Perfect_hash_function
 	template<std::unsigned_integral T, size_t N, size_t M = N, storable H = std::hash<size_t>>
 		requires (N >= M)
-	struct static_perfect_hash_set {
+	struct fixed_perfect_hash_set {
 		// Member types
 		// Neturime value_type, reference ir pointer tipų, nes konteineris nelaiko elementų.
 		using bucket_type = T;
@@ -162,8 +162,6 @@ namespace aa {
 
 
 		// Observers
-		AA_CONSTEXPR const hasher &hash_function() const { return hasher_func; }
-
 		template<hashable_by<hasher> K>
 		[[gnu::always_inline]] AA_CONSTEXPR size_type hash(const K &key) const { return std::invoke(hasher_func, key); }
 
@@ -185,7 +183,7 @@ namespace aa {
 		// Modifiers
 		AA_CONSTEXPR void clear() {
 			// Nedarome used_bins.clear(), nes vis tiek reiktų iteruoti per visus elementus ir tam reiktų įsivesti
-			// lokalų kintamąjį, pamąsčiau kam tai daryti jei galime naudoti jau static_vector klasėje esantį kintamąjį.
+			// lokalų kintamąjį, pamąsčiau kam tai daryti jei galime naudoti jau fixed_vector klasėje esantį kintamąjį.
 			if (!used_bins.empty())
 				unsafe_clear();
 		}
@@ -232,14 +230,16 @@ namespace aa {
 
 		// Special member functions
 		template<class U = hasher>
-		AA_CONSTEXPR static_perfect_hash_set(U &&h = {}) : hasher_func{std::forward<U>(h)} {}
+		AA_CONSTEXPR fixed_perfect_hash_set(U &&h = {}) : hasher_func{std::forward<U>(h)} {}
 
 
 
 		// Member objects
 	protected:
-		static_vector<bucket_type *, M> used_bins;
+		fixed_vector<bucket_type *, M> used_bins;
 		array_t<bucket_type, N> bins = {};
+
+	public:
 		[[no_unique_address]] const hasher hasher_func;
 	};
 

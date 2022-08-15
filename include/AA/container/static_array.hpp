@@ -2,6 +2,9 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t, ptrdiff_t
+#include <concepts> // invocable
+#include <functional> // invoke
+#include <utility> // forward
 
 
 
@@ -9,7 +12,7 @@ namespace aa {
 
 	// https://en.wikipedia.org/wiki/Array_data_structure
 	template<trivially_copyable T, size_t N>
-	struct static_array {
+	struct fixed_array {
 		// Member types
 		using value_type = T;
 		using size_type = size_t;
@@ -89,13 +92,18 @@ namespace aa {
 
 
 		// Special member functions
-		AA_CONSTEXPR static_array() {}
+		AA_CONSTEXPR fixed_array() {}
+
+		template<std::invocable<fixed_array &> F>
+		AA_CONSTEXPR fixed_array(F &&f) { std::invoke(std::forward<F>(f), *this); }
 
 
 
 		// Member objects
-	protected:
 		array_t<value_type, N> elements;
+
+	protected:
+		// Šitas kintamasis turi būti paslėptas, nes kitaip jis suteiktų galimybę naudotojui keisti const elementus.
 		value_type *const r_begin = elements.data() + constant_v<N - 1>;
 	};
 

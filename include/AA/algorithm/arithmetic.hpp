@@ -138,12 +138,12 @@ namespace aa {
 
 
 	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_max(const T &x) {
+	AA_CONSTEXPR bool is_numeric_max(const T &x) {
 		return x == std::numeric_limits<T>::max();
 	}
 
 	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_min(const T &x) {
+	AA_CONSTEXPR bool is_numeric_min(const T &x) {
 		return x == std::numeric_limits<T>::min();
 	}
 

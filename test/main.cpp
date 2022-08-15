@@ -109,7 +109,7 @@ int main() {
 		AA_TRACE_ASSERT(*lower_bound(a, 5) == 5 && *upper_bound(a, 5) == 6);
 	}
 	{
-		static_flat_multiset<size_t, 500> a;
+		fixed_flat_multiset<size_t, 500> a;
 
 		repeat(100, [&]() {
 			a.insert(g());
@@ -125,7 +125,7 @@ int main() {
 	}
 	{
 		std::unordered_set<size_t> b;
-		static_perfect_hash_set<size_t, 1'000> a;
+		fixed_perfect_hash_set<size_t, 1'000> a;
 		println(a.max_bucket_count(), ' ', a.max_size());
 
 		// Insert test
@@ -174,7 +174,7 @@ int main() {
 		static_assert(std::ranges::forward_range<decltype(a)>);
 	}
 	{
-		static_free_vector<size_t, 50'000> a;
+		fixed_free_vector<size_t, 50'000> a;
 
 		repeat(a.max_size(), [&]() { a.emplace(a.size()); });
 		unsafe_for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { a.erase(a[i]); AA_TRACE_ASSERT(!a[i]); });
@@ -190,10 +190,10 @@ int main() {
 		static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
 	{
-		using quad_tree_type = static_quad_tree<array_t<float, 2>, std::identity, 5, 500>;
+		using quad_tree_type = fixed_quad_tree<array_t<float, 2>, std::identity, 5, 500>;
 		quad_tree_type tree = {{0, 0}, {100, 100}};
 		println(make_range_writer(tree.sizes, pair_inserter{}));
-		static_vector<quad_tree_type::value_type, tree.max_size()> positions;
+		fixed_vector<quad_tree_type::value_type, tree.max_size()> positions;
 
 		{
 			repeat(tree.max_size(), [&]() {
