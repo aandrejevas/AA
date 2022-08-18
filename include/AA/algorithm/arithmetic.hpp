@@ -4,7 +4,7 @@
 #include <cstddef> // size_t
 #include <type_traits> // make_unsigned_t
 #include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as, convertible_to, equality_comparable
-#include <bit> // bit_width, has_single_bit, bit_cast
+#include <bit> // countl_zero, has_single_bit, bit_cast
 #include <limits> // numeric_limits
 
 
@@ -61,18 +61,11 @@ namespace aa {
 
 
 
-	// https://en.wikipedia.org/wiki/Find_first_set
-	template<std::unsigned_integral T>
-	AA_CONSTEXPR T int_log2(const T x) {
-		return std::bit_width(x >> 1);
-	}
-
-
-
-	// Nenaudojame dirbdami su pamatiniais tipais common_type, nes biblioteka nepalaiko promotions.
 	// https://en.wikipedia.org/wiki/Remainder
-	template<auto X, unsigned_integral_same_as<decltype(X)> T>
-	[[gnu::always_inline]] AA_CONSTEXPR T remainder(const T x) {
+	template<auto X, std::integral T>
+		requires (std::unsigned_integral<decltype(X)>)
+	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) remainder(const T x) {
+		if constexpr (X == 1) return zero_v<T>;
 		if constexpr (std::has_single_bit(X)) {
 			return x & constant_v<X - 1>;
 		} else {
@@ -81,8 +74,10 @@ namespace aa {
 	}
 
 	// https://en.wikipedia.org/wiki/Quotient
-	template<auto X, unsigned_integral_same_as<decltype(X)> T>
-	[[gnu::always_inline]] AA_CONSTEXPR T quotient(const T x) {
+	template<auto X, std::integral T>
+		requires (std::unsigned_integral<decltype(X)>)
+	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) quotient(const T x) {
+		if constexpr (X == 1) return x;
 		if constexpr (std::has_single_bit(X)) {
 			return x >> constant_v<int_log2(X)>;
 		} else {
@@ -91,8 +86,10 @@ namespace aa {
 	}
 
 	// https://en.wikipedia.org/wiki/Product_(mathematics)
-	template<auto X, unsigned_integral_same_as<decltype(X)> T>
-	[[gnu::always_inline]] AA_CONSTEXPR T product(const T x) {
+	template<auto X, std::integral T>
+		requires (std::unsigned_integral<decltype(X)>)
+	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) product(const T x) {
+		if constexpr (X == 1) return x;
 		if constexpr (std::has_single_bit(X)) {
 			return x << constant_v<int_log2(X)>;
 		} else {
@@ -102,18 +99,30 @@ namespace aa {
 
 
 
+	// Pagal nutylėjimą, one_v yra U tipo, o ne T tipo, nes būtų neteisinga gauti rezultato tipą iš dešinės pusės tipo.
+	// x turi būti unsigned, nes undefined behavior jei dešinysis operandas neigiamas << ir >> operatoriuose.
+	// Išviso U ir T nepilnai generic, nes reiktų tada tikrinti ar su tais tipais išeitų vykdyti reikiamas operacijas.
+	// https://en.wikipedia.org/wiki/Power_of_two
+	template<std::integral U = size_t, auto N = 1uz, std::unsigned_integral T>
+		requires (std::unsigned_integral<decltype(N)>)
+	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) int_exp2(const T x) {
+		return one_v<U> << product<N>(x);
+	}
+
+	// Neturime dar vieno tipo U, nes T tipas kaip ir nėra panaudojamas.
+	// https://en.wikipedia.org/wiki/Find_first_set
+	// https://en.wikipedia.org/wiki/Binary_logarithm
+	template<auto N = 1uz, std::unsigned_integral T>
+		requires (std::unsigned_integral<decltype(N)>)
+	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) int_log2(const T x) {
+		return quotient<N>((constant_v<T, std::numeric_limits<T>::digits - 1>) - unsign<T>(std::countl_zero(x)));
+	}
+
+
+
 	template<class T>
 	[[gnu::always_inline]] AA_CONSTEXPR size_t size_of(const size_t n) {
 		return product<sizeof(T)>(n);
-	}
-
-	// Pagal nutylėjimą, one_v yra U tipo, o ne T tipo, nes būtų neteisinga gauti rezultato tipą iš dešinės pusės tipo.
-	// x turi būti unsigned, nes undefined behavior jei dešinysis operandas neigiamas << ir >> operatoriuose.
-	// Išviso U ir T nepilnai generic, nes palaikomas toks bendras stilius, kad dirbama tik su sveikaisiais skaičiais.
-	// https://en.wikipedia.org/wiki/Power_of_two
-	template<auto N, std::integral U = size_t, std::unsigned_integral T>
-	[[gnu::always_inline]] AA_CONSTEXPR U int_exp2N(const T x) {
-		return one_v<U> << product<N>(x);
 	}
 
 	// https://cp-algorithms.com/algebra/binary-exp.html
@@ -130,6 +139,8 @@ namespace aa {
 
 	// product_result_t tipas gali būti void, bet nieko tokio tai, nes return sakinys gali būti naudojamas
 	// su išraišką, jei tos išraiškos tipas yra void, funkcijoje, kurios gražinamas tipas yra void.
+	//
+	// Galima būtų leisti kompiliatoriui nustatyti gražinamą tipą, bet tada vis tiek reiktų naudoti concept.
 	template<class T>
 	AA_CONSTEXPR product_result_t<const T &> sq(const T &x) {
 		return x * x;

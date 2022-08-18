@@ -8,7 +8,7 @@
 #include "queue.hpp"
 #include <cstddef> // ptrdiff_t, size_t
 #include <functional> // invoke
-#include <utility> // forward
+#include <utility> // forward, exchange
 #include <queue> // queue
 
 
@@ -40,7 +40,7 @@ namespace aa {
 		using position_type = query_result::position_type;
 
 	protected:
-		static AA_CONSTEXPR const size_type leaves_count = int_exp2N<2uz>(H), phantoms_count = (leaves_count - 1) / 3;
+		static AA_CONSTEXPR const size_type leaves_count = int_exp2N<size_type, 2uz>(H), phantoms_count = (leaves_count - 1) / 3;
 
 		struct node_type {
 			value_type *element;
@@ -62,18 +62,12 @@ namespace aa {
 			AA_CONSTEXPR void erase(const const_pointer e, fixed_quad_tree &t) {
 				if (pass == t.pass && first) {
 					if (first->element == e) {
-						// Reikia išsaugoti sekančio elemento adresą, nes ištrynus
-						// šį elementą, bus ištrintas ir sekančio elemento adresas.
-						node_type *const next = first->next;
-						t.nodes.erase(first);
-						first = next;
+						t.nodes.erase(std::exchange(first, first->next));
 					} else {
 						node_type *iter = first;
 						while (iter->next) {
 							if (iter->next->element == e) {
-								node_type *const next = iter->next->next;
-								t.nodes.erase(iter->next);
-								iter->next = next;
+								t.nodes.erase(std::exchange(iter->next, iter->next->next));
 								return;
 							}
 							iter = iter->next;

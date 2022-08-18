@@ -54,6 +54,17 @@ namespace aa {
 		return first;
 	}
 
+	template<std::ranges::bidirectional_range R, class T>
+		requires (std::indirect_binary_predicate<std::ranges::equal_to, std::ranges::iterator_t<R>, const T *>)
+	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> unsafe_find_last(R &&r, const T &value) {
+		std::ranges::iterator_t<R> first = std::ranges::rbegin(r);
+		if (*first != value) {
+			const std::ranges::iterator_t<R> last = std::ranges::rend(r);
+			while (--first != last && (*first != value));
+		}
+		return first;
+	}
+
 
 
 	template<std::input_iterator I, std::sentinel_for<I> S, std::indirectly_unary_invocable<I> F>

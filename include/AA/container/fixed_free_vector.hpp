@@ -48,9 +48,9 @@ namespace aa {
 			AA_CONSTEXPR pointer operator->() const { return std::get_if<elem_index>(ptr); }
 
 			AA_CONSTEXPR variant_iterator &operator++() { ++ptr; return *this; }
-			AA_CONSTEXPR variant_iterator operator++(int) { return {ptr++}; }
+			AA_CONSTEXPR variant_iterator operator++(const int) { return {ptr++}; }
 			AA_CONSTEXPR variant_iterator &operator--() { --ptr; return *this; }
-			AA_CONSTEXPR variant_iterator operator--(int) { return {ptr--}; }
+			AA_CONSTEXPR variant_iterator operator--(const int) { return {ptr--}; }
 
 			friend AA_CONSTEXPR bool operator==(const variant_iterator &l, const variant_iterator &r) { return l.ptr == r.ptr; }
 			friend AA_CONSTEXPR std::strong_ordering operator<=>(const variant_iterator &l, const variant_iterator &r) { return l.ptr <=> r.ptr; }
@@ -71,6 +71,7 @@ namespace aa {
 
 			AA_CONSTEXPR variant_iterator(node_type *const p) : ptr{p} {}
 
+			// Kintamasis protected, nes prie duomenų patekti reikia specifiniu būdu (žr. operator*).
 			node_type *ptr;
 		};
 

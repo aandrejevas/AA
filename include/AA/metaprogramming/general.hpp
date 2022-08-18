@@ -14,7 +14,7 @@
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 #include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, remove_const_t, is_pointer_v, remove_pointer_t, is_function_v
-#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, unsigned_integral, relation, invocable, derived_from, copyable
+#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, copyable
 #include <limits> // numeric_limits
 #include <string_view> // string_view
 #include <array> // array
@@ -75,9 +75,6 @@ namespace aa {
 
 	template<class T>
 	concept trivially_default_constructible = std::is_trivially_default_constructible_v<T>;
-
-	template<class T, class U>
-	concept unsigned_integral_same_as = std::unsigned_integral<T> && std::same_as<T, U>;
 
 	template<class L, class R>
 	concept remove_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
@@ -337,13 +334,15 @@ namespace aa {
 
 
 
+	// Reikia šitų konstantų, nes c++ standarte nėra jos apibrėžtos.
+	//
 	// C yra objektas, galėtume jį padavinėti per const&, o ne per value, bet nusprendžiau, kad kompiliavimo
 	// metu nėra skirtumo kaip tas objektas bus padavinėjamas, net jei jis būtų labai didelis.
 	template<auto C>
-	struct constant : std::integral_constant<decltype(C), C> {};
+	AA_CONSTEXPR const decltype(C) constant_v = std::integral_constant<decltype(C), C>::value;
 
-	template<auto C>
-	AA_CONSTEXPR const decltype(C) constant_v = constant<C>::value;
+	template<class T, T C>
+	AA_CONSTEXPR const T constant_v<C> = std::integral_constant<T, C>::value;
 
 	template<convertible_from<size_t> T>
 	struct zero : std::integral_constant<T, static_cast<T>(0uz)> {};
