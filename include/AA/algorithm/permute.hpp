@@ -5,29 +5,28 @@
 #include "../metaprogramming/range.hpp"
 #include "generate.hpp"
 #include "arithmetic.hpp"
-#include <iterator> // iter_swap, iter_value_t, sized_sentinel_for, sentinel_for
+#include <iterator> // iter_swap, sentinel_for
 #include <utility> // forward
-#include <ranges> // iterator_t, begin, end
+#include <ranges> // iterator_t, range_value_t, begin, end
 
 
 
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
-	// Ne forward'iname g, nes tiesiog visais atvejais paduosime reference ir tiek, čia nėra reikalo palaikyti move semantics.
-	template<permutable_random_access_range R, differences_generator_for<std::ranges::iterator_t<R>> G>
+	template<bool E = true, permutable_random_access_range R, differences_generator_for<std::ranges::iterator_t<R>> G>
 	AA_CONSTEXPR void shuffle(R &&r, G &&g) {
-		shuffle(std::ranges::begin(r), std::ranges::end(r), g);
+		if constexpr (E) {
+			partial_shuffle(r, std::ranges::end(r) - 2, g);
+		} else {
+			partial_shuffle(r, get_rbegin(r) - 1, g);
+		}
 	}
 
-	// Ne move'iname b, nes jei b būtų lvalue ref, tai b būtų sugadintas, negali b būti const&, nes tada neišeitų palaikyti move semantics.
-	template<permutable_random_access_iterator I, std::sized_sentinel_for<I> SS, differences_generator_for<I> G>
-	AA_CONSTEXPR void shuffle(I &&b, const SS &e, G &&g) {
-		partial_shuffle(std::forward<I>(b), e, e - 2, g);
-	}
-
-	template<permutable_random_access_iterator I, std::sized_sentinel_for<I> SS, std::sentinel_for<I> S, differences_generator_for<I> G>
-	AA_CONSTEXPR void partial_shuffle(I b, const SS &e, const S &m, G &&g) {
+	template<permutable_random_access_range R, std::sentinel_for<std::ranges::iterator_t<R>> S, differences_generator_for<std::ranges::iterator_t<R>> G>
+	AA_CONSTEXPR void partial_shuffle(R &&r, const S &m, G &&g) {
+		std::ranges::iterator_t<R> b = std::ranges::begin(r);
+		const std::ranges::iterator_t<R> &e = std::ranges::end(r);
 		do {
 			std::ranges::iter_swap(b, b + int_distribution(g, unsign_cast<generator_modulus_t<G>>(e - b)));
 			if (b != m) ++b; else return;
@@ -37,44 +36,45 @@ namespace aa {
 
 
 	// https://en.wikipedia.org/wiki/Counting_sort
-	template<permutable_random_access_iterator I, std::sentinel_for<I> S, key_bool_iterator_for<I> R>
-	AA_CONSTEXPR void counting_sort(I b, const S &e_S1, R selected) {
-		{I b2 = b; do {
+	template<permutable_random_access_range R, key_bool_iterator_for<std::ranges::iterator_t<R>> B>
+	AA_CONSTEXPR void counting_sort(R &&r, B selected) {
+		std::ranges::iterator_t<R> b = std::ranges::begin(r);
+		const std::ranges::iterator_t<R> e_S1 = get_rbegin(r);
+
+		{std::ranges::iterator_t<R> b2 = b; do {
 			selected[*b2] = true;
 			if (b2 != e_S1) ++b2; else break;
 		} while (true);}
 
-		const R s = selected; do {
+		{const B s = selected; do {
 			if (*selected) {
 				*selected = false;
-				*b = unsign_cast<std::iter_value_t<I>>(selected - s);
+				*b = unsign_cast<std::ranges::range_value_t<R>>(selected - s);
 				if (b == e_S1) return; else ++b;
 			}
 			++selected;
-		} while (true);
+		} while (true);}
 	}
 
-	template<permutable_random_access_range R, key_bool_iterator_for<std::ranges::iterator_t<R>> S>
-	AA_CONSTEXPR void counting_sort(R &&r, S &&s) {
-		counting_sort(std::ranges::begin(r), std::ranges::end(r) - 1, std::forward<S>(s));
-	}
+	template<permutable_random_access_range R, std::sentinel_for<std::ranges::iterator_t<R>> S, differences_generator_for<std::ranges::iterator_t<R>> G, key_bool_iterator_for<std::ranges::iterator_t<R>> B>
+	AA_CONSTEXPR void partial_shuffle_counting_sort(R &&r, const S &m, G &&g, B selected) {
+		std::ranges::iterator_t<R> b = std::ranges::begin(r);
+		const std::ranges::iterator_t<R> &e = std::ranges::end(r);
 
-	template<permutable_random_access_iterator I, std::sized_sentinel_for<I> SS, std::sentinel_for<I> S, differences_generator_for<I> G, key_bool_iterator_for<I> R>
-	AA_CONSTEXPR void partial_shuffle_counting_sort(I b, const SS &e, const S &m, G &&g, R selected) {
-		{I b2 = b; do {
+		{std::ranges::iterator_t<R> b2 = b; do {
 			std::ranges::iter_swap(b2, b2 + int_distribution(g, unsign_cast<generator_modulus_t<G>>(e - b2)));
 			selected[*b2] = true;
 			if (b2 != m) ++b2; else break;
 		} while (true);}
 
-		const R s = selected; do {
+		{const B s = selected; do {
 			if (*selected) {
 				*selected = false;
-				*b = unsign_cast<std::iter_value_t<I>>(selected - s);
+				*b = unsign_cast<std::ranges::range_value_t<R>>(selected - s);
 				if (b == m) return; else ++b;
 			}
 			++selected;
-		} while (true);
+		} while (true);}
 	}
 
 }

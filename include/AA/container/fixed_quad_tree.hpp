@@ -40,7 +40,7 @@ namespace aa {
 		using position_type = query_result::position_type;
 
 	protected:
-		static AA_CONSTEXPR const size_type leaves_count = int_exp2N<size_type, 2uz>(H), phantoms_count = (leaves_count - 1) / 3;
+		static AA_CONSTEXPR const size_type leaves_count = int_exp2<size_type, 2uz>(H), phantoms_count = (leaves_count - 1) / 3;
 
 		struct node_type {
 			value_type *element;
@@ -215,7 +215,7 @@ namespace aa {
 		}
 
 		template<invocable_ref<reference> F>
-		AA_CONSTEXPR void query(F &&f) const {
+		AA_CONSTEXPR void query_all(F &&f) const {
 			unsafe_for_each(leaves, [&](const leaf &l) -> void {
 				l.query(f, *this);
 			});

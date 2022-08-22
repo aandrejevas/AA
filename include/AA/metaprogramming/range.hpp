@@ -3,16 +3,34 @@
 #include "general.hpp"
 #include <type_traits> // type_identity
 #include <concepts> // convertible_to, same_as
-#include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator
-#include <ranges> // contiguous_range, random_access_range, sized_range, iterator_t, range_value_t
+#include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, prev
+#include <ranges> // contiguous_range, random_access_range, sized_range, iterator_t, range_value_t, rbegin, rend, range
 #include <string> // char_traits
 
 
 
 namespace aa {
 
-	template<class I>
-	concept permutable_random_access_iterator = std::random_access_iterator<I> && std::permutable<I>;
+	// Darome daug prielaidų čia, nes atrodo, kad c++ standartas jas daro taip pat.
+	template<std::ranges::range R>
+	AA_CONSTEXPR std::ranges::iterator_t<R> get_rbegin(R &&r) {
+		if constexpr (std::same_as<std::ranges::iterator_t<R>, decltype(std::ranges::rbegin(r))>) {
+			return std::ranges::rbegin(r);
+		} else {
+			return std::ranges::prev(std::ranges::rbegin(r).base());
+		}
+	}
+
+	template<std::ranges::range R>
+	AA_CONSTEXPR std::ranges::iterator_t<R> get_rend(R &&r) {
+		if constexpr (std::same_as<std::ranges::iterator_t<R>, decltype(std::ranges::rend(r))>) {
+			return std::ranges::rend(r);
+		} else {
+			return std::ranges::prev(std::ranges::rend(r).base());
+		}
+	}
+
+
 
 	// Turėtų ne convertible_to<bool> būti naudojamas, o boolean-testable, bet toks concept kol kas yra tik exposition only.
 	// https://en.cppreference.com/w/cpp/concepts/boolean-testable.
@@ -35,8 +53,7 @@ namespace aa {
 	concept sized_contiguous_range = std::ranges::contiguous_range<T> && std::ranges::sized_range<T>;
 
 	template<class R>
-	concept permutable_random_access_range = std::ranges::random_access_range<R> &&
-		permutable_random_access_iterator<std::ranges::iterator_t<R>>;
+	concept permutable_random_access_range = std::ranges::random_access_range<R> && std::permutable<std::ranges::iterator_t<R>>;
 
 	template<class O, class I>
 	concept trivial_output_range_for = sized_contiguous_range<O> && sized_contiguous_range<I>

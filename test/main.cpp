@@ -126,7 +126,7 @@ int main() {
 	{
 		std::unordered_set<size_t> b;
 		fixed_perfect_hash_set<size_t, 1'000> a;
-		println(a.max_bucket_count(), ' ', a.max_size());
+		println(a.max_bucket_count(), ' ', a.max_bucket_size(), ' ', a.max_size());
 
 		// Insert test
 		repeat(100'000, [&]() {

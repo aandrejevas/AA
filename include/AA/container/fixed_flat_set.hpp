@@ -72,13 +72,13 @@ namespace aa {
 
 		// Lookup
 		template<in_relation_with<value_type, comparer_type> K>
-		AA_CONSTEXPR const_iterator lower_bound(const K &key) const {
-			return aa::lower_bound(elements, key, comparer);
+		AA_CONSTEXPR const_iterator unsafe_lower_bound(const K &key) const {
+			return aa::unsafe_lower_bound(elements, key, comparer);
 		}
 
 		template<in_relation_with<value_type, comparer_type> K>
-		AA_CONSTEXPR const_iterator upper_bound(const K &key) const {
-			return aa::upper_bound(elements, key, comparer);
+		AA_CONSTEXPR const_iterator unsafe_upper_bound(const K &key) const {
+			return aa::unsafe_upper_bound(elements, key, comparer);
 		}
 
 		template<in_relation_with<value_type, comparer_type> K>
@@ -86,7 +86,7 @@ namespace aa {
 			if (empty() || compare(back(), key)) {
 				return nullptr;
 			} else {
-				const const_iterator pos = lower_bound(key);
+				const const_iterator pos = unsafe_lower_bound(key);
 				return !compare(key, *pos) ? pos : nullptr;
 			}
 		}
@@ -94,7 +94,7 @@ namespace aa {
 		template<in_relation_with<value_type, comparer_type> K>
 		AA_CONSTEXPR bool contains(const K &key) const {
 			return (empty() || compare(back(), key))
-				? false : !compare(key, *lower_bound(key));
+				? false : !compare(key, *unsafe_lower_bound(key));
 		}
 
 
@@ -111,7 +111,11 @@ namespace aa {
 
 		AA_CONSTEXPR std::conditional_t<MULTISET, void, bool> insert(const value_type &value) {
 			if constexpr (MULTISET) {
-				elements.insert(upper_bound(value), value);
+				if (empty()) {
+					clear(value);
+				} else {
+					elements.insert(unsafe_upper_bound(value), value);
+				}
 			} else {
 				// Nors reikia kiekvieną kartą daryti papildomą tikrinimą ar konteineris nėra tuščias,
 				// vis tiek pasirinkta tokia realizacija, nes kartais išvengiamas lower_bound iškvietimas.
@@ -122,7 +126,7 @@ namespace aa {
 					elements.insert_back(value);
 					return true;
 				} else {
-					const const_iterator pos = lower_bound(value);
+					const const_iterator pos = unsafe_lower_bound(value);
 					if (compare(value, *pos)) {
 						elements.insert(pos, value);
 						return true;
@@ -136,7 +140,7 @@ namespace aa {
 			if (empty() || compare(back(), key)) {
 				return;
 			} else {
-				const const_iterator pos = lower_bound(key);
+				const const_iterator pos = unsafe_lower_bound(key);
 				if (!compare(key, *pos))
 					elements.erase(pos);
 			}
