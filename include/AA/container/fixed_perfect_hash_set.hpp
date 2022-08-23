@@ -21,10 +21,6 @@ namespace aa {
 	template<std::unsigned_integral T, size_t N, size_t M = N, storable H = std::hash<size_t>>
 		requires (N >= M)
 	struct fixed_perfect_hash_set {
-		// Funkcija max_bucket_size turi gražinti dvejeto laipsnį dėl greitaveikos sumetimų.
-		// Nors tuo sunku patikėti, bet gal gali negražinti ko reikia funkcija todėl daromas tikrinimas.
-		static_assert(std::has_single_bit(max_bucket_size()));
-
 		// Member types
 		// Neturime value_type, reference ir pointer tipų, nes konteineris nelaiko elementų.
 		using bucket_type = T;
@@ -65,7 +61,7 @@ namespace aa {
 			}
 
 			friend AA_CONSTEXPR bool operator==(const iterator &l, const iterator &r) {
-				l.bitset == r.bitset && l.pos == r.pos;
+				return l.bitset == r.bitset && l.pos == r.pos;
 			}
 
 			explicit AA_CONSTEXPR operator bool() const { return bitset; }
@@ -159,9 +155,13 @@ namespace aa {
 			return unsign<size_type>(std::popcount(bins[n]));
 		}
 
+		// Funkcija turi gražinti dvejeto laipsnį dėl greitaveikos sumetimų.
 		static AA_CONSTEVAL size_type max_bucket_size() {
 			return std::numeric_limits<bucket_type>::digits;
 		}
+
+		// Nors tuo sunku patikėti, bet gal gali negražinti ko reikia funkcija todėl daromas tikrinimas.
+		static_assert(std::has_single_bit(max_bucket_size()));
 
 
 		AA_CONSTEXPR size_type bucket_count() const {

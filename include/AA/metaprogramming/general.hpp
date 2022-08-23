@@ -334,15 +334,18 @@ namespace aa {
 
 
 
-	// Reikia šitų konstantų, nes c++ standarte nėra jos apibrėžtos.
-	//
 	// C yra objektas, galėtume jį padavinėti per const&, o ne per value, bet nusprendžiau, kad kompiliavimo
 	// metu nėra skirtumo kaip tas objektas bus padavinėjamas, net jei jis būtų labai didelis.
-	template<auto C>
-	AA_CONSTEXPR const decltype(C) constant_v = std::integral_constant<decltype(C), C>::value;
-
+	//
+	// Negali šitos funkcijos būti paverstos į konstantas, nes neegzistuoja konstantų užklojimas ir dalinė specializacija nesikompiliuoja.
+	// Taip pat funkcijos geriau atspindi kas vyksta, tai yra tą faktą, kad reikšmės gaunamos ne iš kažkokios klasės (pvz. integral_constant).
 	template<class T, T C>
-	AA_CONSTEXPR const T constant_v<C> = std::integral_constant<T, C>::value;
+	AA_CONSTEVAL T constant() { return C; }
+
+	template<auto C>
+	AA_CONSTEVAL decltype(C) constant() { return C; }
+
+
 
 	template<convertible_from<size_t> T>
 	struct zero : std::integral_constant<T, static_cast<T>(0uz)> {};

@@ -104,7 +104,7 @@ namespace aa {
 
 	protected:
 		// Šitas kintamasis turi būti paslėptas, nes kitaip jis suteiktų galimybę naudotojui keisti const elementus.
-		value_type *const r_begin = elements.data() + constant_v<N - 1>;
+		value_type *const r_begin = elements.data() + constant<N - 1>();
 	};
 
 }

@@ -4,7 +4,7 @@
 #include <type_traits> // type_identity
 #include <concepts> // convertible_to, same_as
 #include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, prev
-#include <ranges> // contiguous_range, random_access_range, sized_range, iterator_t, range_value_t, rbegin, rend, range
+#include <ranges> // contiguous_range, random_access_range, sized_range, iterator_t, range_value_t, begin, end, rbegin, rend, range
 #include <string> // char_traits
 
 
@@ -17,7 +17,7 @@ namespace aa {
 		if constexpr (std::same_as<std::ranges::iterator_t<R>, decltype(std::ranges::rbegin(r))>) {
 			return std::ranges::rbegin(r);
 		} else {
-			return std::ranges::prev(std::ranges::rbegin(r).base());
+			return std::ranges::prev(std::ranges::end(r));
 		}
 	}
 
@@ -26,7 +26,7 @@ namespace aa {
 		if constexpr (std::same_as<std::ranges::iterator_t<R>, decltype(std::ranges::rend(r))>) {
 			return std::ranges::rend(r);
 		} else {
-			return std::ranges::prev(std::ranges::rend(r).base());
+			return std::ranges::prev(std::ranges::begin(r));
 		}
 	}
 

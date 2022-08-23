@@ -61,13 +61,17 @@ namespace aa {
 
 
 
+	template<auto N, std::unsigned_integral T>
+		requires (std::unsigned_integral<decltype(N)>)
+	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) int_log2(const T);
+
 	// https://en.wikipedia.org/wiki/Remainder
 	template<auto X, std::integral T>
 		requires (std::unsigned_integral<decltype(X)>)
 	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) remainder(const T x) {
 		if constexpr (X == 1) return zero_v<T>;
 		if constexpr (std::has_single_bit(X)) {
-			return x & constant_v<X - 1>;
+			return x & constant<X - 1>();
 		} else {
 			return x % X;
 		}
@@ -79,7 +83,7 @@ namespace aa {
 	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) quotient(const T x) {
 		if constexpr (X == 1) return x;
 		if constexpr (std::has_single_bit(X)) {
-			return x >> constant_v<int_log2(X)>;
+			return x >> constant<int_log2(X)>();
 		} else {
 			return x / X;
 		}
@@ -91,7 +95,7 @@ namespace aa {
 	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) product(const T x) {
 		if constexpr (X == 1) return x;
 		if constexpr (std::has_single_bit(X)) {
-			return x << constant_v<int_log2(X)>;
+			return x << constant<int_log2(X)>();
 		} else {
 			return x * X;
 		}
@@ -115,7 +119,7 @@ namespace aa {
 	template<auto N = 1uz, std::unsigned_integral T>
 		requires (std::unsigned_integral<decltype(N)>)
 	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) int_log2(const T x) {
-		return quotient<N>((constant_v<T, std::numeric_limits<T>::digits - 1>) - unsign<T>(std::countl_zero(x)));
+		return quotient<N>(constant<T, std::numeric_limits<T>::digits - 1>() - unsign<T>(std::countl_zero(x)));
 	}
 
 

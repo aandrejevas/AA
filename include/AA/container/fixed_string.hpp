@@ -50,8 +50,8 @@ namespace aa {
 		AA_CONSTEXPR const_reference front() const { return *data(); }
 		AA_CONSTEXPR const_reference cfront() const { return front(); }
 
-		AA_CONSTEXPR reference back() { return at(constant_v<N - 2>); }
-		AA_CONSTEXPR const_reference back() const { return at(constant_v<N - 2>); }
+		AA_CONSTEXPR reference back() { return at(constant<N - 2>()); }
+		AA_CONSTEXPR const_reference back() const { return at(constant<N - 2>()); }
 		AA_CONSTEXPR const_reference cback() const { return back(); }
 
 		AA_CONSTEXPR operator view_type() const { return view_type{data(), size()}; }
@@ -80,7 +80,7 @@ namespace aa {
 		// Capacity
 		static AA_CONSTEVAL bool empty() { return !size(); }
 		static AA_CONSTEVAL difference_type ssize() { return size(); }
-		static AA_CONSTEVAL size_type size() { return constant_v<N - 1>; }
+		static AA_CONSTEVAL size_type size() { return N - 1; }
 		static AA_CONSTEVAL size_type max_size() { return N; }
 
 
