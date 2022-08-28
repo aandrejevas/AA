@@ -22,7 +22,7 @@
 #include <ios> // sync_with_stdio
 #include <map> // map
 #include <unordered_set> // unordered_set
-#include <ranges> // iota, contiguous_range, random_access_range, forward_range, subrange
+#include <ranges> // reverse, iota, contiguous_range, random_access_range, bidirectional_range, subrange
 #include <algorithm> // is_sorted, is_permutation
 #include <string> // string
 #include <limits> // numeric_limits
@@ -137,9 +137,11 @@ int main() {
 		AA_TRACE_ASSERT(b.size() == a.size());
 
 		// Iterator test
-		unsafe_for_each(a, [&](const size_t c) {
-			AA_TRACE_ASSERT(b.contains(c));
-			b.erase(c);
+		unsafe_for_each(a, [&](const size_t *const d) {
+			unsafe_for_each(std::views::reverse(a.bucket(d)), [&](const size_t c) {
+				AA_TRACE_ASSERT(b.contains(c));
+				b.erase(c);
+			});
 		});
 		AA_TRACE_ASSERT(b.empty());
 
@@ -153,10 +155,10 @@ int main() {
 			b.insert(c);
 			a.insert(c);
 		});
-		AA_TRACE_ASSERT(b.size() == a.bucket_size(0));
+		AA_TRACE_ASSERT(b.size() == a.bucket_size(a.buckets().data()));
 
 		// Local iterator test
-		unsafe_for_each(std::ranges::subrange{a.begin(0), a.end(0)}, [&](const size_t c) {
+		unsafe_for_each(a.bucket(a.buckets().data()), [&](const size_t c) {
 			AA_TRACE_ASSERT(b.contains(c));
 			b.erase(c);
 		});
@@ -167,11 +169,12 @@ int main() {
 			a.insert(int_distribution(g, a.max_size()));
 		});
 		do {
-			a.erase(*a.begin(a.index_at(int_distribution(g, a.bucket_count()))));
+			a.erase(a.bucket(a.elem(int_distribution(g, a.bucket_count()))).front());
 		} while (!a.empty());
 		unsafe_for_each(a.buckets(), [&](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
 
-		static_assert(std::ranges::forward_range<decltype(a)>);
+		static_assert(std::ranges::bidirectional_range<decltype(a)::bucket_iterable>);
+		static_assert(std::ranges::contiguous_range<decltype(a)>);
 	}
 	{
 		fixed_free_vector<size_t, 50'000> a;

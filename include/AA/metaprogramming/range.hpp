@@ -3,8 +3,8 @@
 #include "general.hpp"
 #include <type_traits> // type_identity
 #include <concepts> // convertible_to, same_as
-#include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, prev
-#include <ranges> // contiguous_range, random_access_range, sized_range, iterator_t, range_value_t, end, rbegin, range
+#include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, next, prev, distance
+#include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, iterator_t, range_value_t, begin, end, rbegin, range
 #include <string> // char_traits
 
 
@@ -18,8 +18,10 @@ namespace aa {
 	AA_CONSTEXPR std::ranges::iterator_t<R> get_rbegin(R &&r) {
 		if constexpr (requires { { std::ranges::rbegin(r) } -> std::same_as<std::ranges::iterator_t<R>>; }) {
 			return std::ranges::rbegin(r);
-		} else {
+		} else if constexpr (std::ranges::bidirectional_range<R>) {
 			return std::ranges::prev(std::ranges::end(r));
+		} else {
+			return std::ranges::next(std::ranges::begin(r), std::ranges::distance(r) - 1);
 		}
 	}
 

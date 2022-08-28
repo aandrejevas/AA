@@ -2,7 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
-#include <ranges> // iterator_t, borrowed_iterator_t, range_size_t, begin, size, bidirectional_range, input_range
+#include <ranges> // iterator_t, borrowed_iterator_t, range_size_t, begin, size, forward_range, bidirectional_range, input_range
 #include <iterator> // indirect_strict_weak_order, indirect_binary_predicate, indirectly_unary_invocable
 #include <functional> // invoke, less, equal_to
 #include <utility> // as_const
@@ -51,13 +51,33 @@ namespace aa {
 
 
 	// last kintamasis nėra const&, nes naudojama standarto funkcija, kad inicializuoti jį gražina tiesiog reikšmę.
-	template<std::ranges::bidirectional_range R, class T>
+	template<std::ranges::forward_range R, class T>
 		requires (std::indirect_binary_predicate<std::ranges::equal_to, std::ranges::iterator_t<R>, const T *>)
 	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> unsafe_find_last(R &&r, const T &value) {
-		std::ranges::iterator_t<R> first = get_rbegin(r);
+		if constexpr (std::ranges::bidirectional_range<R>) {
+			std::ranges::iterator_t<R> first = get_rbegin(r);
+			if (*first != value) {
+				const std::ranges::iterator_t<R> last = std::ranges::begin(r);
+				while (first != last && (*--first != value));
+			}
+			return first;
+		} else {
+			std::ranges::iterator_t<R> first = std::ranges::begin(r), res;
+			const std::ranges::iterator_t<R> last = get_rbegin(r);
+			do {
+				if (*first == value) res = first;
+				if (first != last) ++first; else return res;
+			} while (true);
+		}
+	}
+
+	template<std::ranges::input_range R, class T>
+		requires (std::indirect_binary_predicate<std::ranges::equal_to, std::ranges::iterator_t<R>, const T *>)
+	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> unsafe_find(R &&r, const T &value) {
+		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		if (*first != value) {
-			const std::ranges::iterator_t<R> last = std::ranges::begin(r);
-			while (first != last && (*--first != value));
+			const std::ranges::iterator_t<R> last = get_rbegin(r);
+			while (first != last && (*++first != value));
 		}
 		return first;
 	}

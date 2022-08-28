@@ -50,8 +50,8 @@ namespace aa {
 				}
 
 				AA_CONSTEXPR iterator &operator++() {
-					index = std::countr_zero(bucket->word
-						& (constant<(std::numeric_limits<bucket_type>::max() << 1)>() << index));
+					index = unsign<value_type>(std::countr_zero(bucket->word
+						& (constant<(std::numeric_limits<bucket_type>::max() << 1)>() << index)));
 					return *this;
 				}
 
@@ -62,8 +62,8 @@ namespace aa {
 				}
 
 				AA_CONSTEXPR iterator &operator--() {
-					index = constant<max_bucket_size() - 1>() - std::countl_zero(bucket->word
-						& (constant<(std::numeric_limits<bucket_type>::max() >> 1)>() >> (constant<max_bucket_size() - 1>() - index)));
+					index = constant<max_bucket_size() - 1>() - unsign<value_type>(std::countl_zero(bucket->word
+						& (constant<(std::numeric_limits<bucket_type>::max() >> 1)>() >> (constant<max_bucket_size() - 1>() - index))));
 					return *this;
 				}
 
@@ -85,15 +85,15 @@ namespace aa {
 
 
 			// Element access
-			AA_CONSTEXPR value_type front() const { return std::countr_zero(word) + offset; }
-			AA_CONSTEXPR value_type back() const { return std::countl_zero(word) + offset; }
+			AA_CONSTEXPR value_type front() const { return unsign<value_type>(std::countr_zero(word)) + offset; }
+			AA_CONSTEXPR value_type back() const { return unsign<value_type>(std::countl_zero(word)) + offset; }
 
 
 
 			// Iterators
-			AA_CONSTEXPR const_iterator begin() const { return {this, std::countr_zero(word)}; }
+			AA_CONSTEXPR const_iterator begin() const { return {this, unsign<value_type>(std::countr_zero(word))}; }
 			AA_CONSTEXPR const_iterator end() const { return {this, max_bucket_size()}; }
-			AA_CONSTEXPR const_iterator rbegin() const { return {this, std::countl_zero(word)}; }
+			AA_CONSTEXPR const_iterator rbegin() const { return {this, unsign<value_type>(std::countl_zero(word))}; }
 			AA_CONSTEXPR const_iterator rend() const { return {this, numeric_max}; }
 
 
@@ -110,8 +110,9 @@ namespace aa {
 
 
 			// Member objects
-			const bucket_type word;
-			const value_type offset;
+			// Visos funkcijos pažymėtos const todėl nebus netyčia pakeisti šitie kintamieji.
+			bucket_type word;
+			value_type offset;
 		};
 
 		using const_local_iterator = bucket_iterable::const_iterator;
@@ -148,8 +149,8 @@ namespace aa {
 
 		AA_CONSTEXPR size_type size() const {
 			size_type sum = 0;
-			unsafe_for_each(*this, [&sum](const bucket_pointer p) -> void {
-				sum += unsign<size_type>(std::popcount(*p--));
+			unsafe_for_each(*this, [&sum](const bucket_pointer bin) -> void {
+				sum += unsign<size_type>(std::popcount(*bin));
 			});
 			return sum;
 		}
