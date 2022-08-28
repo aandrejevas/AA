@@ -61,9 +61,10 @@ namespace aa {
 
 
 
-	template<auto N, std::unsigned_integral T>
-		requires (std::unsigned_integral<decltype(N)>)
-	[[gnu::always_inline]] AA_CONSTEXPR auto int_log2(const T);
+	template<std::unsigned_integral T>
+	[[gnu::always_inline]] AA_CONSTEXPR T int_log2(const T x) {
+		return constant<T, std::numeric_limits<T>::digits - 1>() - unsign<T>(std::countl_zero(x));
+	}
 
 	// https://en.wikipedia.org/wiki/Remainder
 	template<auto X, std::integral T>
@@ -113,13 +114,13 @@ namespace aa {
 		return one_v<U> << product<N>(x);
 	}
 
-	// Neturime dar vieno tipo U, nes T tipas kaip ir nėra panaudojamas.
+	// Neturime dar vieno tipo U, nes tada T tipas nebūtų panaudojamas.
 	// https://en.wikipedia.org/wiki/Find_first_set
 	// https://en.wikipedia.org/wiki/Binary_logarithm
-	template<auto N = 1uz, std::unsigned_integral T>
+	template<auto N, std::unsigned_integral T>
 		requires (std::unsigned_integral<decltype(N)>)
 	[[gnu::always_inline]] AA_CONSTEXPR auto int_log2(const T x) {
-		return quotient<N>(constant<T, std::numeric_limits<T>::digits - 1>() - unsign<T>(std::countl_zero(x)));
+		return quotient<N>(int_log2(x));
 	}
 
 
