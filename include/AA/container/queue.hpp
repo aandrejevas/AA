@@ -5,6 +5,7 @@
 #include <vector> // vector
 #include <memory> // allocator
 #include <utility> // forward, move
+#include <bit> // bit_cast
 
 
 
@@ -29,16 +30,16 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR reference operator[](const size_type pos) { return at(pos); }
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return at(pos); }
+		AA_CONSTEXPR reference operator[](const size_type pos) { return elem(pos); }
+		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elem(pos); }
 
-		AA_CONSTEXPR reference at(const size_type pos) { return *pointer_at(pos); }
-		AA_CONSTEXPR const_reference at(const size_type pos) const { return *pointer_at(pos); }
-		AA_CONSTEXPR const_reference c_at(const size_type pos) const { return at(pos); }
+		AA_CONSTEXPR reference elem(const size_type pos) { return *data(pos); }
+		AA_CONSTEXPR const_reference elem(const size_type pos) const { return *data(pos); }
+		AA_CONSTEXPR const_reference celem(const size_type pos) const { return elem(pos); }
 
-		AA_CONSTEXPR pointer pointer_at(const size_type pos) { return data() + pos; }
-		AA_CONSTEXPR const_pointer pointer_at(const size_type pos) const { return data() + pos; }
-		AA_CONSTEXPR const_pointer cpointer_at(const size_type pos) const { return pointer_at(pos); }
+		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
+		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
+		AA_CONSTEXPR const_pointer cdata(const size_type pos) const { return data(pos); }
 
 		AA_CONSTEXPR pointer data() { return elements.data() + front_index; }
 		AA_CONSTEXPR const_pointer data() const { return elements.data() + front_index; }
@@ -77,6 +78,7 @@ namespace aa {
 		AA_CONSTEXPR bool empty() const { return elements.empty(); }
 
 		AA_CONSTEXPR size_type size() const { return elements.size() - front_index; }
+		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
 		AA_CONSTEXPR size_type max_size() const { return elements.max_size(); }
 		AA_CONSTEXPR size_type capacity() const { return elements.capacity(); }
 

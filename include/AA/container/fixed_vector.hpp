@@ -30,24 +30,24 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR reference operator[](const size_type pos) { return at(pos); }
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return at(pos); }
+		AA_CONSTEXPR reference operator[](const size_type pos) { return elem(pos); }
+		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elem(pos); }
 
-		AA_CONSTEXPR reference at(const size_type pos) { return *pointer_at(pos); }
-		AA_CONSTEXPR const_reference at(const size_type pos) const { return *pointer_at(pos); }
-		AA_CONSTEXPR const_reference c_at(const size_type pos) const { return at(pos); }
+		AA_CONSTEXPR reference elem(const size_type pos) { return *data(pos); }
+		AA_CONSTEXPR const_reference elem(const size_type pos) const { return *data(pos); }
+		AA_CONSTEXPR const_reference celem(const size_type pos) const { return elem(pos); }
 
-		AA_CONSTEXPR reference r_at(const size_type pos) { return *rpointer_at(pos); }
-		AA_CONSTEXPR const_reference r_at(const size_type pos) const { return *rpointer_at(pos); }
-		AA_CONSTEXPR const_reference cr_at(const size_type pos) const { return r_at(pos); }
+		AA_CONSTEXPR reference relem(const size_type pos) { return *rdata(pos); }
+		AA_CONSTEXPR const_reference relem(const size_type pos) const { return *rdata(pos); }
+		AA_CONSTEXPR const_reference crelem(const size_type pos) const { return relem(pos); }
 
-		AA_CONSTEXPR pointer pointer_at(const size_type pos) { return data() + pos; }
-		AA_CONSTEXPR const_pointer pointer_at(const size_type pos) const { return data() + pos; }
-		AA_CONSTEXPR const_pointer cpointer_at(const size_type pos) const { return pointer_at(pos); }
+		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
+		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
+		AA_CONSTEXPR const_pointer cdata(const size_type pos) const { return data(pos); }
 
-		AA_CONSTEXPR pointer rpointer_at(const size_type pos) { return r_begin - pos; }
-		AA_CONSTEXPR const_pointer rpointer_at(const size_type pos) const { return r_begin - pos; }
-		AA_CONSTEXPR const_pointer crpointer_at(const size_type pos) const { return rpointer_at(pos); }
+		AA_CONSTEXPR pointer rdata(const size_type pos) { return rdata() - pos; }
+		AA_CONSTEXPR const_pointer rdata(const size_type pos) const { return rdata() - pos; }
+		AA_CONSTEXPR const_pointer crdata(const size_type pos) const { return rdata(pos); }
 
 		AA_CONSTEXPR pointer data() { return elements.data(); }
 		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
@@ -61,8 +61,8 @@ namespace aa {
 		AA_CONSTEXPR const_reference front() const { return *data(); }
 		AA_CONSTEXPR const_reference cfront() const { return front(); }
 
-		AA_CONSTEXPR reference back() { return *r_begin; }
-		AA_CONSTEXPR const_reference back() const { return *r_begin; }
+		AA_CONSTEXPR reference back() { return *rdata(); }
+		AA_CONSTEXPR const_reference back() const { return *rdata(); }
 		AA_CONSTEXPR const_reference cback() const { return back(); }
 
 
@@ -76,8 +76,8 @@ namespace aa {
 		AA_CONSTEXPR const_iterator end() const { return r_begin + 1; }
 		AA_CONSTEXPR const_iterator cend() const { return end(); }
 
-		AA_CONSTEXPR iterator rbegin() { return r_begin; }
-		AA_CONSTEXPR const_iterator rbegin() const { return r_begin; }
+		AA_CONSTEXPR iterator rbegin() { return rdata(); }
+		AA_CONSTEXPR const_iterator rbegin() const { return rdata(); }
 		AA_CONSTEXPR const_iterator crbegin() const { return rbegin(); }
 
 		AA_CONSTEXPR iterator rend() { return r_end; }
@@ -91,7 +91,7 @@ namespace aa {
 		AA_CONSTEXPR bool full() const { return size() == N; }
 
 		AA_CONSTEXPR difference_type ssize() const { return r_begin - r_end; }
-		AA_CONSTEXPR size_type size() const { return unsign<size_type>(ssize()); }
+		AA_CONSTEXPR size_type size() const { return std::bit_cast<size_type>(ssize()); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
 
@@ -123,19 +123,19 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		AA_CONSTEXPR iterator emplace(const const_iterator pos, A&&... args) {
 			std::memmove(const_cast<iterator>(pos + 1), pos,
-				unsign<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
+				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
 		AA_CONSTEXPR void insert(const const_iterator pos, const value_type &value) {
 			std::memmove(const_cast<iterator>(pos + 1), pos,
-				unsign<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
+				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
 			*const_cast<iterator>(pos) = value;
 		}
 
 		AA_CONSTEXPR void erase(const const_iterator pos) {
 			std::memmove(const_cast<iterator>(pos), pos + 1,
-				unsign<size_type>(std::bit_cast<const std::byte *>(r_begin--) - std::bit_cast<const std::byte *>(pos)));
+				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(r_begin--) - std::bit_cast<const std::byte *>(pos)));
 		}
 
 		template<class... A>

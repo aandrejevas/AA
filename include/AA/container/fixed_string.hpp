@@ -31,16 +31,16 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR reference operator[](const size_type pos) { return at(pos); }
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return at(pos); }
+		AA_CONSTEXPR reference operator[](const size_type pos) { return elem(pos); }
+		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elem(pos); }
 
-		AA_CONSTEXPR reference at(const size_type pos) { return *pointer_at(pos); }
-		AA_CONSTEXPR const_reference at(const size_type pos) const { return *pointer_at(pos); }
-		AA_CONSTEXPR const_reference c_at(const size_type pos) const { return at(pos); }
+		AA_CONSTEXPR reference elem(const size_type pos) { return *data(pos); }
+		AA_CONSTEXPR const_reference elem(const size_type pos) const { return *data(pos); }
+		AA_CONSTEXPR const_reference celem(const size_type pos) const { return elem(pos); }
 
-		AA_CONSTEXPR pointer pointer_at(const size_type pos) { return data() + pos; }
-		AA_CONSTEXPR const_pointer pointer_at(const size_type pos) const { return data() + pos; }
-		AA_CONSTEXPR const_pointer cpointer_at(const size_type pos) const { return pointer_at(pos); }
+		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
+		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
+		AA_CONSTEXPR const_pointer cdata(const size_type pos) const { return data(pos); }
 
 		AA_CONSTEXPR pointer data() { return elements.data(); }
 		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
@@ -50,8 +50,8 @@ namespace aa {
 		AA_CONSTEXPR const_reference front() const { return *data(); }
 		AA_CONSTEXPR const_reference cfront() const { return front(); }
 
-		AA_CONSTEXPR reference back() { return at(constant<N - 2>()); }
-		AA_CONSTEXPR const_reference back() const { return at(constant<N - 2>()); }
+		AA_CONSTEXPR reference back() { return elem(constant<N - 2>()); }
+		AA_CONSTEXPR const_reference back() const { return elem(constant<N - 2>()); }
 		AA_CONSTEXPR const_reference cback() const { return back(); }
 
 		AA_CONSTEXPR operator view_type() const { return view_type{data(), size()}; }

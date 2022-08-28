@@ -439,6 +439,8 @@ namespace aa {
 
 
 
+	// Galėtų šios klasės turėti get funkciją, bet sakome, kad naudotojas tegul naudoja numeric_limits, nereikia
+	// turėti dviejų kelių, kad padaryti visiškai tą patį. Kad gauti pakeistą konstantą naudoti constant funkciją.
 	AA_CONSTEXPR const struct {
 		template<class T>
 		AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::max(); }

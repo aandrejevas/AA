@@ -63,12 +63,12 @@ namespace aa {
 
 	template<auto N, std::unsigned_integral T>
 		requires (std::unsigned_integral<decltype(N)>)
-	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) int_log2(const T);
+	[[gnu::always_inline]] AA_CONSTEXPR auto int_log2(const T);
 
 	// https://en.wikipedia.org/wiki/Remainder
 	template<auto X, std::integral T>
 		requires (std::unsigned_integral<decltype(X)>)
-	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) remainder(const T x) {
+	[[gnu::always_inline]] AA_CONSTEXPR auto remainder(const T x) {
 		if constexpr (X == 1) return zero_v<T>;
 		if constexpr (std::has_single_bit(X)) {
 			return x & constant<X - 1>();
@@ -80,7 +80,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Quotient
 	template<auto X, std::integral T>
 		requires (std::unsigned_integral<decltype(X)>)
-	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) quotient(const T x) {
+	[[gnu::always_inline]] AA_CONSTEXPR auto quotient(const T x) {
 		if constexpr (X == 1) return x;
 		if constexpr (std::has_single_bit(X)) {
 			return x >> constant<int_log2(X)>();
@@ -92,7 +92,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Product_(mathematics)
 	template<auto X, std::integral T>
 		requires (std::unsigned_integral<decltype(X)>)
-	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) product(const T x) {
+	[[gnu::always_inline]] AA_CONSTEXPR auto product(const T x) {
 		if constexpr (X == 1) return x;
 		if constexpr (std::has_single_bit(X)) {
 			return x << constant<int_log2(X)>();
@@ -109,7 +109,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Power_of_two
 	template<std::integral U = size_t, auto N = 1uz, std::unsigned_integral T>
 		requires (std::unsigned_integral<decltype(N)>)
-	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) int_exp2(const T x) {
+	[[gnu::always_inline]] AA_CONSTEXPR auto int_exp2(const T x) {
 		return one_v<U> << product<N>(x);
 	}
 
@@ -118,7 +118,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Binary_logarithm
 	template<auto N = 1uz, std::unsigned_integral T>
 		requires (std::unsigned_integral<decltype(N)>)
-	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) int_log2(const T x) {
+	[[gnu::always_inline]] AA_CONSTEXPR auto int_log2(const T x) {
 		return quotient<N>(constant<T, std::numeric_limits<T>::digits - 1>() - unsign<T>(std::countl_zero(x)));
 	}
 

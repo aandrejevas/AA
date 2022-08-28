@@ -9,8 +9,8 @@
 #include <functional> // hash, invoke
 #include <concepts> // unsigned_integral
 #include <utility> // forward
-#include <iterator> // forward_iterator_tag
-#include <bit> // countr_zero, popcount, has_single_bit
+#include <iterator> // bidirectional_iterator_tag
+#include <bit> // countr_zero, countl_zero, popcount, has_single_bit, bit_cast
 
 
 
@@ -18,104 +18,127 @@ namespace aa {
 
 	// https://en.wikipedia.org/wiki/Perfect_hash_function
 	// https://en.wikipedia.org/wiki/Hash_table
+	// Konteineris laiko savyje maišos kodus.
 	template<std::unsigned_integral T, size_t N, size_t M = N, storable H = std::hash<size_t>>
 		requires (N >= M)
 	struct fixed_perfect_hash_set {
 		// Member types
-		// Neturime value_type, reference ir pointer tipų, nes konteineris nelaiko elementų.
+		// Neturime reference ir pointer tipų, nes konteineris nelaiko elementų, jis juos apskaičiuoja.
 		using bucket_type = T;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
+		using value_type = size_type;
 		using hasher_type = H;
+		using bucket_pointer = const bucket_type *;
+		using iterator = const bucket_type *const *;
+		using const_iterator = iterator;
 
-		// Iteratoriai skirti iteruoti pro maišos kodus.
-		using const_iterator = struct iterator {
-			// Neturime pointer tipo, nes neturime operator-> metodo.
-			using value_type = size_type;
+		struct bucket_iterable {
+			// Member types
+			using value_type = value_type;
+			using size_type = size_type;
 			using difference_type = difference_type;
-			using reference = value_type;
-			using iterator_category = std::forward_iterator_tag;
 
-			AA_CONSTEXPR reference operator*() const {
-				return unsign<size_type>(std::countr_zero(bitset)) + product<max_bucket_size()>(unsign<size_type>(*pos - bins_begin));
-			}
+			// Iteratorius skirtas iteruoti pro maišos kodus.
+			using const_iterator = struct iterator {
+				using value_type = value_type;
+				using difference_type = difference_type;
+				using iterator_category = std::bidirectional_iterator_tag;
 
-			AA_CONSTEXPR iterator &operator++() {
-				// (0 & (0 - 1)) == 0
-				bitset &= bitset - 1;
-				if (!bitset && pos != rbegin) {
-					bitset = **++pos;
+				AA_CONSTEXPR value_type operator*() const {
+					return index + bucket->offset;
 				}
-				return *this;
-			}
 
-			AA_CONSTEXPR iterator operator++(const int) {
-				const bucket_type b = bitset;
-				bitset &= bitset - 1;
-				if (!bitset && pos != rbegin) {
-					const bucket_type *const *const p = pos;
-					bitset = **++pos;
-					return {b, p, rbegin, bins_begin};
-				} else
-					return {b, pos, rbegin, bins_begin};
-			}
+				AA_CONSTEXPR iterator &operator++() {
+					index = std::countr_zero(bucket->word
+						& (constant<(std::numeric_limits<bucket_type>::max() << 1)>() << index));
+					return *this;
+				}
 
-			friend AA_CONSTEXPR bool operator==(const iterator &l, const iterator &r) {
-				return l.bitset == r.bitset && l.pos == r.pos;
-			}
+				AA_CONSTEXPR iterator operator++(const int) {
+					const value_type i = index;
+					operator++();
+					return {bucket, i};
+				}
 
-			explicit AA_CONSTEXPR operator bool() const { return bitset; }
+				AA_CONSTEXPR iterator &operator--() {
+					index = constant<max_bucket_size() - 1>() - std::countl_zero(bucket->word
+						& (constant<(std::numeric_limits<bucket_type>::max() >> 1)>() >> (constant<max_bucket_size() - 1>() - index)));
+					return *this;
+				}
 
-			bucket_type bitset;
-			const bucket_type *const *pos, *const *rbegin, *bins_begin;
+				AA_CONSTEXPR iterator operator--(const int) {
+					const value_type i = index;
+					operator--();
+					return {bucket, i};
+				}
+
+				friend AA_CONSTEXPR bool operator==(const iterator &l, const iterator &r) {
+					return l.index == r.index && l.bucket == r.bucket;
+				}
+
+				// Iteratoriaus kintamieji ne const, nes racionalu ir reikia palaikyti kopijavimo operatorių.
+				const bucket_iterable *bucket;
+				value_type index;
+			};
+
+
+
+			// Element access
+			AA_CONSTEXPR value_type front() const { return std::countr_zero(word) + offset; }
+			AA_CONSTEXPR value_type back() const { return std::countl_zero(word) + offset; }
+
+
+
+			// Iterators
+			AA_CONSTEXPR const_iterator begin() const { return {this, std::countr_zero(word)}; }
+			AA_CONSTEXPR const_iterator end() const { return {this, max_bucket_size()}; }
+			AA_CONSTEXPR const_iterator rbegin() const { return {this, std::countl_zero(word)}; }
+			AA_CONSTEXPR const_iterator rend() const { return {this, numeric_max}; }
+
+
+
+			// Capacity
+			AA_CONSTEXPR bool empty() const { return size() == 0; }
+			AA_CONSTEXPR bool full() const { return size() == max_size(); }
+
+			AA_CONSTEXPR size_type size() const { return unsign<size_type>(std::popcount(word)); }
+			AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
+
+			static AA_CONSTEVAL size_type max_size() { return max_bucket_size(); }
+
+
+
+			// Member objects
+			const bucket_type word;
+			const value_type offset;
 		};
 
-		using const_local_iterator = struct local_iterator {
-			using value_type = size_type;
-			using difference_type = difference_type;
-			using reference = value_type;
-			using iterator_category = std::forward_iterator_tag;
+		using const_local_iterator = bucket_iterable::const_iterator;
+		using local_iterator = bucket_iterable::const_iterator;
 
-			AA_CONSTEXPR reference operator*() const {
-				return unsign<size_type>(std::countr_zero(bitset)) + index;
-			}
 
-			AA_CONSTEXPR local_iterator &operator++() {
-				bitset &= bitset - 1;
-				return *this;
-			}
 
-			AA_CONSTEXPR local_iterator operator++(const int) {
-				const bucket_type b = bitset;
-				bitset &= bitset - 1;
-				return {b, index};
-			}
+		// Element access
+		AA_CONSTEXPR bucket_pointer elem(const size_type pos) const { return used_bins.elem(pos); }
+		AA_CONSTEXPR bucket_pointer relem(const size_type pos) const { return used_bins.relem(pos); }
+		AA_CONSTEXPR const_iterator data(const size_type pos) const { return used_bins.data(pos); }
+		AA_CONSTEXPR const_iterator rdata(const size_type pos) const { return used_bins.rdata(pos); }
 
-			friend AA_CONSTEXPR bool operator==(const local_iterator &l, const local_iterator &r) {
-				return l.bitset == r.bitset && l.index == r.index;
-			}
-
-			explicit AA_CONSTEXPR operator bool() const { return bitset; }
-
-			// Jokie iteratorių kintamieji ne const, nes racionalu ir reikia palaikyti kopijavimo operatorių.
-			bucket_type bitset;
-			size_type index;
-		};
+		AA_CONSTEXPR const_iterator data() const { return used_bins.data(); }
+		AA_CONSTEXPR const_iterator rdata() const { return used_bins.rdata(); }
+		AA_CONSTEXPR bucket_pointer front() const { return used_bins.front(); }
+		AA_CONSTEXPR bucket_pointer back() const { return used_bins.back(); }
 
 
 
 		// Iterators
-		AA_CONSTEXPR const_iterator begin() const {
-			if (used_bins.empty()) return end();
-			else return {*used_bins.front(), used_bins.begin(), used_bins.rbegin(), bins.data()};
-		}
-
-		// Pridera neštis šią visą šią informaciją end iteratoriui gautam iš šios klasės objekto.
-		// Galime įsivaizduoti, kad tai normalus iteratorius gautas po iteravimo proceso.
-		// Funkcija operator++(const int) taip pat gražina "perteklinius duomenis" kartais.
-		AA_CONSTEXPR const_iterator end() const {
-			return {0, used_bins.rbegin(), used_bins.rbegin(), bins.data()};
-		}
+		// Iteratoriai skirti iteruoti pro buckets, o ne elementus. Nestandartinis sprendimas, bet ir nėra taip,
+		// kad laiko konteineris elementus. Toks sprendimas leidžia teisingai iteruoti pro visus maišos kodus.
+		AA_CONSTEXPR const_iterator begin() const { return used_bins.begin(); }
+		AA_CONSTEXPR const_iterator end() const { return used_bins.end(); }
+		AA_CONSTEXPR const_iterator rbegin() const { return used_bins.rbegin(); }
+		AA_CONSTEXPR const_iterator rend() const { return used_bins.rend(); }
 
 
 
@@ -125,10 +148,12 @@ namespace aa {
 
 		AA_CONSTEXPR size_type size() const {
 			size_type sum = 0;
-			const bucket_type *const *pos = used_bins.rbegin(), *const *const rend = used_bins.rend();
-			while (pos != rend) sum += unsign<size_type>(std::popcount(**pos--));
+			unsafe_for_each(*this, [&sum](const bucket_pointer p) -> void {
+				sum += unsign<size_type>(std::popcount(*p--));
+			});
 			return sum;
 		}
+		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
 
 		// Jei N=M, tada šis konteineris gali talpinti tik mažesnias reikšmes už max_size,
 		// nebent būtų naudojamas ne tas hasher, kuris yra naudojamas pagal nutylėjimą.
@@ -139,20 +164,18 @@ namespace aa {
 
 
 		// Bucket interface
-		AA_CONSTEXPR size_type to_index(const bucket_type *const bin) const { return unsign<size_type>(bin - bins.data()); }
+		// Šita funkcija reikalinga jei naudotojas pasirinktų dirbti tiesiogiai su buckets.
+		AA_CONSTEXPR size_type index(const bucket_pointer bin) const {
+			return std::bit_cast<size_type>(bin - bins.data());
+		}
 
-		AA_CONSTEXPR size_type index_at(const size_type pos) const { return to_index(used_bins.at(pos)); }
-		AA_CONSTEXPR size_type index_rat(const size_type pos) const { return to_index(used_bins.rat(pos)); }
-
-		AA_CONSTEXPR size_type front_index() const { return to_index(used_bins.front()); }
-		AA_CONSTEXPR size_type back_index() const { return to_index(used_bins.back()); }
-
-		AA_CONSTEXPR const_local_iterator begin(const size_type n) const { return {bins[n], product<max_bucket_size()>(n)}; }
-		AA_CONSTEXPR const_local_iterator end(const size_type n) const { return {0, product<max_bucket_size()>(n)}; }
+		AA_CONSTEXPR bucket_iterable bucket(const bucket_pointer bin) const {
+			return {*bin, product<max_bucket_size()>(index(bin))};
+		}
 
 
-		AA_CONSTEXPR size_type bucket_size(const size_type n) const {
-			return unsign<size_type>(std::popcount(bins[n]));
+		AA_CONSTEXPR size_type bucket_size(const bucket_pointer bin) const {
+			return unsign<size_type>(std::popcount(*bin));
 		}
 
 		// Funkcija turi gražinti dvejeto laipsnį dėl greitaveikos sumetimų.
@@ -173,11 +196,11 @@ namespace aa {
 		}
 
 
-		[[gnu::always_inline]] static AA_CONSTEXPR size_type bucket(const size_type hash) {
+		[[gnu::always_inline]] static AA_CONSTEXPR size_type index(const size_type hash) {
 			return quotient<max_bucket_size()>(hash);
 		}
 
-		[[gnu::always_inline]] static AA_CONSTEXPR bucket_type bit(const size_type hash) {
+		[[gnu::always_inline]] static AA_CONSTEXPR bucket_type mask(const size_type hash) {
 			return int_exp2<bucket_type>(remainder<max_bucket_size()>(hash));
 		}
 
@@ -199,7 +222,7 @@ namespace aa {
 		template<hashable_by<hasher_type> K>
 		AA_CONSTEXPR bool contains(const K &key) const {
 			const size_type hash = this->hash(key);
-			return bins[bucket(hash)] & bit(hash);
+			return bins[index(hash)] & mask(hash);
 		}
 
 
@@ -222,18 +245,18 @@ namespace aa {
 		template<hashable_by<hasher_type> K>
 		AA_CONSTEXPR void insert(const K &key) {
 			const size_type hash = this->hash(key);
-			bucket_type &bin = bins[bucket(hash)];
+			bucket_type &bin = bins[index(hash)];
 			if (!bin) used_bins.insert_back(&bin);
-			bin |= bit(hash);
+			bin |= mask(hash);
 		}
 
 		template<hashable_by<hasher_type> K>
 		AA_CONSTEXPR void erase(const K &key) {
 			const size_type hash = this->hash(key);
-			bucket_type &bin = bins[bucket(hash)];
+			bucket_type &bin = bins[index(hash)];
 			// Reikia sąlygos, nes kitaip būtų bandoma pašalinti nenaudojamą bucket.
 			if (bin) {
-				bin &= ~bit(hash);
+				bin &= ~mask(hash);
 				if (!bin) used_bins.fast_erase(aa::unsafe_find_last(used_bins, &bin));
 			}
 		}
@@ -241,13 +264,13 @@ namespace aa {
 		template<hashable_by<hasher_type> K>
 		AA_CONSTEXPR void insert_or_erase(const K &key) {
 			const size_type hash = this->hash(key);
-			bucket_type &bin = bins[bucket(hash)];
+			bucket_type &bin = bins[index(hash)];
 			if (bin) {
-				bin ^= bit(hash);
+				bin ^= mask(hash);
 				if (!bin) used_bins.fast_erase(aa::unsafe_find_last(used_bins, &bin));
 			} else {
 				used_bins.insert_back(&bin);
-				bin |= bit(hash);
+				bin |= mask(hash);
 			}
 		}
 

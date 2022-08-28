@@ -4,7 +4,7 @@
 #include <type_traits> // type_identity
 #include <concepts> // convertible_to, same_as
 #include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, prev
-#include <ranges> // contiguous_range, random_access_range, sized_range, iterator_t, range_value_t, begin, end, rbegin, rend, range
+#include <ranges> // contiguous_range, random_access_range, sized_range, iterator_t, range_value_t, end, rbegin, range
 #include <string> // char_traits
 
 
@@ -12,21 +12,14 @@
 namespace aa {
 
 	// Darome daug prielaidų čia, nes atrodo, kad c++ standartas jas daro taip pat.
+	//
+	// Nėra atitinkamos funkcijos rend iteratoriui, nes jis nėra svarbus.
 	template<std::ranges::range R>
 	AA_CONSTEXPR std::ranges::iterator_t<R> get_rbegin(R &&r) {
-		if constexpr (std::same_as<std::ranges::iterator_t<R>, decltype(std::ranges::rbegin(r))>) {
+		if constexpr (requires { { std::ranges::rbegin(r) } -> std::same_as<std::ranges::iterator_t<R>>; }) {
 			return std::ranges::rbegin(r);
 		} else {
 			return std::ranges::prev(std::ranges::end(r));
-		}
-	}
-
-	template<std::ranges::range R>
-	AA_CONSTEXPR std::ranges::iterator_t<R> get_rend(R &&r) {
-		if constexpr (std::same_as<std::ranges::iterator_t<R>, decltype(std::ranges::rend(r))>) {
-			return std::ranges::rend(r);
-		} else {
-			return std::ranges::prev(std::ranges::begin(r));
 		}
 	}
 

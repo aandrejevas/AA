@@ -31,10 +31,10 @@ namespace aa {
 
 		// Element access
 		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elements[pos]; }
-		AA_CONSTEXPR const_reference at(const size_type pos) const { return elements.at(pos); }
-		AA_CONSTEXPR const_reference r_at(const size_type pos) const { return elements.r_at(pos); }
-		AA_CONSTEXPR const_pointer pointer_at(const size_type pos) const { return elements.pointer_at(pos); }
-		AA_CONSTEXPR const_pointer rpointer_at(const size_type pos) const { return elements.rpointer_at(pos); }
+		AA_CONSTEXPR const_reference elem(const size_type pos) const { return elements.elem(pos); }
+		AA_CONSTEXPR const_reference relem(const size_type pos) const { return elements.relem(pos); }
+		AA_CONSTEXPR const_pointer data(const size_type pos) const { return elements.data(pos); }
+		AA_CONSTEXPR const_pointer rdata(const size_type pos) const { return elements.rdata(pos); }
 
 		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
 		AA_CONSTEXPR const_pointer rdata() const { return elements.rdata(); }

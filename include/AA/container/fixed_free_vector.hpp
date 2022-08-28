@@ -82,16 +82,16 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR pointer operator[](const size_type pos) { return std::get_if<elem_index>(elements.pointer_at(pos)); }
-		AA_CONSTEXPR const_pointer operator[](const size_type pos) const { return std::get_if<elem_index>(elements.pointer_at(pos)); }
+		AA_CONSTEXPR pointer operator[](const size_type pos) { return std::get_if<elem_index>(elements.data(pos)); }
+		AA_CONSTEXPR const_pointer operator[](const size_type pos) const { return std::get_if<elem_index>(elements.data(pos)); }
 
-		AA_CONSTEXPR pointer at(const size_type pos) { return std::get_if<elem_index>(elements.pointer_at(pos)); }
-		AA_CONSTEXPR const_pointer at(const size_type pos) const { return std::get_if<elem_index>(elements.pointer_at(pos)); }
-		AA_CONSTEXPR const_pointer c_at(const size_type pos) const { return at(pos); }
+		AA_CONSTEXPR pointer elem(const size_type pos) { return std::get_if<elem_index>(elements.data(pos)); }
+		AA_CONSTEXPR const_pointer elem(const size_type pos) const { return std::get_if<elem_index>(elements.data(pos)); }
+		AA_CONSTEXPR const_pointer celem(const size_type pos) const { return elem(pos); }
 
-		AA_CONSTEXPR pointer r_at(const size_type pos) { return std::get_if<elem_index>(elements.rpointer_at(pos)); }
-		AA_CONSTEXPR const_pointer r_at(const size_type pos) const { return std::get_if<elem_index>(elements.rpointer_at(pos)); }
-		AA_CONSTEXPR const_pointer cr_at(const size_type pos) const { return r_at(pos); }
+		AA_CONSTEXPR pointer relem(const size_type pos) { return std::get_if<elem_index>(elements.rdata(pos)); }
+		AA_CONSTEXPR const_pointer relem(const size_type pos) const { return std::get_if<elem_index>(elements.rdata(pos)); }
+		AA_CONSTEXPR const_pointer crelem(const size_type pos) const { return relem(pos); }
 
 		AA_CONSTEXPR pointer front() { return std::get_if<elem_index>(elements.data()); }
 		AA_CONSTEXPR const_pointer front() const { return std::get_if<elem_index>(elements.data()); }
@@ -166,7 +166,7 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR void erase(const size_type pos) {
-			node_type *const element = elements.pointer_at(pos);
+			node_type *const element = elements.data(pos);
 			if (element->index() == elem_index) {
 				element->template emplace<hole_index>(first_hole);
 				first_hole = element;
