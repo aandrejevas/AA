@@ -151,7 +151,7 @@ int main() {
 
 		// Bucket test
 		repeat(100, [&]() {
-			const size_t c = int_distribution(g, 64) * a.max_bucket_count();
+			const size_t c = int_distribution(g, a.max_bucket_size());
 			b.insert(c);
 			a.insert(c);
 		});
