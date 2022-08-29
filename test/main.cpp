@@ -22,7 +22,7 @@
 #include <ios> // sync_with_stdio
 #include <map> // map
 #include <unordered_set> // unordered_set
-#include <ranges> // reverse, iota, contiguous_range, random_access_range, bidirectional_range, subrange
+#include <ranges> // reverse, iota, contiguous_range, random_access_range, bidirectional_range
 #include <algorithm> // is_sorted, is_permutation
 #include <string> // string
 #include <limits> // numeric_limits
@@ -95,7 +95,7 @@ int main() {
 		});
 
 		repeat(100, [&]() {
-			partial_shuffle_counting_sort(std::ranges::subrange{a.data(), a.data() + 10}, a.data() + 4, g, s.data());
+			partial_shuffle_counting_sort(a, a.data() + 4, g, s.data());
 			AA_TRACE_ASSERT(std::ranges::is_sorted(a.data(), a.data() + 5));
 			//println(make_range_writer(a));
 		});
@@ -106,7 +106,7 @@ int main() {
 			AA_TRACE_ASSERT(a[i] == b[(i + 1) % 10]);
 		});
 
-		AA_TRACE_ASSERT(*unsafe_lower_bound(a, 5) == 5 && *unsafe_lower_bound(a, 5) == 6);
+		AA_TRACE_ASSERT(*unsafe_lower_bound(a, 5) == 5 && *unsafe_upper_bound(a, 5) == 6);
 	}
 	{
 		fixed_flat_multiset<size_t, 500> a;

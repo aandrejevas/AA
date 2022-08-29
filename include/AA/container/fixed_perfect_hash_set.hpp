@@ -50,8 +50,12 @@ namespace aa {
 				}
 
 				AA_CONSTEXPR iterator &operator++() {
-					index = unsign<value_type>(std::countr_zero(bucket->word
-						& (constant<(std::numeric_limits<bucket_type>::max() << 1)>() << index)));
+					if (is_numeric_max(index)) {
+						index = unsign<value_type>(std::countr_zero(bucket->word));
+					} else {
+						index = unsign<value_type>(std::countr_zero(bucket->word
+							& (constant<(std::numeric_limits<bucket_type>::max() << 1)>() << index)));
+					}
 					return *this;
 				}
 
@@ -62,8 +66,12 @@ namespace aa {
 				}
 
 				AA_CONSTEXPR iterator &operator--() {
-					index = constant<max_bucket_size() - 1>() - unsign<value_type>(std::countl_zero(bucket->word
-						& (constant<(std::numeric_limits<bucket_type>::max() >> 1)>() >> (constant<max_bucket_size() - 1>() - index))));
+					if (index == max_size()) {
+						index = max_index() - unsign<value_type>(std::countl_zero(bucket->word));
+					} else {
+						index = max_index() - unsign<value_type>(std::countl_zero(bucket->word
+							& (constant<(std::numeric_limits<bucket_type>::max() >> 1)>() >> (max_index() - index))));
+					}
 					return *this;
 				}
 
@@ -86,26 +94,27 @@ namespace aa {
 
 			// Element access
 			AA_CONSTEXPR value_type front() const { return unsign<value_type>(std::countr_zero(word)) + offset; }
-			AA_CONSTEXPR value_type back() const { return unsign<value_type>(std::countl_zero(word)) + offset; }
+			AA_CONSTEXPR value_type back() const { return (max_index() - unsign<value_type>(std::countl_zero(word))) + offset; }
 
 
 
 			// Iterators
 			AA_CONSTEXPR const_iterator begin() const { return {this, unsign<value_type>(std::countr_zero(word))}; }
-			AA_CONSTEXPR const_iterator end() const { return {this, max_bucket_size()}; }
-			AA_CONSTEXPR const_iterator rbegin() const { return {this, unsign<value_type>(std::countl_zero(word))}; }
+			AA_CONSTEXPR const_iterator end() const { return {this, max_size()}; }
+			AA_CONSTEXPR const_iterator rbegin() const { return {this, max_index() - unsign<value_type>(std::countl_zero(word))}; }
 			AA_CONSTEXPR const_iterator rend() const { return {this, numeric_max}; }
 
 
 
 			// Capacity
-			AA_CONSTEXPR bool empty() const { return size() == 0; }
-			AA_CONSTEXPR bool full() const { return size() == max_size(); }
+			AA_CONSTEXPR bool empty() const { return !word; }
+			AA_CONSTEXPR bool full() const { return !~word; }
 
 			AA_CONSTEXPR size_type size() const { return unsign<size_type>(std::popcount(word)); }
 			AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
 
 			static AA_CONSTEVAL size_type max_size() { return max_bucket_size(); }
+			static AA_CONSTEVAL size_type max_index() { return max_bucket_size() - 1; }
 
 
 
@@ -145,14 +154,21 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const { return used_bins.empty(); }
-		AA_CONSTEXPR bool full() const { return size() == max_size(); }
+		AA_CONSTEXPR bool full() const {
+			return used_bins.full()
+				&& unsafe_all_of(*this, [](const bucket_pointer bin) -> void {
+				return !~*bin;
+				});
+		}
 
 		AA_CONSTEXPR size_type size() const {
-			size_type sum = 0;
-			unsafe_for_each(*this, [&sum](const bucket_pointer bin) -> void {
-				sum += unsign<size_type>(std::popcount(*bin));
-			});
-			return sum;
+			if (!empty()) {
+				size_type sum = 0;
+				unsafe_for_each(*this, [&sum](const bucket_pointer bin) -> void {
+					sum += unsign<size_type>(std::popcount(*bin));
+				});
+				return sum;
+			} else return 0;
 		}
 		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
 
@@ -232,7 +248,7 @@ namespace aa {
 		AA_CONSTEXPR void clear() {
 			// Nedarome used_bins.clear(), nes vis tiek reiktų iteruoti per visus elementus ir tam reiktų įsivesti
 			// lokalų kintamąjį, pamąsčiau kam tai daryti jei galime naudoti jau fixed_vector klasėje esantį kintamąjį.
-			if (!used_bins.empty())
+			if (!empty())
 				unsafe_clear();
 		}
 

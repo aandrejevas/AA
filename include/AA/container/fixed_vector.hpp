@@ -88,12 +88,14 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const { return r_begin == r_end; }
-		AA_CONSTEXPR bool full() const { return size() == N; }
+		AA_CONSTEXPR bool full() const { return size() == max_size(); }
 
 		AA_CONSTEXPR difference_type ssize() const { return r_begin - r_end; }
 		AA_CONSTEXPR size_type size() const { return std::bit_cast<size_type>(ssize()); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
+
+		AA_CONSTEXPR size_type max_index() const { return std::bit_cast<size_type>(r_begin - elements.data()); }
 
 
 

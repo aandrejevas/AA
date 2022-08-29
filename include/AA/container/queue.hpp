@@ -81,6 +81,7 @@ namespace aa {
 		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
 		AA_CONSTEXPR size_type max_size() const { return elements.max_size(); }
 		AA_CONSTEXPR size_type capacity() const { return elements.capacity(); }
+		AA_CONSTEXPR size_type max_index() const { return size() - 1; }
 
 		AA_CONSTEXPR void reserve(const size_type cap) { elements.reserve(cap); }
 		AA_CONSTEXPR void shrink_to_fit() { elements.shrink_to_fit(); }

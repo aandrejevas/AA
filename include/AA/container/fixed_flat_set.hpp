@@ -60,6 +60,8 @@ namespace aa {
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
 
+		AA_CONSTEXPR size_type max_index() const { return elements.max_index(); }
+
 
 
 		// Observers

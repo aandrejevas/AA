@@ -3,7 +3,7 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
 #include <ranges> // iterator_t, borrowed_iterator_t, range_size_t, begin, size, forward_range, bidirectional_range, input_range
-#include <iterator> // indirect_strict_weak_order, indirect_binary_predicate, indirectly_unary_invocable
+#include <iterator> // indirect_strict_weak_order, indirect_binary_predicate, indirectly_unary_invocable, indirect_unary_predicate
 #include <functional> // invoke, less, equal_to
 #include <utility> // as_const
 
@@ -80,6 +80,20 @@ namespace aa {
 			while (first != last && (*++first != value));
 		}
 		return first;
+	}
+
+
+
+	template<std::ranges::input_range R, std::indirect_unary_predicate<std::ranges::iterator_t<R>> P>
+	AA_CONSTEXPR bool unsafe_all_of(R &&r, P &&pred) {
+		std::ranges::iterator_t<R> first = std::ranges::begin(r);
+		if (std::invoke(pred, *first)) {
+			const std::ranges::iterator_t<R> last = get_rbegin(r);
+			while (first != last)
+				if (!std::invoke(pred, *++first))
+					return false;
+			return true;
+		} else return false;
 	}
 
 
