@@ -38,7 +38,13 @@ int main() {
 	// Galima būtų naudoti funkcijų atributus (pvz. const, pure) ir restricted kvalifikatorių, bet visą tai yra compiler extensions.
 	// Sakykime nenaudojimas minėtų galimybių skatina ieškoti kitų būdų kaip gauti tokį patį performance.
 
-	static_assert(std::numeric_limits<size_t>::digits == 64 && sizeof(size_t) == 8);
+	{
+		static_assert(std::numeric_limits<size_t>::digits == 64 && sizeof(size_t) == 8);
+		static_assert(int_log2<2uz>(1uz) == 0 && int_log2<2uz>(4uz) == 1 && int_log2<2uz>(16uz) == 2);
+		static_assert(int_log2<3uz>(1uz) == 0 && int_log2<3uz>(8uz) == 1 && int_log2<3uz>(64uz) == 2);
+		static_assert(int_log2<4uz>(1uz) == 0 && int_log2<4uz>(16uz) == 1 && int_log2<4uz>(256uz) == 2);
+	}
+
 	std::ios_base::sync_with_stdio(false);
 
 	pascal_lcg g;
