@@ -147,8 +147,8 @@ namespace aa {
 		};
 	}
 
-	AA_CONSTEXPR const detail::getter<0> get_0 = {}, get_x = {};
-	AA_CONSTEXPR const detail::getter<1> get_1 = {}, get_y = {};
+	AA_CONSTEXPR const detail::getter<0> get_0, get_x;
+	AA_CONSTEXPR const detail::getter<1> get_1, get_y;
 
 	template<class T, size_t I>
 	concept normal_get = requires(std::remove_const_t<T> &t) {
@@ -294,7 +294,8 @@ namespace aa {
 
 	// https://mathworld.wolfram.com/Hypermatrix.html
 	// Gal reiktų vadinti struktūrą ne array, o hypermatrix, bet pasiliekama prie array vardo,
-	// nes galime interpretuoti stuktūros pavadinimą kaip masyvą masyvų.
+	// nes galime interpretuoti stuktūros pavadinimą kaip masyvą masyvų. Taip pat struktūrą vadinti
+	// matrix būtų netikslinga, nes tai implikuotų, kad struktūra palaiko matricos operacijas.
 	template<class T, size_t N1, size_t... N>
 	struct array : array<std::array<T, N1>, N...> {};
 
@@ -306,20 +307,22 @@ namespace aa {
 
 
 
-	namespace detail {
-		template<class T, size_t D, size_t N0, size_t... N>
-		struct square_array_base : square_array_base<T, D - 1, N0, N0, N...> {};
+	// https://mathworld.wolfram.com/Hypercube.html
+	template<class T, size_t D, size_t N>
+	struct hypercube_array : hypercube_array<std::array<T, N>, D - 1, N> {};
 
-		template<class T, size_t N0, size_t... N>
-		struct square_array_base<T, 0, N0, N...> : array<T, N...> {};
-	}
+	template<class T, size_t N>
+	struct hypercube_array<T, 1, N> : std::type_identity<std::array<T, N>> {};
+
+	template<class T, size_t D, size_t N>
+	using hypercube_array_t = hypercube_array<T, D, N>::type;
 
 	// https://mathworld.wolfram.com/SquareArray.html
-	template<class T, size_t D, size_t N>
-	struct square_array : detail::square_array_base<T, D, N> {};
+	template<class T, size_t N>
+	using square_array_t = hypercube_array_t<T, 2, N>;
 
-	template<class T, size_t D, size_t N>
-	using square_array_t = square_array<T, D, N>::type;
+	template<class T, size_t N>
+	using cube_array_t = hypercube_array_t<T, 3, N>;
 
 
 
