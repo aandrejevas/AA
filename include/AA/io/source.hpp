@@ -5,7 +5,6 @@
 #include "../algorithm/arithmetic.hpp"
 #include <cstdint> // uint32_t
 #include <cstdlib> // abort
-#include <type_traits> // invoke_result_t
 #include <utility> // forward
 #include <iostream> // cerr, clog
 
