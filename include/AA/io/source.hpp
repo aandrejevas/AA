@@ -3,11 +3,11 @@
 #include "../metaprogramming/general.hpp"
 #include "../container/fixed_string.hpp"
 #include "../algorithm/arithmetic.hpp"
-#include "print.hpp"
 #include <cstdint> // uint32_t
 #include <cstdlib> // abort
 #include <type_traits> // invoke_result_t
 #include <utility> // forward
+#include <iostream> // cerr, clog
 
 
 
@@ -31,33 +31,39 @@ namespace aa {
 
 
 
-	template<source_data D, auto S = &get_clog, class... A>
-		requires (function_pointer<decltype(S)>)
-	AA_CONSTEXPR void log(const A&... args) {
-		std::invoke_result_t<decltype(S)> stream = S();
-
-		stream << D.file_name << '(' << D.line;
+	template<source_data D, class S, class... A>
+	[[gnu::always_inline]] AA_CONSTEXPR void f_log(S &s, const A&... args) {
+		s << D.file_name << '(' << D.line;
 		if constexpr (!is_numeric_max(D.column)) {
-			stream << ':' << D.column;
+			s << ':' << D.column;
 		}
-		stream << ") `" << D.function_name << "`: ";
+		s << ") `" << D.function_name << "`: ";
 
 		if constexpr (sizeof...(A)) {
-			(stream << ... << args) << '\n';
+			(s << ... << args) << '\n';
 		} else {
-			stream << "Info logged.\n";
+			s << "Info logged.\n";
 		}
 	}
 
-	template<source_data D, auto S = &get_cerr, class... A>
-		requires (function_pointer<decltype(S)>)
-	[[noreturn]] AA_CONSTEXPR void abort(const A&... args) {
+	template<source_data D, class... A>
+	[[gnu::always_inline]] AA_CONSTEXPR void log(const A&... args) {
+		f_log<D>(std::clog, args...);
+	}
+
+	template<source_data D, class S, class... A>
+	[[gnu::always_inline, noreturn]] AA_CONSTEXPR void f_abort(S &s, const A&... args) {
 		if constexpr (sizeof...(A)) {
-			log<D, S>(args...);
+			f_log<D>(s, args...);
 		} else {
-			log<D, S>("Program aborted.");
+			f_log<D>(s, "Program aborted.");
 		}
 		std::abort();
+	}
+
+	template<source_data D, class... A>
+	[[gnu::always_inline, noreturn]] AA_CONSTEXPR void abort(const A&... args) {
+		f_abort<D>(std::cerr, args...);
 	}
 
 	// TODO: Su c++23 čia galima bus naudoti static operator().
@@ -71,18 +77,22 @@ namespace aa {
 	}
 
 	// Dėl atributo, naudoti šią funkciją turėtų būti tas pats kaip naudoti macro greitaveikos atžvilgiu.
-	template<source_data D, auto S = &get_cerr, bool T = true, class... A>
-		requires (function_pointer<decltype(S)>)
-	[[gnu::always_inline]] AA_CONSTEXPR void assert(const bool condition, const A&... args) {
+	template<source_data D, bool T = true, class S, class... A>
+	[[gnu::always_inline]] AA_CONSTEXPR void f_assert(S &s, const bool condition, const A&... args) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {
 				if constexpr (sizeof...(A)) {
-					abort<D, S>(args...);
+					f_abort<D>(s, args...);
 				} else {
-					abort<D, S>("Assertion failed.");
+					f_abort<D>(s, "Assertion failed.");
 				}
 			}
 		}
+	}
+
+	template<source_data D, bool T = true, class... A>
+	[[gnu::always_inline]] AA_CONSTEXPR void assert(const bool condition, const A&... args) {
+		f_assert<D, T>(std::cerr, condition, args...);
 	}
 
 }
