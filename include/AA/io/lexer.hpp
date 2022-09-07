@@ -2,8 +2,7 @@
 
 #include "../preprocessor/assert.hpp"
 #include "../metaprogramming/general.hpp"
-#include "../wrapper/general.hpp"
-#include "../wrapper/range.hpp"
+#include "../metaprogramming/range.hpp"
 #include <cstddef> // size_t
 #include <string> // string, hash
 #include <variant> // variant, monostate, get_if
