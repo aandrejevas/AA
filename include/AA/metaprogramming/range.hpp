@@ -4,7 +4,7 @@
 #include <type_traits> // type_identity
 #include <concepts> // convertible_to, same_as
 #include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, next, prev, distance
-#include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, iterator_t, sentinel_t, range_value_t, begin, end, rbegin, range
+#include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, iterator_t, sentinel_t, range_value_t, begin, end, rbegin, size, data, range
 #include <string> // char_traits
 
 
@@ -81,5 +81,17 @@ namespace aa {
 
 	template<class T, class U>
 	concept same_range_char_traits_as = char_range<T> && char_range<U> && std::same_as<range_char_traits_t<T>, range_char_traits_t<U>>;
+
+
+
+	struct char_equal_to {
+		template<char_range L, same_range_char_traits_as<L> R>
+		AA_CONSTEXPR bool operator()(const L &l, const R &r) const {
+			return std::ranges::size(l) == std::ranges::size(r) &&
+				!range_char_traits_t<L>::compare(std::ranges::data(l), std::ranges::data(r), std::ranges::size(l));
+		}
+
+		using is_transparent = void;
+	};
 
 }

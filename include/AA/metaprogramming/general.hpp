@@ -14,7 +14,7 @@
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 #include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, remove_const_t, is_pointer_v, remove_pointer_t, is_function_v
-#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, copyable
+#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, copyable, totally_ordered_with, equality_comparable_with
 #include <limits> // numeric_limits
 #include <string_view> // string_view
 #include <array> // array
@@ -462,5 +462,56 @@ namespace aa {
 	AA_CONSTEVAL std::string_view type_name() {
 		return std::string_view{__PRETTY_FUNCTION__ + 76, (std::extent_v<std::remove_reference_t<decltype(__PRETTY_FUNCTION__)>>) - 127};
 	}
+
+
+
+	template<auto R>
+	struct less {
+		template<std::totally_ordered_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l < R; }
+	};
+
+	template<auto R>
+	struct less_equal {
+		template<std::totally_ordered_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l <= R; }
+	};
+
+	template<auto R>
+	struct greater {
+		template<std::totally_ordered_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l > R; }
+	};
+
+	template<auto R>
+	struct greater_equal {
+		template<std::totally_ordered_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l >= R; }
+	};
+
+	template<auto R>
+	struct equal_to {
+		template<std::equality_comparable_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l == R; }
+	};
+
+	template<auto R>
+	struct not_equal_to {
+		template<std::equality_comparable_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l != R; }
+	};
+
+
+
+	// Atrodo galima būtų turėti tipą, kuris generalizuotu šią klasę, tai yra tiesiog jis susidėtų iš
+	// paduotų tipų. Bet toks tipas nebūtų naudingas, nes užklojimai neveiktų gerai, todėl būtent ir
+	// reikia šio overload tipo, kad bent jau veiktų operatoriaus () užklojimai gerai. Tačiau realizacija
+	// reikalauja, kad visi paduodami tipai turėtų būtinai tik vieną operatorių (), gal būtų galima realizuoti
+	// taip tipą, kad tokio reikalavimo neliktų, bet tokios realizacijos savybės dabar nereikalingos.
+	template<functor... T>
+	struct overload : T... {
+		using T::operator()...;
+		using is_transparent = void;
+	};
 
 }
