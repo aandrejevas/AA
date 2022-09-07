@@ -172,6 +172,9 @@ namespace aa {
 		}
 		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
 
+		// Daugybos nepaverčiame į postūmio operaciją, nes kompiliavimo metu ilgiau užtruktų nustatyti ar galime daryti
+		// postūmį negu tiesiog įvykdyti daugybos operaciją, programos veikimo laikui irgi nepadėtų tokios kostrukcijos.
+		//
 		// Jei N=M, tada šis konteineris gali talpinti tik mažesnias reikšmes už max_size,
 		// nebent būtų naudojamas ne tas hasher, kuris yra naudojamas pagal nutylėjimą.
 		static AA_CONSTEVAL size_type max_size() {
