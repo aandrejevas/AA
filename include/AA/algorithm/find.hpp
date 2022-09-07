@@ -2,7 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
-#include <ranges> // iterator_t, borrowed_iterator_t, range_size_t, begin, size, forward_range, bidirectional_range, input_range
+#include <ranges> // iterator_t, sentinel_t, borrowed_iterator_t, range_size_t, begin, size, forward_range, bidirectional_range, input_range
 #include <iterator> // indirect_strict_weak_order, indirect_binary_predicate, indirectly_unary_invocable, indirect_unary_predicate
 #include <functional> // invoke, less, equal_to
 #include <utility> // as_const
@@ -55,7 +55,7 @@ namespace aa {
 		requires (std::indirect_binary_predicate<std::ranges::equal_to, std::ranges::iterator_t<R>, const T *>)
 	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> unsafe_find_last(R &&r, const T &value) {
 		if constexpr (std::ranges::bidirectional_range<R>) {
-			std::ranges::iterator_t<R> first = get_rbegin(r);
+			std::ranges::sentinel_t<R> first = get_rbegin(r);
 			if (*first != value) {
 				const std::ranges::iterator_t<R> last = std::ranges::begin(r);
 				while (first != last && (*--first != value));
@@ -63,7 +63,7 @@ namespace aa {
 			return first;
 		} else {
 			std::ranges::iterator_t<R> first = std::ranges::begin(r), res;
-			const std::ranges::iterator_t<R> last = get_rbegin(r);
+			const std::ranges::sentinel_t<R> last = get_rbegin(r);
 			do {
 				if (*first == value) res = first;
 				if (first != last) ++first; else return res;
@@ -76,7 +76,7 @@ namespace aa {
 	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> unsafe_find(R &&r, const T &value) {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		if (*first != value) {
-			const std::ranges::iterator_t<R> last = get_rbegin(r);
+			const std::ranges::sentinel_t<R> last = get_rbegin(r);
 			while (first != last && (*++first != value));
 		}
 		return first;
@@ -88,7 +88,7 @@ namespace aa {
 	AA_CONSTEXPR bool unsafe_all_of(R &&r, P &&pred) {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		if (std::invoke(pred, *first)) {
-			const std::ranges::iterator_t<R> last = get_rbegin(r);
+			const std::ranges::sentinel_t<R> last = get_rbegin(r);
 			while (first != last)
 				if (!std::invoke(pred, *++first))
 					return false;
@@ -101,7 +101,7 @@ namespace aa {
 	template<std::ranges::input_range R, std::indirectly_unary_invocable<std::ranges::iterator_t<R>> F>
 	AA_CONSTEXPR void unsafe_for_each(R &&r, F &&f) {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
-		const std::ranges::iterator_t<R> last = get_rbegin(r);
+		const std::ranges::sentinel_t<R> last = get_rbegin(r);
 		do {
 			std::invoke(f, *first);
 			if (first != last) ++first; else return;
