@@ -11,11 +11,11 @@
 #include <AA/algorithm/repeat.hpp>
 #include <AA/preprocessor/assert.hpp>
 #include <AA/metaprogramming/general.hpp>
-#include <AA/io/timekeeper.hpp>
-#include <AA/io/evaluator.hpp>
-#include <AA/io/lexer.hpp>
-#include <AA/io/writer.hpp>
-#include <AA/io/print.hpp>
+#include <AA/system/timekeeper.hpp>
+#include <AA/system/evaluator.hpp>
+#include <AA/system/lexer.hpp>
+#include <AA/system/writer.hpp>
+#include <AA/system/print.hpp>
 #include <cstddef> // size_t
 #include <cstdint> // uint32_t
 #include <cstdlib> // EXIT_SUCCESS
