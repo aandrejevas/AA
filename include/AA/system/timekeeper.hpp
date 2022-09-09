@@ -1,17 +1,17 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../metaprogramming/time.hpp"
 #include <concepts> // invocable
 #include <functional> // invoke
 #include <utility> // forward
-#include <chrono> // steady_clock, duration, duration_cast, is_clock_v
+#include <chrono> // steady_clock, duration, duration_cast
 
 
 
 namespace aa {
 
-	template<class C = std::chrono::steady_clock>
-		requires (std::chrono::is_clock_v<C>)
+	template<clock C = std::chrono::steady_clock>
 	struct timekeeper {
 		// Turi būti inicializuoti šitie kintamieji su ta pačia reikšme, nes kitaip neteisingai
 		// veiktų resume funkcija jei sukūrus timekeeper objektą iškarto ji būtų iškviesta.
