@@ -151,7 +151,7 @@ namespace aa {
 	AA_CONSTEXPR const detail::getter<1> get_1, get_y;
 
 	template<class T, size_t I>
-	concept normal_get = requires(std::remove_const_t<T> &t) {
+	concept regular_gettable = requires(std::remove_const_t<T> &t) {
 		{ detail::getter<I>{}(t) } -> std::same_as<std::tuple_element_t<I, std::remove_cvref_t<T>> &>;
 		{ detail::getter<I>{}(std::as_const(t)) } -> std::same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>> &>;
 	};
@@ -162,7 +162,7 @@ namespace aa {
 		struct normal : std::false_type {};
 
 		template<size_t... I>
-			requires (... && normal_get<T, I>)
+			requires (... && regular_gettable<T, I>)
 		struct normal<I...> : std::true_type {};
 
 		template<size_t... I>

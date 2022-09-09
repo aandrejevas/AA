@@ -28,6 +28,7 @@
 #include <limits> // numeric_limits
 #include <ostream> // flush, ostream
 #include <iostream> // cout
+#include <bit> // bit_cast
 
 
 
@@ -48,15 +49,23 @@ int main() {
 
 	std::ios_base::sync_with_stdio(false);
 
-	pascal_lcg g;
-	println(g.curr(), std::flush<std::ostream::char_type, std::ostream::traits_type>);
 	timekeeper tttt;
 	tttt.start();
+	pascal_lcg g;
 	{
 		log<AA_SOURCE_DATA>();
 		log<AA_SOURCE_DATA>("Hello world!");
 		log<AA_SOURCE_DATA>(std::cout);
 		log<AA_SOURCE_DATA>(std::cout, "Hello world!");
+		//print();
+		println();
+		//print(std::cout);
+		println(std::cout);
+		print("Hello world!\n");
+		println("Hello world!");
+		print(std::cout, "Hello world!\n");
+		println(std::cout, "Hello world!");
+		println(g.curr(), std::flush<std::ostream::char_type, std::ostream::traits_type>);
 	}
 	{
 		const pascal_lcg initial_g = g;
@@ -89,10 +98,7 @@ int main() {
 		const lexer<evaluator<std::string>, evaluator<uint32_t>, evaluator<double>> l = {"params.txt"};
 
 		AA_TRACE_ASSERT(l.get_param<std::string>("TEST_1") == "text");
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-		AA_TRACE_ASSERT(l.get_param<double>("TEST_2") == 22.5);
-#pragma GCC diagnostic pop
+		AA_TRACE_ASSERT(std::bit_cast<size_t>(l.get_param<double>("TEST_2")) == std::bit_cast<size_t>(22.5));
 		AA_TRACE_ASSERT(l.get_param<uint32_t>("TEST_3") == 45);
 		AA_TRACE_ASSERT(l.get_params().size() == 3);
 	}

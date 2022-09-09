@@ -1,12 +1,13 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../metaprogramming/io.hpp"
 #include <ranges> // input_range, range_value_t
 #include <functional> // invoke
 #include <concepts> // invocable
 #include <ostream> // basic_ostream
 #include <algorithm> // for_each
-#include <utility> // forward, as_const
+#include <utility> // forward, as_const, tuple_element_t
 #include <iomanip> // setw
 
 
@@ -59,12 +60,14 @@ namespace aa {
 
 	struct identity_inserter {
 		template<class S, class T>
+			requires (output_stream<S, T>)
 		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << t; }
 	};
 
 	template<char D = ' '>
 	struct delim_inserter {
 		template<class S, class T>
+			requires (output_stream<S, T>)
 		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << t << D; }
 	};
 
@@ -73,12 +76,14 @@ namespace aa {
 	template<int N>
 	struct width_inserter {
 		template<class S, class T>
+			requires (output_stream<S, T>)
 		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << std::setw(N) << t; }
 	};
 
 	template<char D1 = ':', char D2 = ' '>
 	struct pair_inserter {
 		template<class S, pair_like T>
+			requires (output_stream<S, std::tuple_element_t<0, T>, std::tuple_element_t<1, T>>)
 		AA_CONSTEXPR void operator()(S &s, const T &t) const {
 			const auto &[m1, m2] = t;
 			s << m1 << D1 << m2 << D2;
