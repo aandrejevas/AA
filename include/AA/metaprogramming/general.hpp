@@ -159,14 +159,14 @@ namespace aa {
 	template<class T>
 	struct is_tuple {
 		template<size_t... I>
-		struct normal : std::false_type {};
+		struct regular : std::false_type {};
 
 		template<size_t... I>
 			requires (... && regular_gettable<T, I>)
-		struct normal<I...> : std::true_type {};
+		struct regular<I...> : std::true_type {};
 
 		template<size_t... I>
-		static AA_CONSTEXPR const bool normal_v = normal<I...>::value;
+		static AA_CONSTEXPR const bool regular_v = regular<I...>::value;
 
 		template<size_t... I>
 		struct valid : std::false_type {};
@@ -213,7 +213,7 @@ namespace aa {
 	template<class T>
 	concept vector_like = array_like<T> && arithmetic<array_element_t<T>> && std::copyable<std::remove_reference_t<T>>
 		&& apply_types_t<bind_types<is_list_constructible, std::remove_reference_t<T>>::template front_t, T>::value
-		&& apply_indices_t<is_tuple<T>::template normal, std::tuple_size_v<std::remove_reference_t<T>>>::value;
+		&& apply_indices_t<is_tuple<T>::template regular, std::tuple_size_v<std::remove_reference_t<T>>>::value;
 
 	template<size_t N, class T>
 	concept tupleN_like = tuple_like<T> && (std::tuple_size_v<T> == N);
