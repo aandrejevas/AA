@@ -27,6 +27,7 @@
 #include <string> // string
 #include <limits> // numeric_limits
 #include <ostream> // flush, ostream
+#include <iostream> // cout
 
 
 
@@ -51,6 +52,12 @@ int main() {
 	println(g.curr(), std::flush<std::ostream::char_type, std::ostream::traits_type>);
 	timekeeper tttt;
 	tttt.start();
+	{
+		log<AA_SOURCE_DATA>();
+		log<AA_SOURCE_DATA>("Hello world!");
+		log<AA_SOURCE_DATA>(std::cout);
+		log<AA_SOURCE_DATA>(std::cout, "Hello world!");
+	}
 	{
 		const pascal_lcg initial_g = g;
 		std::map<int, size_t> m;

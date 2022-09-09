@@ -337,6 +337,20 @@ namespace aa {
 
 
 
+	template<class...>
+	struct first_or_void;
+
+	template<class A1, class... A>
+	struct first_or_void<A1, A...> : std::type_identity<A1> {};
+
+	template<>
+	struct first_or_void<> : std::type_identity<void> {};
+
+	template<class... A>
+	using first_or_void_t = first_or_void<A...>::type;
+
+
+
 	// C yra objektas, galėtume jį padavinėti per const&, o ne per value, bet nusprendžiau, kad kompiliavimo
 	// metu nėra skirtumo kaip tas objektas bus padavinėjamas, net jei jis būtų labai didelis.
 	//

@@ -19,8 +19,10 @@ namespace aa {
 		((s << a1) << ... << args);
 	}
 
+	// Netikriname ar į output_stream galima insertinti char, nes žinoma su paprastais
+	// tipais gali susidoroti klasė, kuri paveldi iš basic_ostream.
 	template<class S, class... A>
-		requires (output_stream<S, A..., char>)
+		requires (output_stream<S, A...>)
 	[[gnu::always_inline]] AA_CONSTEXPR void println(S &s, const A&... args) {
 		(s << ... << args) << '\n';
 	}
@@ -37,19 +39,19 @@ namespace aa {
 	// situacijų, kai tai nėra tiesa, pavyzdžiui norint sekti kiek kartų kintamasis buvo išspausdintas. Bet tokiems
 	// atvejams klasė gali būti taip parašyta, kad ji ignoruotų const kvalifikatorių.
 	template<class A1, class... A>
-		requires (output_stream<std::ostream, A1, A...> && !output_stream<A1, A...>)
+		requires (output_stream<std::ostream, A1, A...> && !output_stream<A1>)
 	[[gnu::always_inline]] AA_CONSTEXPR void print(const A1 &a1, const A&... args) {
 		print(std::cout, a1, args...);
 	}
 
 	template<class... A>
-		requires (output_stream<std::ostream, A..., char> && !output_stream<A..., char>)
+		requires (output_stream<std::ostream, A...> && !output_stream<first_or_void_t<A...>>)
 	[[gnu::always_inline]] AA_CONSTEXPR void println(const A&... args) {
 		println(std::cout, args...);
 	}
 
 	template<class A1, class... A>
-		requires (input_stream<std::istream, A1, A...> && !input_stream<A1, A...>)
+		requires (input_stream<std::istream, A1, A...> && !input_stream<A1>)
 	[[gnu::always_inline]] AA_CONSTEXPR void read(A1 &&a1, A&&... args) {
 		read(std::cin, std::forward<A1>(a1), std::forward<A>(args)...);
 	}

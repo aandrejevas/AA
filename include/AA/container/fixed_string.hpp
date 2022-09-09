@@ -6,16 +6,18 @@
 #include <algorithm> // copy_n
 #include <string_view> // basic_string_view
 #include <ostream> // basic_ostream
+#include <string> // char_traits
 
 
 
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Null-terminated_string
-	template<trivially_copyable T, size_t N>
+	template<trivially_copyable C, size_t N, class T = std::char_traits<C>>
 	struct basic_fixed_string {
 		// Member types
-		using value_type = T;
+		using value_type = C;
+		using traits_type = T;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using reference = value_type &;
@@ -26,7 +28,8 @@ namespace aa {
 		using const_iterator = const_pointer;
 		using reverse_iterator = std::reverse_iterator<iterator>;
 		using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-		using view_type = std::basic_string_view<value_type>;
+		using view_type = std::basic_string_view<value_type, traits_type>;
+		using ostream_type = std::basic_ostream<value_type, traits_type>;
 
 
 
@@ -86,9 +89,14 @@ namespace aa {
 
 
 
+		// Operations
+		AA_CONSTEXPR bool starts_with(const value_type &c) const { return traits_type::eq(front(), c); }
+		AA_CONSTEXPR bool ends_with(const value_type &c) const { return traits_type::eq(back(), c); }
+
+
+
 		// Input/output
-		template<class C, class CT>
-		friend AA_CONSTEXPR std::basic_ostream<C, CT> &operator<<(std::basic_ostream<C, CT> &os, const basic_fixed_string &str) {
+		friend AA_CONSTEXPR ostream_type &operator<<(ostream_type &os, const basic_fixed_string &str) {
 			return os.write(str.data(), str.size());
 		}
 
