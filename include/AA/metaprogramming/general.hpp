@@ -13,8 +13,8 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, remove_const_t, is_pointer_v, remove_pointer_t, is_function_v
-#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, copyable, totally_ordered_with, equality_comparable_with
+#include <type_traits> // remove_reference_t, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, remove_const_t, is_pointer_v, remove_pointer_t, is_function_v
+#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, semiregular, totally_ordered_with, equality_comparable_with
 #include <limits> // numeric_limits
 #include <string_view> // string_view
 #include <array> // array
@@ -78,17 +78,6 @@ namespace aa {
 
 	template<class L, class R>
 	concept remove_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
-
-	// Klasės reikia, nes is_constructible tikrina ar klasę galima sukonstruoti naudojant lenktinius skliaustelius, o ne riestinius.
-	template<class T, class... A>
-	struct is_list_constructible : std::false_type {};
-
-	template<class T, class... A>
-		requires requires(A&&... args) { T{std::forward<A>(args)...}; }
-	struct is_list_constructible<T, A...> : std::true_type {};
-
-	template<class T, class... A>
-	AA_CONSTEXPR const bool is_list_constructible_v = is_list_constructible<T, A...>::value;
 
 
 
@@ -159,24 +148,22 @@ namespace aa {
 	template<class T>
 	struct is_tuple {
 		template<size_t... I>
-		struct regular : std::false_type {};
-
-		template<size_t... I>
-			requires (... && regular_gettable<T, I>)
-		struct regular<I...> : std::true_type {};
+		struct regular : std::bool_constant<(... && regular_gettable<T, I>)> {};
 
 		template<size_t... I>
 		static AA_CONSTEXPR const bool regular_v = regular<I...>::value;
 
 		template<size_t... I>
-		struct valid : std::false_type {};
-
-		template<size_t... I>
-			requires (... && gettable<T, I>)
-		struct valid<I...> : std::true_type {};
+		struct valid : std::bool_constant<(... && gettable<T, I>)> {};
 
 		template<size_t... I>
 		static AA_CONSTEXPR const bool valid_v = valid<I...>::value;
+
+		template<size_t... I>
+		struct uniform : are_same<std::tuple_element_t<I, std::remove_reference_t<T>>...> {};
+
+		template<size_t... I>
+		static AA_CONSTEXPR const bool uniform_v = uniform<I...>::value;
 	};
 
 	template<class T>
@@ -184,25 +171,9 @@ namespace aa {
 		std::integral_constant<size_t, std::tuple_size_v<std::remove_reference_t<T>>>>
 		&& apply_indices_t<is_tuple<T>::template valid, std::tuple_size_v<std::remove_reference_t<T>>>::value;
 
-	// Tokia klasė, nes neeina nurodyti/naudoti type parameter pack ir non-type parameter pack šalia vienas kito,
-	// o to reikia, kad išeitų sukurti bendrą binder klasę, kuri pirma bind'intų tipus, o tada likusius indeksus.
-	template<template<class...> class F, tuple_like T>
-	struct map_to_types {
-		template<size_t... I>
-		struct from_indices : std::type_identity<F<std::tuple_element_t<I, std::remove_reference_t<T>>...>> {};
-
-		template<size_t... I>
-		using from_indices_t = from_indices<I...>::type;
-	};
-
-	template<template<class...> class F, tuple_like T>
-	struct apply_types : apply_indices<map_to_types<F, T>::template from_indices_t, std::tuple_size_v<std::remove_reference_t<T>>> {};
-
-	template<template<class...> class F, class T>
-	using apply_types_t = apply_types<F, T>::type;
-
 	template<class T>
-	concept array_like = tuple_like<T> && apply_types_t<are_same, T>::value;
+	concept array_like = tuple_like<T> && !!std::tuple_size_v<std::remove_reference_t<T>>
+		&& apply_indices_t<is_tuple<T>::template uniform, std::tuple_size_v<std::remove_reference_t<T>>>::value;
 
 	template<array_like T>
 	struct array_element : std::tuple_element<0, std::remove_reference_t<T>> {};
@@ -210,9 +181,11 @@ namespace aa {
 	template<class T>
 	using array_element_t = array_element<T>::type;
 
+	// Netikriname ar tipas gali būti sukonstruotas su elementų tipais, nes vis tiek nežinotume kokius
+	// elementus inicializuos nurodyti argumentai konstruktoriuje. Tai prašome užtat, kad tipas būtų
+	// default initializable, tada kode galime tiesiog rankomis inicializuoti elementus.
 	template<class T>
-	concept vector_like = array_like<T> && arithmetic<array_element_t<T>> && std::copyable<std::remove_reference_t<T>>
-		&& apply_types_t<bind_types<is_list_constructible, std::remove_reference_t<T>>::template front_t, T>::value
+	concept vector_like = array_like<T> && arithmetic<array_element_t<T>> && std::semiregular<std::remove_reference_t<T>>
 		&& apply_indices_t<is_tuple<T>::template regular, std::tuple_size_v<std::remove_reference_t<T>>>::value;
 
 	template<size_t N, class T>
