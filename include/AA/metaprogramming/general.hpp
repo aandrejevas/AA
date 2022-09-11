@@ -28,8 +28,11 @@ namespace aa {
 	concept char_traits_like = requires {
 		typename T::char_type; typename T::int_type; typename T::off_type; typename T::pos_type; typename T::state_type; };
 
+	// Netikriname ar tipo reikšmės using yra toks pat kaip jo traits char_type, nes skirtingi tipai gali skirtingų
+	// pavadinimų reikšmės using'us turėti ar gali išviso tokio using neturėti. Patiems tipams paliekama tikrintis ar
+	// jų reikšmės using'ai sutampa su jų traits char_type, o dėl šio concept tiesiog galima naudoti traits char_type.
 	template<class T>
-	concept using_char_traits = (requires { typename T::traits_type; }) && char_traits_like<typename T::traits_type>;
+	concept uses_char_traits = (requires { typename T::traits_type; }) && char_traits_like<typename T::traits_type>;
 
 
 
@@ -52,7 +55,7 @@ namespace aa {
 	template<template<size_t...> class F, size_t N>
 	AA_CONSTEXPR const auto apply_indices_t_v = apply_indices_t<F, N>::value;
 
-	template<template<class...> class F, using_char_traits T>
+	template<template<class...> class F, uses_char_traits T>
 	struct apply_traits : std::type_identity<F<typename T::traits_type::char_type, typename T::traits_type>> {};
 
 	template<template<class...> class F, class T>

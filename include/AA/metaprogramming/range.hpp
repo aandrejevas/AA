@@ -57,8 +57,8 @@ namespace aa {
 
 
 	template<class T>
-	concept range_using_char_traits = sized_contiguous_range<T> && using_char_traits<T>
-		&& std::same_as<std::ranges::range_value_t<T>, typename T::traits_type::char_type>;
+	concept range_using_char_traits = sized_contiguous_range<T> && uses_char_traits<T>
+		&& char_traits_for<typename T::traits_type, std::ranges::range_value_t<T>>;
 
 	template<class T>
 	concept char_range = sized_contiguous_range<T>
