@@ -13,7 +13,7 @@
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Set_(abstract_data_type)
-	template<trivially_copyable T, size_t N, storable_relation<T> C = std::ranges::less, bool MULTISET = false>
+	template<trivially_copyable T, size_t N, storable_relation_for<T> C = std::ranges::less, bool MULTISET = false>
 	struct fixed_flat_set {
 		// Member types
 		using value_type = T;

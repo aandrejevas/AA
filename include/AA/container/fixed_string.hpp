@@ -12,8 +12,9 @@
 
 namespace aa {
 
+	// Nors tai labai nepatogu, traits tipas turi būti antras, nes standarte visos tokio tipo klasės apibrėžtos panašiai.
 	// https://en.wikipedia.org/wiki/Null-terminated_string
-	template<trivially_copyable C, size_t N, class T = std::char_traits<C>>
+	template<trivially_copyable C, char_traits_for<C> T, size_t N>
 	struct basic_fixed_string {
 		// Member types
 		using value_type = C;
@@ -115,10 +116,13 @@ namespace aa {
 
 
 
-	template<class T, size_t N>
-	basic_fixed_string(const T(&)[N])->basic_fixed_string<T, N>;
+	template<class C, size_t N>
+	using semibasic_fixed_string = basic_fixed_string<C, std::char_traits<C>, N>;
 
 	template<size_t N>
-	using fixed_string = basic_fixed_string<char, N>;
+	using fixed_string = semibasic_fixed_string<char, N>;
+
+	template<class T, size_t N>
+	basic_fixed_string(const T(&)[N])->semibasic_fixed_string<T, N>;
 
 }

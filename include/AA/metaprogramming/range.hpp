@@ -57,16 +57,15 @@ namespace aa {
 
 
 	template<class T>
-	concept char_traits_using_range = sized_contiguous_range<T>
-		&& (requires { typename T::traits_type; typename T::traits_type::char_type; })
+	concept range_using_char_traits = sized_contiguous_range<T> && using_char_traits<T>
 		&& std::same_as<std::ranges::range_value_t<T>, typename T::traits_type::char_type>;
 
 	template<class T>
 	concept char_range = sized_contiguous_range<T>
-		&& ((requires { typename std::char_traits<std::ranges::range_value_t<T>>; }) || char_traits_using_range<T>);
+		&& ((requires { typename std::char_traits<std::ranges::range_value_t<T>>; }) || range_using_char_traits<T>);
 
 	namespace detail {
-		template<class T, bool = char_traits_using_range<T>>
+		template<class T, bool = range_using_char_traits<T>>
 		struct range_char_traits_selector : std::type_identity<std::char_traits<std::ranges::range_value_t<T>>> {};
 
 		template<class T>
@@ -80,12 +79,12 @@ namespace aa {
 	using range_char_traits_t = range_char_traits<T>::type;
 
 	template<class T, class U>
-	concept same_range_char_traits_as = char_range<T> && char_range<U> && std::same_as<range_char_traits_t<T>, range_char_traits_t<U>>;
+	concept same_range_char_traits_as = char_range<T> && std::same_as<range_char_traits_t<T>, U>;
 
 
 
 	struct char_equal_to {
-		template<char_range L, same_range_char_traits_as<L> R>
+		template<char_range L, same_range_char_traits_as<range_char_traits_t<L>> R>
 		AA_CONSTEXPR bool operator()(const L &l, const R &r) const {
 			return std::ranges::size(l) == std::ranges::size(r) &&
 				!range_char_traits_t<L>::compare(std::ranges::data(l), std::ranges::data(r), std::ranges::size(l));

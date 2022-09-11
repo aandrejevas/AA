@@ -24,6 +24,15 @@
 
 namespace aa {
 
+	template<class T>
+	concept char_traits_like = requires {
+		typename T::char_type; typename T::int_type; typename T::off_type; typename T::pos_type; typename T::state_type; };
+
+	template<class T>
+	concept using_char_traits = (requires { typename T::traits_type; }) && char_traits_like<typename T::traits_type>;
+
+
+
 	template<template<class...> class F, class... A1>
 	struct bind_types {
 		template<class... A2>
@@ -39,6 +48,15 @@ namespace aa {
 
 	template<template<size_t...> class F, size_t N>
 	using apply_indices_t = apply_indices<F, N>::type;
+
+	template<template<size_t...> class F, size_t N>
+	AA_CONSTEXPR const auto apply_indices_t_v = apply_indices_t<F, N>::value;
+
+	template<template<class...> class F, using_char_traits T>
+	struct apply_traits : std::type_identity<F<typename T::traits_type::char_type, typename T::traits_type>> {};
+
+	template<template<class...> class F, class T>
+	using apply_traits_t = apply_traits<F, T>::type;
 
 
 
@@ -169,11 +187,11 @@ namespace aa {
 	template<class T>
 	concept tuple_like = std::derived_from<std::tuple_size<std::remove_reference_t<T>>,
 		std::integral_constant<size_t, std::tuple_size_v<std::remove_reference_t<T>>>>
-		&& apply_indices_t<is_tuple<T>::template valid, std::tuple_size_v<std::remove_reference_t<T>>>::value;
+		&& apply_indices_t_v<is_tuple<T>::template valid, std::tuple_size_v<std::remove_reference_t<T>>>;
 
 	template<class T>
 	concept array_like = tuple_like<T> && !!std::tuple_size_v<std::remove_reference_t<T>>
-		&& apply_indices_t<is_tuple<T>::template uniform, std::tuple_size_v<std::remove_reference_t<T>>>::value;
+		&& apply_indices_t_v<is_tuple<T>::template uniform, std::tuple_size_v<std::remove_reference_t<T>>>;
 
 	template<array_like T>
 	struct array_element : std::tuple_element<0, std::remove_reference_t<T>> {};
@@ -186,7 +204,7 @@ namespace aa {
 	// default initializable, tada kode galime tiesiog rankomis inicializuoti elementus.
 	template<class T>
 	concept vector_like = array_like<T> && arithmetic<array_element_t<T>> && std::semiregular<std::remove_reference_t<T>>
-		&& apply_indices_t<is_tuple<T>::template regular, std::tuple_size_v<std::remove_reference_t<T>>>::value;
+		&& apply_indices_t_v<is_tuple<T>::template regular, std::tuple_size_v<std::remove_reference_t<T>>>;
 
 	template<size_t N, class T>
 	concept tupleN_like = tuple_like<T> && (std::tuple_size_v<T> == N);
@@ -233,13 +251,16 @@ namespace aa {
 	concept in_relation_with = std::relation<const T &, const U &, const V &>;
 
 	template<class T, class U, class V = U>
-	concept storable_relation = in_relation_with<U, V, T> && storable<T>;
+	concept storable_relation_for = in_relation_with<U, V, T> && storable<T>;
 
 	template<class U, class T>
 	concept hashable_by = std::invocable<const T &, const U &> && std::same_as<std::invoke_result_t<const T &, const U &>, size_t>;
 
 	template<class T, class U>
-	concept storable_hasher = hashable_by<U, T> && storable<T>;
+	concept storable_hasher_for = hashable_by<U, T> && storable<T>;
+
+	template<class T, class U>
+	concept char_traits_for = char_traits_like<T> && std::same_as<typename T::char_type, U>;
 
 	// evaluator'ius gali nebūtinai gražinti be kvalifikatorių tipą, bet copy_constructible turėtų užtikrinti,
 	// kad kad ir ką gražintų evaluator'ius, kad tai būtų paverčiama į tipą be kvalifikatorių.
