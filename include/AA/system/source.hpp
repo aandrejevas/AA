@@ -10,6 +10,7 @@
 #include <utility> // forward
 #include <ostream> // ostream
 #include <iostream> // cerr, clog
+#undef assert
 
 
 
