@@ -28,35 +28,49 @@ namespace aa {
 
 
 	template<std::floating_point T>
-	AA_CONSTEXPR T norm(const T value, const T mag) {
+	[[gnu::always_inline]] AA_CONSTEXPR T norm(const T value, const T mag) {
 		return value / mag;
 	}
 
 	template<std::floating_point T>
-	AA_CONSTEXPR T norm(const T value, const T start, const T mag) {
+	[[gnu::always_inline]] AA_CONSTEXPR T norm(const T value, const T start, const T mag) {
 		return (value - start) / mag;
 	}
 
+
+
 	template<std::floating_point T>
-	AA_CONSTEXPR T map(const T value, const T mag1, const T mag2) {
-		return mag2 * norm(value, mag1);
+	[[gnu::always_inline]] AA_CONSTEXPR T map(const T value, const T mag) {
+		return value * mag;
+	}
+
+	template<std::floating_point T>
+	[[gnu::always_inline]] AA_CONSTEXPR T map(const T value, const T start, const T mag) {
+		return start + value * mag;
+	}
+
+
+
+	template<std::floating_point T>
+	AA_CONSTEXPR T norm_map(const T value, const T mag1, const T mag2) {
+		return aa::map(aa::norm(value, mag1), mag2);
 	}
 
 	template<size_t V, std::floating_point T>
 		requires (V == 0)
-	AA_CONSTEXPR T map(const T value, const T start1, const T mag1, const T mag2) {
-		return mag2 * norm(value, start1, mag1);
+	AA_CONSTEXPR T norm_map(const T value, const T start1, const T mag1, const T mag2) {
+		return aa::map(aa::norm(value, start1, mag1), mag2);
 	}
 
 	template<size_t V, std::floating_point T>
 		requires (V == 1)
-	AA_CONSTEXPR T map(const T value, const T mag1, const T start2, const T mag2) {
-		return start2 + mag2 * norm(value, mag1);
+	AA_CONSTEXPR T norm_map(const T value, const T mag1, const T start2, const T mag2) {
+		return aa::map(aa::norm(value, mag1), start2, mag2);
 	}
 
 	template<std::floating_point T>
-	AA_CONSTEXPR T map(const T value, const T start1, const T mag1, const T start2, const T mag2) {
-		return start2 + mag2 * norm(value, start1, mag1);
+	AA_CONSTEXPR T norm_map(const T value, const T start1, const T mag1, const T start2, const T mag2) {
+		return aa::map(aa::norm(value, start1, mag1), start2, mag2);
 	}
 
 
