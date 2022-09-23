@@ -172,6 +172,7 @@ namespace aa {
 			std::ifstream file = std::ifstream{filename};
 			AA_TRACE_ASSERT(file.is_open(), "Error while openning file ", filename, '.');
 
+			// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
 			if (file.peek() == std::ifstream::traits_type::eof())
 				return;
 
@@ -183,9 +184,10 @@ namespace aa {
 				MULTILINE,
 				CHECKMULTI
 			} state = lexing_state::NONE;
-			int character = file.get();
 
 			do {
+				const std::ifstream::int_type character = file.get();
+
 				switch (state) {
 					case lexing_state::NONE:
 						switch (character) {
@@ -239,9 +241,9 @@ namespace aa {
 								continue;
 						}
 				}
-			} while ((character = file.get()) != std::ifstream::traits_type::eof());
+			} while (file.peek() != std::ifstream::traits_type::eof());
 
-			AA_TRACE_ASSERT(!file.bad(), "Error while reading file ", filename, '.');
+			AA_TRACE_ASSERT(!file.fail(), "Error while reading file ", filename, '.');
 		}
 
 	public:
