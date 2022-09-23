@@ -14,6 +14,7 @@
 #include <tuple> // tuple, get
 #include <utility> // unreachable, forward
 #include <bit> // bit_cast
+#include <filesystem> // path
 
 
 
@@ -167,7 +168,7 @@ namespace aa {
 			}
 		};
 
-		AA_CONSTEXPR lexer(const std::string_view &filename, params_lexer &&p_lexer) {
+		AA_CONSTEXPR lexer(const std::filesystem::path &filename, params_lexer &&p_lexer) {
 			std::ifstream file = std::ifstream{filename.data()};
 			AA_TRACE_ASSERT(file.is_open(), "Error while openning file `", filename, "`.");
 
@@ -244,9 +245,9 @@ namespace aa {
 		}
 
 	public:
-		AA_CONSTEXPR lexer(const std::string_view &filename) : lexer{filename, {params, {}}} {}
+		AA_CONSTEXPR lexer(const std::filesystem::path &filename) : lexer{filename, {params, {}}} {}
 		template<class... U>
-		AA_CONSTEXPR lexer(const std::string_view &filename, U&&... args) : lexer{filename, {params, {std::forward<U>(args)...}}} {}
+		AA_CONSTEXPR lexer(const std::filesystem::path &filename, U&&... args) : lexer{filename, {params, {std::forward<U>(args)...}}} {}
 
 		AA_CONSTEXPR const params_map &get_params() const {
 			return params;
@@ -264,7 +265,7 @@ namespace aa {
 	};
 
 	template<class... A>
-	AA_CONSTEXPR lexer<A...> make_lexer(const std::string_view &filename, A&&... args) {
+	AA_CONSTEXPR lexer<A...> make_lexer(const std::filesystem::path &filename, A&&... args) {
 		return {filename, std::forward<A>(args)...};
 	}
 
