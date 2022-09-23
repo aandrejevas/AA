@@ -169,7 +169,7 @@ namespace aa {
 		};
 
 		AA_CONSTEXPR lexer(const std::filesystem::path &filename, params_lexer &&p_lexer) {
-			std::ifstream file = std::ifstream{filename.data()};
+			std::ifstream file = std::ifstream{filename};
 			AA_TRACE_ASSERT(file.is_open(), "Error while openning file `", filename, "`.");
 
 			if (file.peek() == std::ifstream::traits_type::eof())

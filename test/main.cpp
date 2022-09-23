@@ -220,7 +220,7 @@ int main() {
 		{
 			repeat(tree.max_size(), [&]() {
 				positions.emplace_back(quad_tree_type::value_type{real_distribution<float>(g, 25.),
-					map<0>(real_distribution<float>(g, 50., 10.), 50.f, 10.f, 25.f)});
+					norm_map<0>(real_distribution<float>(g, 50., 10.), 50.f, 10.f, 25.f)});
 				tree.insert(positions.back());
 			});
 			size_t sum = 0;
