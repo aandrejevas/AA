@@ -61,6 +61,7 @@ namespace aa {
 		}
 	};
 
-	timekeeper()->timekeeper<std::chrono::steady_clock>;
+	template<class A>
+	timekeeper(A&&...)->timekeeper<>;
 
 }

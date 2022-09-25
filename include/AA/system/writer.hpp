@@ -71,7 +71,7 @@ namespace aa {
 		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << t << D; }
 	};
 
-	delim_inserter()->delim_inserter<' '>;
+	delim_inserter()->delim_inserter<>;
 
 	template<int N>
 	struct width_inserter {
@@ -90,7 +90,7 @@ namespace aa {
 		}
 	};
 
-	pair_inserter()->pair_inserter<':', ' '>;
+	pair_inserter()->pair_inserter<>;
 
 
 

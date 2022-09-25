@@ -7,7 +7,7 @@
 #include <AA/algorithm/shift.hpp>
 #include <AA/algorithm/permute.hpp>
 #include <AA/algorithm/generate.hpp>
-#include <AA/algorithm/lcg.hpp>
+#include <AA/algorithm/linear_congruential_generator.hpp>
 #include <AA/algorithm/repeat.hpp>
 #include <AA/preprocessor/assert.hpp>
 #include <AA/metaprogramming/general.hpp>
@@ -51,7 +51,7 @@ int main() {
 
 	timekeeper tttt;
 	tttt.start();
-	pascal_lcg g;
+	linear_congruential_generator g;
 	{
 		log<AA_SOURCE_DATA>();
 		log<AA_SOURCE_DATA>("Hello world!");
@@ -68,12 +68,12 @@ int main() {
 		println(g.curr(), std::flush<std::ostream::char_type, std::ostream::traits_type>);
 	}
 	{
-		const pascal_lcg initial_g = g;
+		const linear_congruential_generator initial_g = g;
 		std::map<int, size_t> m;
 
 		unsafe_for_each(std::views::iota(1uz, 5001uz), [&](const size_t i) -> void {
 			++m[int_distribution<int>(g, static_cast<size_t>(-5), 10)];
-			pascal_lcg copy_g = initial_g;
+			linear_congruential_generator copy_g = initial_g;
 			copy_g.jump(i);
 			const size_t d = initial_g.dist(copy_g);
 			AA_TRACE_ASSERT(copy_g.curr() == g.curr() && i == d, i, ' ', d);

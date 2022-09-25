@@ -15,8 +15,8 @@ namespace aa {
 	// Idėja kilo turėti iterator tipą, bet tai bloga idėja, nes lcg reiktų naudoti kaip function object.
 	// lcg būsenos nėra ordered, jos sudaro ciklą.
 	// https://en.wikipedia.org/wiki/Linear_congruential_generator
-	template<std::unsigned_integral T, T A, T C>
-	struct lcg {
+	template<std::unsigned_integral T = prev_unsigned_t<size_t>, T A = 0x8088405, T C = 1>
+	struct linear_congruential_generator {
 		// Member types
 		using result_type = T;
 		using modulus_type = next_unsigned_t<result_type>;
@@ -86,7 +86,7 @@ namespace aa {
 		}
 
 		// https://math.stackexchange.com/questions/2008585/computing-the-distance-between-two-linear-congruential-generator-states
-		AA_CONSTEXPR result_type dist(const lcg &o) const {
+		AA_CONSTEXPR result_type dist(const linear_congruential_generator &o) const {
 			result_type d = 0, mask = 1, t_state = state,
 				cur_mult = multiplier, cur_plus = increment;
 			do {
@@ -113,6 +113,7 @@ namespace aa {
 		}
 	};
 
-	using pascal_lcg = lcg<prev_unsigned_t<size_t>, 0x8088405, 1>;
+	template<class A>
+	linear_congruential_generator(A&&...)->linear_congruential_generator<>;
 
 }
