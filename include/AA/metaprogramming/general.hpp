@@ -32,7 +32,14 @@ namespace aa {
 	// pavadinimų reikšmės using'us turėti ar gali išviso tokio using neturėti. Patiems tipams paliekama tikrintis ar
 	// jų reikšmės using'ai sutampa su jų traits char_type, o dėl šio concept tiesiog galima naudoti traits char_type.
 	template<class T>
-	concept uses_char_traits = (requires { typename T::traits_type; }) && char_traits_like<typename T::traits_type>;
+	concept uses_traits_type = (requires { typename std::remove_reference_t<T>::traits_type; })
+		&& char_traits_like<typename std::remove_reference_t<T>::traits_type>;
+
+	template<uses_traits_type T>
+	struct traits_type_in_use : std::type_identity<typename std::remove_reference_t<T>::traits_type> {};
+
+	template<uses_traits_type T>
+	using traits_type_in_use_t = traits_type_in_use<T>::type;
 
 
 
@@ -55,8 +62,8 @@ namespace aa {
 	template<template<size_t...> class F, size_t N>
 	AA_CONSTEXPR const auto apply_indices_t_v = apply_indices_t<F, N>::value;
 
-	template<template<class...> class F, uses_char_traits T>
-	struct apply_traits : std::type_identity<F<typename T::traits_type::char_type, typename T::traits_type>> {};
+	template<template<class...> class F, uses_traits_type T>
+	struct apply_traits : std::type_identity<F<typename traits_type_in_use_t<T>::char_type, traits_type_in_use_t<T>>> {};
 
 	template<template<class...> class F, class T>
 	using apply_traits_t = apply_traits<F, T>::type;
@@ -99,6 +106,9 @@ namespace aa {
 
 	template<class L, class R>
 	concept remove_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
+
+	template<class L, template<class...> class R, template<class> class... A>
+	concept same_as_template = remove_ref_same_as<L, R<typename A<std::remove_reference_t<L>>::type...>>;
 
 
 
@@ -143,27 +153,25 @@ namespace aa {
 	template<class T, size_t I>
 	concept gettable = member_get<T, I> || adl_get<T, I>;
 
-	namespace detail {
-		template<size_t I>
-		struct getter {
-			template<gettable<I> T>
-			[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) operator()(T &&t) const {
-				if constexpr (member_get<T, I>) {
-					return t.template get<I>();
-				} else {
-					return get<I>(t);
-				}
+	template<size_t I>
+	struct getter {
+		template<gettable<I> T>
+		[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) operator()(T &&t) const {
+			if constexpr (member_get<T, I>) {
+				return t.template get<I>();
+			} else {
+				return get<I>(t);
 			}
-		};
-	}
+		}
+	};
 
-	AA_CONSTEXPR const detail::getter<0> get_0, get_x;
-	AA_CONSTEXPR const detail::getter<1> get_1, get_y;
+	AA_CONSTEXPR const getter<0> get_0, get_x;
+	AA_CONSTEXPR const getter<1> get_1, get_y;
 
 	template<class T, size_t I>
 	concept regular_gettable = requires(std::remove_const_t<T> &t) {
-		{ detail::getter<I>{}(t) } -> std::same_as<std::tuple_element_t<I, std::remove_cvref_t<T>> &>;
-		{ detail::getter<I>{}(std::as_const(t)) } -> std::same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>> &>;
+		{ getter<I>{}(t) } -> std::same_as<std::tuple_element_t<I, std::remove_cvref_t<T>> &>;
+		{ getter<I>{}(std::as_const(t)) } -> std::same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>> &>;
 	};
 
 	template<class T>

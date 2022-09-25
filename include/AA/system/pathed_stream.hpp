@@ -6,22 +6,36 @@
 #include <filesystem> // path
 #include <concepts> // constructible_from
 #include <utility> // forward
+#include <fstream> // ofstream, ifstream
 
 
 
 namespace aa {
 
-	template<std::constructible_from<const std::filesystem::path &> S>
-		requires (output_stream<S> || input_stream<S>)
+	template<stream_constructible_from<const std::filesystem::path &> S>
 	struct pathed_stream {
 		// Member types
 		using stream_type = S;
+		using char_type = stream_type::char_type;
+		using traits_type = stream_type::traits_type;
+		using int_type = stream_type::int_type;
+		using pos_type = stream_type::pos_type;
+		using off_type = stream_type::off_type;
 
 
 
 		// Observers
 		AA_CONSTEXPR operator stream_type &() { return stream; }
 		AA_CONSTEXPR operator const stream_type &() const { return stream; }
+
+		AA_CONSTEXPR stream_type &operator*() { return stream; }
+		AA_CONSTEXPR const stream_type &operator*() const { return stream; }
+
+		AA_CONSTEXPR stream_type *operator->() { return &stream; }
+		AA_CONSTEXPR const stream_type *operator->() const { return &stream; }
+
+		AA_CONSTEXPR stream_type &get() { return stream; }
+		AA_CONSTEXPR const stream_type &get() const { return stream; }
 
 
 
@@ -42,5 +56,17 @@ namespace aa {
 		const std::filesystem::path path;
 		stream_type stream;
 	};
+
+
+
+	template<output_stream S>
+	using pathed_ostream = pathed_stream<S>;
+
+	template<input_stream S>
+	using pathed_istream = pathed_stream<S>;
+
+	using pathed_ofstream = pathed_ostream<std::ofstream>;
+
+	using pathed_ifstream = pathed_istream<std::ifstream>;
 
 }

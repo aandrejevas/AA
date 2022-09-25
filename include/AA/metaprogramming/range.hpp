@@ -57,34 +57,26 @@ namespace aa {
 
 
 	template<class T>
-	concept range_using_char_traits = sized_contiguous_range<T> && uses_char_traits<T>
-		&& char_traits_for<typename T::traits_type, std::ranges::range_value_t<T>>;
+	concept range_using_traits_type = sized_contiguous_range<T> && uses_traits_type<T>
+		&& char_traits_for<traits_type_in_use_t<T>, std::ranges::range_value_t<T>>;
 
-	template<class T>
-	concept char_range = sized_contiguous_range<T>
-		&& ((requires { typename std::char_traits<std::ranges::range_value_t<T>>; }) || range_using_char_traits<T>);
+	// Darome prielaidą, kad char_traits yra apibrėžtas su visais tipais.
+	template<sized_contiguous_range T>
+	struct range_char_traits : std::type_identity<std::char_traits<std::ranges::range_value_t<T>>> {};
 
-	namespace detail {
-		template<class T, bool = range_using_char_traits<T>>
-		struct range_char_traits_selector : std::type_identity<std::char_traits<std::ranges::range_value_t<T>>> {};
+	template<range_using_traits_type T>
+	struct range_char_traits<T> : traits_type_in_use<T> {};
 
-		template<class T>
-		struct range_char_traits_selector<T, true> : std::type_identity<typename T::traits_type> {};
-	}
-
-	template<char_range T>
-	struct range_char_traits : detail::range_char_traits_selector<T> {};
-
-	template<class T>
+	template<sized_contiguous_range T>
 	using range_char_traits_t = range_char_traits<T>::type;
 
 	template<class T, class U>
-	concept same_range_char_traits_as = char_range<T> && std::same_as<range_char_traits_t<T>, U>;
+	concept same_range_char_traits_as = sized_contiguous_range<T> && std::same_as<range_char_traits_t<T>, U>;
 
 
 
 	struct char_equal_to {
-		template<char_range L, same_range_char_traits_as<range_char_traits_t<L>> R>
+		template<sized_contiguous_range L, same_range_char_traits_as<range_char_traits_t<L>> R>
 		AA_CONSTEXPR bool operator()(const L &l, const R &r) const {
 			return std::ranges::size(l) == std::ranges::size(r) &&
 				!range_char_traits_t<L>::compare(std::ranges::data(l), std::ranges::data(r), std::ranges::size(l));

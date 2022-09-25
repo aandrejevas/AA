@@ -16,6 +16,7 @@
 #include <AA/system/lexer.hpp>
 #include <AA/system/writer.hpp>
 #include <AA/system/print.hpp>
+#include <AA/system/pathed_stream.hpp>
 #include <cstddef> // size_t
 #include <cstdint> // uint32_t
 #include <cstdlib> // EXIT_SUCCESS
@@ -95,7 +96,7 @@ int main() {
 		println(type_name<std::string>());
 		println(type_name<uint32_t>());
 		println(type_name<double>());
-		const lexer<evaluator<std::string>, evaluator<uint32_t>, evaluator<double>> l = {"params.txt"};
+		const lexer<evaluator<std::string>, evaluator<uint32_t>, evaluator<double>> l = {pathed_ifstream{"params.txt"}};
 
 		AA_TRACE_ASSERT(l.get_param<std::string>("TEST_1") == "text");
 		AA_TRACE_ASSERT(std::bit_cast<size_t>(l.get_param<double>("TEST_2")) == std::bit_cast<size_t>(22.5));

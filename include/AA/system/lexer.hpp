@@ -1,12 +1,12 @@
 #pragma once
 
+#include "pathed_stream.hpp"
 #include "../preprocessor/assert.hpp"
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
 #include <cstddef> // size_t
 #include <string> // string, hash
 #include <variant> // variant, monostate, get_if
-#include <fstream> // ifstream
 #include <unordered_map> // unordered_map
 #include <initializer_list> // initializer_list
 #include <functional> // invoke, hash
@@ -14,7 +14,6 @@
 #include <tuple> // tuple, get
 #include <utility> // unreachable, forward
 #include <bit> // bit_cast
-#include <filesystem> // path
 
 
 
@@ -26,12 +25,11 @@ namespace aa {
 	template<storable_evaluator... A>
 		requires (are_unique_v<std::monostate, evaluator_result_t<A>...>)
 	struct lexer {
+		// Member types
 		using params_map = std::unordered_map<std::string, std::variant<std::monostate, evaluator_result_t<A>...>,
 			overload<std::hash<std::string>, std::hash<std::string_view>>, char_equal_to>;
 
 	protected:
-		params_map params = {};
-
 		struct params_lexer {
 			params_map &params;
 
@@ -86,6 +84,7 @@ namespace aa {
 								token.push_back(*std::bit_cast<const char *>(&character));
 								return;
 						}
+
 					case lexing_state::TYPE:
 						switch (character) {
 							default:
@@ -99,6 +98,7 @@ namespace aa {
 								init_type();
 								return;
 						}
+
 					case lexing_state::TYPE_SPACE:
 						switch (character) {
 							default:
@@ -114,6 +114,7 @@ namespace aa {
 								whitespace.clear();
 								return;
 						}
+
 					case lexing_state::BEFORE_KEY:
 						switch (character) {
 							case '=': abort<AA_SOURCE_DATA>();
@@ -123,6 +124,7 @@ namespace aa {
 								token.push_back(*std::bit_cast<const char *>(&character));
 								return;
 						}
+
 					case lexing_state::KEY:
 						switch (character) {
 							default:
@@ -136,6 +138,7 @@ namespace aa {
 								init_key();
 								return;
 						}
+
 					case lexing_state::KEY_SPACE:
 						switch (character) {
 							default:
@@ -151,6 +154,7 @@ namespace aa {
 								whitespace.clear();
 								return;
 						}
+
 					case lexing_state::VALUE:
 						switch (character) {
 							default:
@@ -163,18 +167,25 @@ namespace aa {
 								token.clear();
 								return;
 						}
+
+					default:
+						std::unreachable();
 				}
-				std::unreachable();
 			}
 		};
 
-		AA_CONSTEXPR lexer(const std::filesystem::path &filename, params_lexer &&p_lexer) {
-			std::ifstream file = std::ifstream{filename};
-			AA_TRACE_ASSERT(file.is_open(), "Error while openning file ", filename, '.');
 
+
+		// Special member functions
+	public:
+		template<same_as_template<pathed_istream, stream_type_in_use> T, class... U>
+		AA_CONSTEXPR lexer(T &&file, U&&... args) {
 			// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
-			if (file.peek() == std::ifstream::traits_type::eof())
+			if (file->peek() == stream_type_in_use_t<T>::traits_type::eof())
 				return;
+
+			// Lexing parameters
+			params_lexer p_lexer = {params, {std::forward<U>(args)...}};
 
 			// Lexing comments
 			enum struct lexing_state : size_t {
@@ -186,7 +197,7 @@ namespace aa {
 			} state = lexing_state::NONE;
 
 			do {
-				const std::ifstream::int_type character = file.get();
+				const typename stream_type_in_use_t<T>::int_type character = file->get();
 
 				switch (state) {
 					case lexing_state::NONE:
@@ -241,16 +252,12 @@ namespace aa {
 								continue;
 						}
 				}
-			} while (file.peek() != std::ifstream::traits_type::eof());
-
-			AA_TRACE_ASSERT(!file.fail(), "Error while reading file ", filename, '.');
+			} while (file->peek() != stream_type_in_use_t<T>::traits_type::eof());
 		}
 
-	public:
-		AA_CONSTEXPR lexer(const std::filesystem::path &filename) : lexer{filename, {params, {}}} {}
-		template<class... U>
-		AA_CONSTEXPR lexer(const std::filesystem::path &filename, U&&... args) : lexer{filename, {params, {std::forward<U>(args)...}}} {}
 
+
+		// Observers
 		AA_CONSTEXPR const params_map &get_params() const {
 			return params;
 		}
@@ -264,11 +271,15 @@ namespace aa {
 			AA_TRACE_ASSERT(param, "Parameter `", type_name<T>(), " - ", name, "` not found.");
 			return *param;
 		}
+
+
+
+		// Member objects
+	protected:
+		params_map params = {};
 	};
 
-	template<class... A>
-	AA_CONSTEXPR lexer<A...> make_lexer(const std::filesystem::path &filename, A&&... args) {
-		return {filename, std::forward<A>(args)...};
-	}
+	template<class T, class... A>
+	lexer(T &&, A&&...)->lexer<A...>;
 
 }
