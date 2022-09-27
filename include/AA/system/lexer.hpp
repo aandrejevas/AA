@@ -1,9 +1,9 @@
 #pragma once
 
-#include "pathed_stream.hpp"
 #include "../preprocessor/assert.hpp"
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
+#include "../metaprogramming/io.hpp"
 #include <cstddef> // size_t
 #include <string> // string, hash
 #include <variant> // variant, monostate, get_if
@@ -180,10 +180,10 @@ namespace aa {
 		// Special member functions
 	public:
 		// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
-		// Patariama pačiam naudoti naudotojui pathed_stream klasę, kuri automatiškai patikrina failed state.
+		// Patariama pačiam naudoti naudotojui pathed_stream klasę, kuri automatiškai taip pat patikrina failed state.
 		template<input_stream T, class... U>
 		AA_CONSTEXPR lexer(T &&file, U&&... args) {
-			// Negalime naudoti decltype, nes decltype šiuo atveju visados nustato reference tipą.
+			// Negalime naudoti decltype(file), nes decltype šiuo atveju visados nustatytų reference tipą.
 			using stream_type = std::remove_reference_t<T>;
 
 			// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
