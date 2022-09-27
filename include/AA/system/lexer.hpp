@@ -14,6 +14,7 @@
 #include <tuple> // tuple, get
 #include <utility> // unreachable, forward
 #include <bit> // bit_cast
+#include <type_traits> // remove_reference_t
 
 
 
@@ -178,10 +179,15 @@ namespace aa {
 
 		// Special member functions
 	public:
-		template<same_as_template<pathed_istream, stream_type_in_use> T, class... U>
+		// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
+		// Patariama pačiam naudoti naudotojui pathed_stream klasę, kuri automatiškai patikrina failed state.
+		template<input_stream T, class... U>
 		AA_CONSTEXPR lexer(T &&file, U&&... args) {
+			// Negalime naudoti decltype, nes decltype šiuo atveju visados nustato reference tipą.
+			using stream_type = std::remove_reference_t<T>;
+
 			// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
-			if (file->peek() == stream_type_in_use_t<T>::traits_type::eof())
+			if (file.peek() == stream_type::traits_type::eof())
 				return;
 
 			// Lexing parameters
@@ -197,7 +203,7 @@ namespace aa {
 			} state = lexing_state::NONE;
 
 			do {
-				const typename stream_type_in_use_t<T>::int_type character = file->get();
+				const typename stream_type::int_type character = file.get();
 
 				switch (state) {
 					case lexing_state::NONE:
@@ -209,6 +215,7 @@ namespace aa {
 								p_lexer(character);
 								continue;
 						}
+
 					case lexing_state::CHECK:
 						switch (character) {
 							case '/':
@@ -223,6 +230,7 @@ namespace aa {
 								p_lexer(character);
 								continue;
 						}
+
 					case lexing_state::COMMENT:
 						switch (character) {
 							case '\n':
@@ -234,6 +242,7 @@ namespace aa {
 							default:
 								continue;
 						}
+
 					case lexing_state::MULTILINE:
 						switch (character) {
 							case '*':
@@ -242,6 +251,7 @@ namespace aa {
 							default:
 								continue;
 						}
+
 					case lexing_state::CHECKMULTI:
 						switch (character) {
 							case '/':
@@ -251,8 +261,11 @@ namespace aa {
 								state = lexing_state::MULTILINE;
 								continue;
 						}
+
+					default:
+						std::unreachable();
 				}
-			} while (file->peek() != stream_type_in_use_t<T>::traits_type::eof());
+			} while (file.peek() != stream_type::traits_type::eof());
 		}
 
 

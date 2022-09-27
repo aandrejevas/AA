@@ -105,6 +105,9 @@ namespace aa {
 	concept trivially_default_constructible = std::is_trivially_default_constructible_v<T>;
 
 	template<class L, class R>
+	concept remove_ref_derived_from = std::derived_from<std::remove_reference_t<L>, R>;
+
+	template<class L, class R>
 	concept remove_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
 
 	template<class L, template<class...> class R, template<class> class... A>
