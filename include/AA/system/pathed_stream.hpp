@@ -3,18 +3,20 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
 #include "../preprocessor/assert.hpp"
-#include <filesystem> // path
 #include <concepts> // constructible_from
 #include <utility> // forward
 #include <fstream> // ofstream, ifstream
+#include <ostream> // ostream
 
 
 
 namespace aa {
 
-	template<stream_constructible_from<const std::filesystem::path &> S>
+	template<class P, stream_constructible_from<propagate_const_t<P> &> S>
+		requires (output_stream<std::ostream, propagate_const_t<P> &>)
 	struct pathed_stream {
 		// Member types
+		using path_type = propagate_const_t<P>;
 		using stream_type = S;
 		using char_type = stream_type::char_type;
 		using traits_type = stream_type::traits_type;
@@ -40,8 +42,8 @@ namespace aa {
 
 
 		// Special member functions
-		template<class T, class... U>
-			requires (std::constructible_from<stream_type, const std::filesystem::path &, U...>)
+		template<constructible_to<path_type> T, class... U>
+			requires (std::constructible_from<stream_type, path_type &, U...>)
 		AA_CONSTEXPR pathed_stream(T &&t, U&&... args) : path{std::forward<T>(t)}, stream{path, std::forward<U>(args)...} {
 			AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " (", path, ") in fail state after construction.");
 		}
@@ -53,20 +55,22 @@ namespace aa {
 
 
 		// Member objects
-		const std::filesystem::path path;
+		path_type path;
 		stream_type stream;
 	};
 
 
 
-	template<output_stream S>
-	using pathed_ostream = pathed_stream<S>;
+	template<class P>
+	struct pathed_ofstream : pathed_stream<P, std::ofstream> {};
 
-	template<input_stream S>
-	using pathed_istream = pathed_stream<S>;
+	template<class P, class... U>
+	pathed_ofstream(P &&, U&&...)->pathed_ofstream<P>;
 
-	using pathed_ofstream = pathed_ostream<std::ofstream>;
+	template<class P>
+	struct pathed_ifstream : pathed_stream<P, std::ifstream> {};
 
-	using pathed_ifstream = pathed_istream<std::ifstream>;
+	template<class P, class... U>
+	pathed_ifstream(P &&, U&&...)->pathed_ifstream<P>;
 
 }

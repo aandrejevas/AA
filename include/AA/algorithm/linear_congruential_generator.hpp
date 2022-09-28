@@ -113,7 +113,7 @@ namespace aa {
 		}
 	};
 
-	template<class A>
+	template<class... A>
 	linear_congruential_generator(A&&...)->linear_congruential_generator<>;
 
 }
