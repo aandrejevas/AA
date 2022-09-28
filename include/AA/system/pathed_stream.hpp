@@ -42,6 +42,8 @@ namespace aa {
 
 
 		// Special member functions
+		// Kad sukonstruoti path, nesuteikiame galimybės paduoti parameter pack, nes įmanoma tiesiog paduoti path_type
+		// argumentą, kuris bus nukopijuotas. To negalime padaryti su stream. Tokia realizacija kai kuriais atvejais gal lėta.
 		template<constructible_to<path_type> T, class... U>
 			requires (std::constructible_from<stream_type, path_type &, U...>)
 		AA_CONSTEXPR pathed_stream(T &&t, U&&... args) : path{std::forward<T>(t)}, stream{path, std::forward<U>(args)...} {
@@ -61,6 +63,8 @@ namespace aa {
 
 
 
+	// Turime sukurti papildomas klases, nes ant originalios klasės neišeina nurodyti gero deduction guide.
+	// Kartojasi deduction guides kodas, bet net jei leistų ant alias daryti guides, vis tiek kodas turėtų kartotis.
 	template<class P>
 	struct pathed_ofstream : pathed_stream<P, std::ofstream> {};
 

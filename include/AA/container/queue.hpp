@@ -4,7 +4,7 @@
 #include <cstddef> // size_t, ptrdiff_t
 #include <vector> // vector
 #include <memory> // allocator
-#include <utility> // forward, move
+#include <utility> // forward
 #include <bit> // bit_cast
 
 
@@ -96,8 +96,8 @@ namespace aa {
 		// Modifiers
 		AA_CONSTEXPR void clear() { elements.clear(); front_index = 0; }
 
-		AA_CONSTEXPR void push_back(const value_type &value) { elements.push_back(value); }
-		AA_CONSTEXPR void push_back(value_type &&value) { elements.push_back(std::move(value)); }
+		template<remove_cvref_same_as<value_type> A>
+		AA_CONSTEXPR void push_back(A &&value) { elements.push_back(std::forward<A>(value)); }
 
 		template<class... A>
 		AA_CONSTEXPR reference emplace_back(A&&... args) { return elements.emplace_back(std::forward<A>(args)...); }
