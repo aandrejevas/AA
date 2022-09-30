@@ -66,13 +66,17 @@ namespace aa {
 	// Turime sukurti papildomas klases, nes ant originalios klasės neišeina nurodyti gero deduction guide.
 	// Kartojasi deduction guides kodas, bet net jei leistų ant alias daryti guides, vis tiek kodas turėtų kartotis.
 	template<class P>
-	struct pathed_ofstream : pathed_stream<P, std::ofstream> {};
+	struct pathed_ofstream : pathed_stream<P, std::ofstream> {
+		using pathed_stream<P, std::ofstream>::pathed_stream;
+	};
 
 	template<class P, class... U>
 	pathed_ofstream(P &&, U&&...)->pathed_ofstream<P>;
 
 	template<class P>
-	struct pathed_ifstream : pathed_stream<P, std::ifstream> {};
+	struct pathed_ifstream : pathed_stream<P, std::ifstream> {
+		using pathed_stream<P, std::ifstream>::pathed_stream;
+	};
 
 	template<class P, class... U>
 	pathed_ifstream(P &&, U&&...)->pathed_ifstream<P>;

@@ -27,7 +27,6 @@
 #include <algorithm> // is_sorted, is_permutation
 #include <string> // string
 #include <limits> // numeric_limits
-#include <ostream> // flush, ostream
 #include <iostream> // cout
 #include <bit> // bit_cast
 
@@ -59,14 +58,14 @@ int main() {
 		log<AA_SOURCE_DATA>(std::cout);
 		log<AA_SOURCE_DATA>(std::cout, "Hello world!");
 		//print();
-		println();
+		printl();
 		//print(std::cout);
-		println(std::cout);
+		printl(std::cout);
 		print("Hello world!\n");
-		println("Hello world!");
+		printl("Hello world!");
 		print(std::cout, "Hello world!\n");
-		println(std::cout, "Hello world!");
-		println(g.curr(), std::flush<std::ostream::char_type, std::ostream::traits_type>);
+		printl(std::cout, "Hello world!");
+		printl(g.curr());
 	}
 	{
 		const linear_congruential_generator initial_g = g;
@@ -79,7 +78,7 @@ int main() {
 			const size_t d = initial_g.dist(copy_g);
 			AA_TRACE_ASSERT(copy_g.curr() == g.curr() && i == d, i, ' ', d);
 		});
-		println(make_range_writer(m, pair_inserter{}));
+		printl(make_range_writer(m, pair_inserter{}));
 
 		repeat(5000, [&]() {
 			g.prev();
@@ -93,9 +92,9 @@ int main() {
 		//}
 	}
 	{
-		println(type_name<std::string>());
-		println(type_name<uint32_t>());
-		println(type_name<double>());
+		printl(type_name<std::string>());
+		printl(type_name<uint32_t>());
+		printl(type_name<double>());
 		const lexer<evaluator<std::string>, evaluator<uint32_t>, evaluator<double>> l = {pathed_ifstream{"params.txt"}.get()};
 
 		AA_TRACE_ASSERT(l.get_param<std::string>("TEST_1") == "text");
@@ -117,7 +116,7 @@ int main() {
 		repeat(100, [&]() {
 			partial_shuffle_counting_sort(a, a.data() + 4, g, s.data());
 			AA_TRACE_ASSERT(std::ranges::is_sorted(a.data(), a.data() + 5));
-			//println(make_range_writer(a));
+			//printl(make_range_writer(a));
 		});
 
 		counting_sort(a, s.data());
@@ -146,7 +145,7 @@ int main() {
 	{
 		std::unordered_set<size_t> b;
 		fixed_perfect_hash_set<size_t, 1'000> a;
-		println(a.max_bucket_count(), ' ', a.max_bucket_size(), ' ', a.max_size());
+		printl(a.max_bucket_count(), ' ', a.max_bucket_size(), ' ', a.max_size());
 
 		// Insert test
 		repeat(100'000, [&]() {
@@ -215,7 +214,7 @@ int main() {
 	{
 		using quad_tree_type = fixed_quad_tree<array_t<float, 2>, std::identity, 5, 500>;
 		quad_tree_type tree = {{0, 0}, {100, 100}};
-		println(make_range_writer(tree.sizes, pair_inserter{}));
+		printl(make_range_writer(tree.sizes, pair_inserter{}));
 		fixed_vector<quad_tree_type::value_type, tree.max_size()> positions;
 
 		{
@@ -239,7 +238,7 @@ int main() {
 		}
 	}
 	tttt.stop();
-	println(tttt.elapsed());
+	printl(tttt.elapsed());
 
 	return EXIT_SUCCESS;
 }

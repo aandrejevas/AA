@@ -17,12 +17,12 @@ namespace aa {
 		((s << a1) << ... << args);
 	}
 
-	// Netikriname ar į output_stream galima insertinti char, nes žinoma su paprastais
-	// tipais gali susidoroti klasė, kuri paveldi iš basic_ostream.
-	template<class S, class... A>
-		requires (output_stream<S, A...>)
-	[[gnu::always_inline]] AA_CONSTEXPR void println(S &s, const A&... args) {
-		(s << ... << args) << '\n';
+	// Tikriname ar į output_stream galima insert'inti visus paduotus tipus, nes tarp jų
+	// gali būti tipų, su kuriais negali susidoroti klasė, kuri paveldi iš basic_ostream.
+	template<auto L = '\n', class S, class... A>
+		requires (output_stream<S, A..., decltype(L)>)
+	[[gnu::always_inline]] AA_CONSTEXPR void printl(S &s, const A&... args) {
+		(s << ... << args) << L;
 	}
 
 	template<class S, class A1, class... A>
@@ -42,10 +42,11 @@ namespace aa {
 		print(std::cout, a1, args...);
 	}
 
-	template<class... A>
-		requires (!output_stream<first_or_void_t<A...>>)
-	[[gnu::always_inline]] AA_CONSTEXPR void println(const A&... args) {
-		println(std::cout, args...);
+	// L negali būti stream, bet vis tiek mums reikia tipo dėl atvejo kai A sąrašas tuščias.
+	template<auto L = '\n', class... A>
+		requires (!output_stream<first_t<A..., decltype(L)>>)
+	[[gnu::always_inline]] AA_CONSTEXPR void printl(const A&... args) {
+		printl<L>(std::cout, args...);
 	}
 
 	template<class A1, class... A>

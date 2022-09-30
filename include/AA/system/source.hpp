@@ -37,7 +37,7 @@ namespace aa {
 	template<source_data D, class... A>
 	[[gnu::always_inline]] AA_CONSTEXPR void log(std::ostream &s, const A&... args) {
 		if constexpr (sizeof...(A)) {
-			println(s, D, ": ", args...);
+			printl(s, D, ": ", args...);
 		} else {
 			log<D>(s, "Info logged.");
 		}
