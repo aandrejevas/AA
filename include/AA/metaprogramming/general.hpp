@@ -371,28 +371,20 @@ namespace aa {
 
 
 
-	template<class...>
-	struct first_or_void;
+	template<class A1, class...>
+	struct first : std::type_identity<A1> {};
 
-	template<class A1, class... A>
-	struct first_or_void<A1, A...> : std::type_identity<A1> {};
+	template<class... A>
+		requires (!!sizeof...(A))
+	using first_t = first<A...>::type;
 
-	template<>
-	struct first_or_void<> : std::type_identity<void> {};
+
+
+	template<class... A>
+	struct first_or_void : first<A..., void> {};
 
 	template<class... A>
 	using first_or_void_t = first_or_void<A...>::type;
-
-
-
-	template<class...>
-	struct first;
-
-	template<class A1, class... A>
-	struct first<A1, A...> : std::type_identity<A1> {};
-
-	template<class... A>
-	using first_t = first<A...>::type;
 
 
 
