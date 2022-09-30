@@ -56,8 +56,8 @@ namespace aa {
 			// Jeigu deklaruotume savo konstruktorius, galėtume inicializuoti iteratorius su default
 			// initialization, bet to nedarome, nes niekas nepasikeistų, nes naudojamų stl konteinerių
 			// default konstruktoriai nėra trivial. Todėl params_lexer tipas gali likti aggregate.
-			types_map::const_iterator types_iter = {};
-			params_map::iterator params_iter = {};
+			typename types_map::const_iterator types_iter = {};
+			typename params_map::iterator params_iter = {};
 			std::string token = {}, whitespace = {};
 
 

@@ -22,10 +22,10 @@ namespace aa {
 		using const_reference = const value_type &;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
-		using iterator = std::vector<value_type, allocator_type>::iterator;
-		using const_iterator = std::vector<value_type, allocator_type>::const_iterator;
-		using reverse_iterator = std::vector<value_type, allocator_type>::reverse_iterator;
-		using const_reverse_iterator = std::vector<value_type, allocator_type>::const_reverse_iterator;
+		using iterator = typename std::vector<value_type, allocator_type>::iterator;
+		using const_iterator = typename std::vector<value_type, allocator_type>::const_iterator;
+		using reverse_iterator = typename std::vector<value_type, allocator_type>::reverse_iterator;
+		using const_reverse_iterator = typename std::vector<value_type, allocator_type>::const_reverse_iterator;
 
 
 

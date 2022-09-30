@@ -18,11 +18,11 @@ namespace aa {
 		// Member types
 		using path_type = propagate_const_t<P>;
 		using stream_type = S;
-		using char_type = stream_type::char_type;
-		using traits_type = stream_type::traits_type;
-		using int_type = stream_type::int_type;
-		using pos_type = stream_type::pos_type;
-		using off_type = stream_type::off_type;
+		using char_type = typename stream_type::char_type;
+		using traits_type = typename stream_type::traits_type;
+		using int_type = typename stream_type::int_type;
+		using pos_type = typename stream_type::pos_type;
+		using off_type = typename stream_type::off_type;
 
 
 

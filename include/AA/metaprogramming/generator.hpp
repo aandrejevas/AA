@@ -21,14 +21,14 @@ namespace aa {
 	struct generator_result : std::invoke_result<G &> {};
 
 	template<class G>
-	using generator_result_t = generator_result<G>::type;
+	using generator_result_t = typename generator_result<G>::type;
 
 	template<random_bit_generator G>
 	struct generator_modulus : apply_if<next_unsigned_t,
 		is_numeric_max(std::remove_reference_t<G>::max()), generator_result_t<G>> {};
 
 	template<class G>
-	using generator_modulus_t = generator_modulus<G>::type;
+	using generator_modulus_t = typename generator_modulus<G>::type;
 
 
 

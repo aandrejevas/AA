@@ -124,8 +124,8 @@ namespace aa {
 			value_type offset;
 		};
 
-		using const_local_iterator = bucket_iterable::const_iterator;
-		using local_iterator = bucket_iterable::const_iterator;
+		using const_local_iterator = typename bucket_iterable::const_iterator;
+		using local_iterator = typename bucket_iterable::const_iterator;
 
 
 

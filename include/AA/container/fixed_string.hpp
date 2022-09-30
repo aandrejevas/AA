@@ -123,6 +123,6 @@ namespace aa {
 	using fixed_string = semibasic_fixed_string<char, N>;
 
 	template<class T, size_t N>
-	basic_fixed_string(const T(&)[N])->semibasic_fixed_string<T, N>;
+	basic_fixed_string(const T(&)[N])->basic_fixed_string<T, std::char_traits<T>, N>;
 
 }

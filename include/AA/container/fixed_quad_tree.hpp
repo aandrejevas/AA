@@ -37,7 +37,7 @@ namespace aa {
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
 		using query_result = query_result<value_type, locator_type>;
-		using position_type = query_result::position_type;
+		using position_type = typename query_result::position_type;
 
 	protected:
 		static AA_CONSTEXPR const size_type leaves_count = int_exp2<size_type, 2uz>(H), phantoms_count = (leaves_count - 1) / 3;

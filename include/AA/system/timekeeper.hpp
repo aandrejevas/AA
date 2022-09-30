@@ -15,9 +15,9 @@ namespace aa {
 	struct timekeeper {
 		// Turi būti inicializuoti šitie kintamieji su ta pačia reikšme, nes kitaip neteisingai
 		// veiktų resume funkcija jei sukūrus timekeeper objektą iškarto ji būtų iškviesta.
-		C::rep begin = 0, end = 0;
+		typename C::rep begin = 0, end = 0;
 
-		static AA_CONSTEXPR C::rep now() {
+		static AA_CONSTEXPR typename C::rep now() {
 			return C::now().time_since_epoch().count();
 		}
 
@@ -56,7 +56,7 @@ namespace aa {
 
 		// Pagal nutylėjimą, laikas pateikiamas sekundėmis.
 		template<class D = std::chrono::duration<double>>
-		AA_CONSTEXPR D::rep elapsed() const {
+		AA_CONSTEXPR typename D::rep elapsed() const {
 			return std::chrono::duration_cast<D>(typename C::duration{end - begin}).count();
 		}
 	};

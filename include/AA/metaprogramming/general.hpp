@@ -39,7 +39,7 @@ namespace aa {
 	struct traits_type_in_use : std::type_identity<typename std::remove_reference_t<T>::traits_type> {};
 
 	template<uses_traits_type T>
-	using traits_type_in_use_t = traits_type_in_use<T>::type;
+	using traits_type_in_use_t = typename traits_type_in_use<T>::type;
 
 
 
@@ -49,7 +49,7 @@ namespace aa {
 		struct front : std::type_identity<F<A1..., A2...>> {};
 
 		template<class... A2>
-		using front_t = front<A2...>::type;
+		using front_t = typename front<A2...>::type;
 	};
 
 	template<template<size_t...> class F, size_t N>
@@ -57,7 +57,7 @@ namespace aa {
 		std::type_identity<F<I...>> { return {}; })(std::make_index_sequence<N>{})) {};
 
 	template<template<size_t...> class F, size_t N>
-	using apply_indices_t = apply_indices<F, N>::type;
+	using apply_indices_t = typename apply_indices<F, N>::type;
 
 	template<template<size_t...> class F, size_t N>
 	AA_CONSTEXPR const auto apply_indices_t_v = apply_indices_t<F, N>::value;
@@ -66,7 +66,7 @@ namespace aa {
 	struct apply_traits : std::type_identity<F<typename traits_type_in_use_t<T>::char_type, traits_type_in_use_t<T>>> {};
 
 	template<template<class...> class F, class T>
-	using apply_traits_t = apply_traits<F, T>::type;
+	using apply_traits_t = typename apply_traits<F, T>::type;
 
 
 
@@ -120,7 +120,7 @@ namespace aa {
 
 	// https://en.wikipedia.org/wiki/Function_object
 	template<class T>
-	concept functor = requires { T::operator(); };
+	concept functor = requires { &T::operator(); };
 
 	template<class F, auto... A>
 	concept nttp_accepting_functor = std::invocable<decltype(&(std::remove_reference_t<F>::template AA_CALL_OPERATOR<A...>)), F>;
@@ -141,7 +141,7 @@ namespace aa {
 		: std::type_identity<decltype(AA_MUL(std::declval<L>(), std::declval<R>()))> {};
 
 	template<class L, class R = L>
-	using product_result_t = product_result<L, R>::type;
+	using product_result_t = typename product_result<L, R>::type;
 
 
 
@@ -214,7 +214,7 @@ namespace aa {
 	struct array_element : std::tuple_element<0, std::remove_reference_t<T>> {};
 
 	template<class T>
-	using array_element_t = array_element<T>::type;
+	using array_element_t = typename array_element<T>::type;
 
 	// Netikriname ar tipas gali būti sukonstruotas su elementų tipais, nes vis tiek nežinotume kokius
 	// elementus inicializuos nurodyti argumentai konstruktoriuje. Tai prašome užtat, kad tipas būtų
@@ -280,7 +280,7 @@ namespace aa {
 	struct propagate_const<T> : std::type_identity<typename propagate_const<std::remove_reference_t<T>>::type &&> {};
 
 	template<class T>
-	using propagate_const_t = propagate_const<T>::type;
+	using propagate_const_t = typename propagate_const<T>::type;
 
 
 
@@ -312,7 +312,7 @@ namespace aa {
 	struct evaluator_result : std::remove_cvref<std::invoke_result_t<const T &, const std::string_view &>> {};
 
 	template<class T>
-	using evaluator_result_t = evaluator_result<T>::type;
+	using evaluator_result_t = typename evaluator_result<T>::type;
 
 	template<class T, class U>
 	concept storable_vector2_getter = storable<T>
@@ -322,7 +322,7 @@ namespace aa {
 	struct vector2_getter_result : std::remove_cvref<std::invoke_result_t<const T &, const U &>> {};
 
 	template<class U, class T>
-	using vector2_getter_result_t = vector2_getter_result<U, T>::type;
+	using vector2_getter_result_t = typename vector2_getter_result<U, T>::type;
 
 
 
@@ -337,7 +337,7 @@ namespace aa {
 	struct array<T, N1> : std::type_identity<std::array<T, N1>> {};
 
 	template<class T, size_t N1, size_t... N>
-	using array_t = array<T, N1, N...>::type;
+	using array_t = typename array<T, N1, N...>::type;
 
 
 
@@ -349,7 +349,7 @@ namespace aa {
 	struct hypercube_array<T, 1, N> : std::type_identity<std::array<T, N>> {};
 
 	template<class T, size_t D, size_t N>
-	using hypercube_array_t = hypercube_array<T, D, N>::type;
+	using hypercube_array_t = typename hypercube_array<T, D, N>::type;
 
 	// https://mathworld.wolfram.com/SquareArray.html
 	template<class T, size_t N>
@@ -367,7 +367,7 @@ namespace aa {
 	struct first_not_void<A1, A...> : std::conditional_t<std::is_void_v<A1>, first_not_void<A...>, std::type_identity<A1>> {};
 
 	template<class... A>
-	using first_not_void_t = first_not_void<A...>::type;
+	using first_not_void_t = typename first_not_void<A...>::type;
 
 
 
@@ -376,7 +376,7 @@ namespace aa {
 
 	template<class... A>
 		requires (!!sizeof...(A))
-	using first_t = first<A...>::type;
+	using first_t = typename first<A...>::type;
 
 
 
@@ -384,7 +384,7 @@ namespace aa {
 	struct first_or_void : first<A..., void> {};
 
 	template<class... A>
-	using first_or_void_t = first_or_void<A...>::type;
+	using first_or_void_t = typename first_or_void<A...>::type;
 
 
 
@@ -428,27 +428,27 @@ namespace aa {
 	struct next_type<T, A1, A2, A...> : std::conditional_t<std::same_as<T, A1>, std::type_identity<A2>, next_type<T, A2, A...>> {};
 
 	template<class T, class... A>
-	using next_type_t = next_type<T, A...>::type;
+	using next_type_t = typename next_type<T, A...>::type;
 
 	template<class T>
 	struct next_unsigned : next_type<T, uint8_t, uint16_t, uint32_t, uint64_t> {};
 	template<class T>
-	using next_unsigned_t = next_unsigned<T>::type;
+	using next_unsigned_t = typename next_unsigned<T>::type;
 
 	template<class T>
 	struct prev_unsigned : next_type<T, uint64_t, uint32_t, uint16_t, uint8_t> {};
 	template<class T>
-	using prev_unsigned_t = prev_unsigned<T>::type;
+	using prev_unsigned_t = typename prev_unsigned<T>::type;
 
 	template<class T>
 	struct next_signed : next_type<T, int8_t, int16_t, int32_t, int64_t> {};
 	template<class T>
-	using next_signed_t = next_signed<T>::type;
+	using next_signed_t = typename next_signed<T>::type;
 
 	template<class T>
 	struct prev_signed : next_type<T, int64_t, int32_t, int16_t, int8_t> {};
 	template<class T>
-	using prev_signed_t = prev_signed<T>::type;
+	using prev_signed_t = typename prev_signed<T>::type;
 
 
 
@@ -456,7 +456,7 @@ namespace aa {
 	struct apply_if : std::conditional<C, F<T>, T> {};
 
 	template<template<class> class F, bool C, class T>
-	using apply_if_t = apply_if<F, C, T>::type;
+	using apply_if_t = typename apply_if<F, C, T>::type;
 
 
 
@@ -464,7 +464,7 @@ namespace aa {
 	struct add_const_if : apply_if<std::add_const_t, C, T> {};
 
 	template<bool C, class T>
-	using add_const_if_t = add_const_if<C, T>::type;
+	using add_const_if_t = typename add_const_if<C, T>::type;
 
 
 
@@ -472,7 +472,7 @@ namespace aa {
 	struct copy_const : add_const_if<std::is_const_v<F>, T> {};
 
 	template<class F, class T>
-	using copy_const_t = copy_const<F, T>::type;
+	using copy_const_t = typename copy_const<F, T>::type;
 
 
 

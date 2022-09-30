@@ -37,6 +37,6 @@ namespace aa {
 	struct stream_type_in_use : std::type_identity<typename std::remove_reference_t<T>::stream_type> {};
 
 	template<uses_stream_type T>
-	using stream_type_in_use_t = stream_type_in_use<T>::type;
+	using stream_type_in_use_t = typename stream_type_in_use<T>::type;
 
 }
