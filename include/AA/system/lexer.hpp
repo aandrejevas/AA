@@ -45,7 +45,7 @@ namespace aa {
 
 			const std::tuple<A...> evaluators;
 			const types_map types = {std::initializer_list<typename types_map::value_type>{
-				typename types_map::value_type{type_name<evaluator_result_t<A>>(), &evaluate<A>}...
+				typename types_map::value_type{type_name<evaluator_result_t<A>>(), &params_lexer::evaluate<A>}...
 			}};
 
 			enum struct lexing_state : size_t {

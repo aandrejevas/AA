@@ -504,11 +504,15 @@ namespace aa {
 
 
 
-	// Galima būtų naudoti source_location, bet ta klasė surenka daugiau duomenų negu reikia ir taip pat
-	// kadangi neišeitų panaudoti strlen tai ir neišeitų užtikrinti lengvai compile time veikimo.
-	template<class>
+	// Galima būtų naudoti source_location, bet ta klasė surenka daugiau duomenų negu reikia.
+	// clang kompiliatoriui reikia, kad template parametras būtų pavadintas.
+	template<class A>
 	AA_CONSTEVAL std::string_view type_name() {
+#ifdef __clang__
+		return std::string_view{__PRETTY_FUNCTION__ + 37, (std::extent_v<decltype(__PRETTY_FUNCTION__)>) - 39};
+#else
 		return std::string_view{__PRETTY_FUNCTION__ + 76, (std::extent_v<std::remove_reference_t<decltype(__PRETTY_FUNCTION__)>>) - 127};
+#endif
 	}
 
 

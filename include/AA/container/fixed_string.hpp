@@ -98,7 +98,7 @@ namespace aa {
 
 		// Input/output
 		friend AA_CONSTEXPR ostream_type &operator<<(ostream_type &os, const basic_fixed_string &str) {
-			return os.write(str.data(), str.size());
+			return os.write(str.data(), basic_fixed_string::size());
 		}
 
 

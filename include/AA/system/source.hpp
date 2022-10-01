@@ -18,7 +18,7 @@ namespace aa {
 
 	// Klasės reikia, nes source_location klasės negalima naudoti kaip non type template parameter
 	// ir taip pat yra truputį keista man, kad minėtos klasės duomenys pasiekiami tik per metodus.
-	template<size_t COL, size_t LINE, fixed_string FILE, fixed_string FUNC>
+	template<size_t COL, size_t LINE, basic_fixed_string FILE, basic_fixed_string FUNC>
 	struct source_data {
 		// Naudojamas ostream stream, nes fixed_string galima naudoti tik su tokiu stream, o
 		// fixed_string turime naudoti dėl constantų tipo, kuriomis ši klasė inicializuojama.
