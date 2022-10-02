@@ -122,7 +122,7 @@ namespace aa {
 	template<size_t N>
 	using fixed_string = semibasic_fixed_string<char, N>;
 
-	// Nekopijuojame į fixed_string null character, nes tik užimtų bereikalingai vietą jis.
+	// Nekopijuojame į fixed_string null character, nes tik užimtų bereikalingai vietą simbolis.
 	template<class T, size_t N>
 	basic_fixed_string(const T(&)[N])->basic_fixed_string<T, std::char_traits<T>, N - 1>;
 

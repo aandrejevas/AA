@@ -103,7 +103,7 @@ namespace aa {
 	template<arithmetic auto X, arithmetic T>
 	[[gnu::always_inline]] AA_CONSTEXPR auto product(const T x) {
 		if constexpr (!std::same_as<T, decltype(X)>)	return product<static_cast<T>(X)>(x);
-		else if constexpr (X == 0)						return X;
+		else if constexpr (X == 0)						return zero_v<T>;
 		else if constexpr (X == 1)						return x;
 		else if constexpr (!std::unsigned_integral<T>)	return x * X;
 		else if constexpr (!std::has_single_bit(X))		return x * X;
@@ -146,7 +146,6 @@ namespace aa {
 		return int_exp2<U>(product<N>(x));
 	}
 
-	// Neturime dar vieno tipo U, nes tada T tipas nebūtų panaudojamas.
 	// https://en.wikipedia.org/wiki/Find_first_set
 	// https://en.wikipedia.org/wiki/Binary_logarithm
 	template<arithmetic auto N, std::integral U = size_t, std::unsigned_integral T>
@@ -155,6 +154,11 @@ namespace aa {
 	}
 
 
+
+	template<arithmetic T>
+	[[gnu::always_inline]] AA_CONSTEXPR auto halve(const T x) {
+		return quotient<2>(x);
+	}
 
 	template<class T>
 	[[gnu::always_inline]] AA_CONSTEXPR size_t size_of(const size_t n) {

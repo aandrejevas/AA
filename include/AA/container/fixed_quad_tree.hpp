@@ -245,18 +245,12 @@ namespace aa {
 			: sizes{[&](fixed_array<position_type, H> &init_sizes) -> void
 		{
 			if constexpr (H) {
-				init_sizes.front() = position_type{
-					get_x(size) / two_v<array_element_t<position_type>>,
-					get_y(size) / two_v<array_element_t<position_type>>
-				};
+				init_sizes.front() = position_type{halve(get_x(size)), halve(get_y(size))};
 				if constexpr (H != 1) {
 					position_type *iter_s = init_sizes.data() + 1;
 					do {
 						const position_type &s = iter_s[-1];
-						*iter_s = position_type{
-							get_x(s) / two_v<array_element_t<position_type>>,
-							get_y(s) / two_v<array_element_t<position_type>>
-						};
+						*iter_s = position_type{halve(get_x(s)), halve(get_y(s))};
 						if (iter_s != init_sizes.rdata()) ++iter_s; else break;
 					} while (true);
 				}
