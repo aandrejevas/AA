@@ -43,7 +43,7 @@ namespace aa {
 			using types_map = std::unordered_map<std::string_view, void(params_lexer:: *)() const,
 				typename params_map::hasher, typename params_map::key_equal>;
 
-			const std::tuple<A...> evaluators;
+			[[no_unique_address]] const std::tuple<A...> evaluators;
 			const types_map types = {std::initializer_list<typename types_map::value_type>{
 				typename types_map::value_type{type_name<evaluator_result_t<A>>(), &params_lexer::evaluate<A>}...
 			}};

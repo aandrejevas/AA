@@ -32,8 +32,8 @@ namespace aa {
 			inverse = power(multiplier, (modulus >> 1) - 1);
 
 		// Nedarome requires, nes tame kontekste neturėtume modulus ir decremented_multiplier konstantų.
-		static_assert(std::gcd<size_t, size_t>(modulus, increment) == 1
-			&& !remainder<2uz, size_t>(decremented_multiplier) && !remainder<4uz, size_t>(decremented_multiplier));
+		static_assert(std::gcd(modulus, increment) == 1
+			&& !remainder<2>(decremented_multiplier) && !remainder<4>(decremented_multiplier));
 
 
 

@@ -2,6 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t
+#include <cmath> // fmod
 #include <type_traits> // make_unsigned_t
 #include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as, convertible_to, equality_comparable
 #include <bit> // countl_zero, has_single_bit, bit_cast
@@ -11,9 +12,14 @@
 
 namespace aa {
 
+	template<std::signed_integral X>
+	[[gnu::always_inline]] AA_CONSTEXPR std::make_unsigned_t<X> unsign(const X x) {
+		return std::bit_cast<std::make_unsigned_t<X>>(x);
+	}
+
 	template<std::unsigned_integral T, std::signed_integral X>
 	[[gnu::always_inline]] AA_CONSTEXPR T unsign(const X x) {
-		return static_cast<T>(std::bit_cast<std::make_unsigned_t<X>>(x));
+		return static_cast<T>(unsign(x));
 	}
 
 	template<class T, std::convertible_to<T> X>
@@ -75,46 +81,59 @@ namespace aa {
 
 
 
-	template<std::unsigned_integral T>
-	[[gnu::always_inline]] AA_CONSTEXPR T int_log2(const T x) {
-		return constant<T, std::numeric_limits<T>::digits - 1>() - unsign<T>(std::countl_zero(x));
+	template<std::integral U = size_t, std::unsigned_integral T>
+	[[gnu::always_inline]] AA_CONSTEXPR auto int_exp2(const T x) {
+		return one_v<U> << x;
+	}
+
+	// T yra tipas, kurio bitus skaičiuosime, U nurodo kokiu tipu pateikti rezutatus.
+	template<std::integral U = size_t, std::unsigned_integral T>
+	[[gnu::always_inline]] AA_CONSTEXPR auto int_log2(const T x) {
+		return constant<U, std::numeric_limits<T>::digits - 1>() - unsign<U>(std::countl_zero(x));
+	}
+
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+	// https://en.wikipedia.org/wiki/Product_(mathematics)
+	// X parametras skirtas indikuoti kiek kartų turi būti padaugintas x, išties nebūtinai iš X bus dauginama.
+	// Gražinamas tipas auto, nes expression, kuriame dalyvauja mažesni tipai negu int, gražinamas tipas yra int.
+	// Reikalaujama, kad T būtų unsigned, nes per shift operacijas neįmanoma pagreitinti neigiamų skaičių daugybos.
+	template<arithmetic auto X, arithmetic T>
+	[[gnu::always_inline]] AA_CONSTEXPR auto product(const T x) {
+		if constexpr (!std::same_as<T, decltype(X)>)	return product<static_cast<T>(X)>(x);
+		else if constexpr (X == 0)						return X;
+		else if constexpr (X == 1)						return x;
+		else if constexpr (!std::unsigned_integral<T>)	return x * X;
+		else if constexpr (!std::has_single_bit(X))		return x * X;
+		else											return x << constant<int_log2(X)>();
 	}
 
 	// https://en.wikipedia.org/wiki/Remainder
-	template<auto X, std::integral T>
-		requires (std::unsigned_integral<decltype(X)>)
+	template<arithmetic auto X, arithmetic T>
+		requires (X != 0)
 	[[gnu::always_inline]] AA_CONSTEXPR auto remainder(const T x) {
-		if constexpr (X == 1) return zero_v<T>;
-		if constexpr (std::has_single_bit(X)) {
-			return x & constant<X - 1>();
-		} else {
-			return x % X;
-		}
+		if constexpr (!std::same_as<T, decltype(X)>)	return remainder<static_cast<T>(X)>(x);
+		else if constexpr (X == 1)						return zero_v<T>;
+		else if constexpr (std::floating_point<T>)		return std::fmod(x, X);
+		else if constexpr (std::signed_integral<T>)		return x % X;
+		else if constexpr (!std::has_single_bit(X))		return x % X;
+		else											return x & constant<X - 1>();
 	}
 
 	// https://en.wikipedia.org/wiki/Quotient
-	template<auto X, std::integral T>
-		requires (std::unsigned_integral<decltype(X)>)
+	template<arithmetic auto X, arithmetic T>
+		requires (X != 0)
 	[[gnu::always_inline]] AA_CONSTEXPR auto quotient(const T x) {
-		if constexpr (X == 1) return x;
-		if constexpr (std::has_single_bit(X)) {
-			return x >> constant<int_log2(X)>();
-		} else {
-			return x / X;
-		}
+		if constexpr (!std::same_as<T, decltype(X)>)	return quotient<static_cast<T>(X)>(x);
+		else if constexpr (X == 1)						return x;
+		else if constexpr (std::floating_point<T>)		return product<1 / X>(x);
+		else if constexpr (std::signed_integral<T>)		return x / X;
+		else if constexpr (!std::has_single_bit(X))		return x / X;
+		else											return x >> constant<int_log2(X)>();
 	}
-
-	// https://en.wikipedia.org/wiki/Product_(mathematics)
-	template<auto X, std::integral T>
-		requires (std::unsigned_integral<decltype(X)>)
-	[[gnu::always_inline]] AA_CONSTEXPR auto product(const T x) {
-		if constexpr (X == 1) return x;
-		if constexpr (std::has_single_bit(X)) {
-			return x << constant<int_log2(X)>();
-		} else {
-			return x * X;
-		}
-	}
+#pragma GCC diagnostic pop
 
 
 
@@ -122,19 +141,17 @@ namespace aa {
 	// x turi būti unsigned, nes undefined behavior jei dešinysis operandas neigiamas << ir >> operatoriuose.
 	// Išviso U ir T nepilnai generic, nes reiktų tada tikrinti ar su tais tipais išeitų vykdyti reikiamas operacijas.
 	// https://en.wikipedia.org/wiki/Power_of_two
-	template<std::integral U = size_t, auto N = 1uz, std::unsigned_integral T>
-		requires (std::unsigned_integral<decltype(N)>)
+	template<arithmetic auto N, std::integral U = size_t, std::unsigned_integral T>
 	[[gnu::always_inline]] AA_CONSTEXPR auto int_exp2(const T x) {
-		return one_v<U> << product<N>(x);
+		return int_exp2<U>(product<N>(x));
 	}
 
 	// Neturime dar vieno tipo U, nes tada T tipas nebūtų panaudojamas.
 	// https://en.wikipedia.org/wiki/Find_first_set
 	// https://en.wikipedia.org/wiki/Binary_logarithm
-	template<auto N, std::unsigned_integral T>
-		requires (std::unsigned_integral<decltype(N)>)
+	template<arithmetic auto N, std::integral U = size_t, std::unsigned_integral T>
 	[[gnu::always_inline]] AA_CONSTEXPR auto int_log2(const T x) {
-		return quotient<N>(int_log2(x));
+		return quotient<N>(int_log2<U>(x));
 	}
 
 

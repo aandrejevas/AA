@@ -72,9 +72,9 @@ namespace aa {
 		requires (std::numeric_limits<T>::digits > std::bit_width(G::max() - G::min()))
 	AA_CONSTEXPR T real_distribution(G &g) {
 		if constexpr (!is_numeric_min(G::min())) {
-			return static_cast<T>(g() - G::min()) * constant<one_v<T> / ((G::max() - G::min()) + 1)>();
+			return quotient<(G::max() - G::min()) + 1>(static_cast<T>(g() - G::min()));
 		} else {
-			return static_cast<T>(g()) * constant<one_v<T> / (static_cast<generator_modulus_t<G>>(G::max()) + 1)>();
+			return quotient<static_cast<generator_modulus_t<G>>(G::max()) + 1>(static_cast<T>(g()));
 		}
 	}
 

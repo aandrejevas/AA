@@ -84,9 +84,9 @@ namespace aa {
 		// Capacity
 		static AA_CONSTEVAL bool empty() { return !size(); }
 		static AA_CONSTEVAL difference_type ssize() { return size(); }
-		static AA_CONSTEVAL size_type size() { return N - 1; }
+		static AA_CONSTEVAL size_type size() { return N; }
 		static AA_CONSTEVAL size_type max_size() { return N; }
-		static AA_CONSTEVAL size_type max_index() { return N - 2; }
+		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
 
 
@@ -98,7 +98,7 @@ namespace aa {
 
 		// Input/output
 		friend AA_CONSTEXPR ostream_type &operator<<(ostream_type &os, const basic_fixed_string &str) {
-			return os.write(str.data(), basic_fixed_string::size());
+			return os.write(str.data(), size());
 		}
 
 
@@ -122,7 +122,8 @@ namespace aa {
 	template<size_t N>
 	using fixed_string = semibasic_fixed_string<char, N>;
 
+	// Nekopijuojame į fixed_string null character, nes tik užimtų bereikalingai vietą jis.
 	template<class T, size_t N>
-	basic_fixed_string(const T(&)[N])->basic_fixed_string<T, std::char_traits<T>, N>;
+	basic_fixed_string(const T(&)[N])->basic_fixed_string<T, std::char_traits<T>, N - 1>;
 
 }

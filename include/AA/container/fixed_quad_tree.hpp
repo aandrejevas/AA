@@ -40,7 +40,7 @@ namespace aa {
 		using position_type = typename query_result::position_type;
 
 	protected:
-		static AA_CONSTEXPR const size_type leaves_count = int_exp2<size_type, 2uz>(H), phantoms_count = (leaves_count - 1) / 3;
+		static AA_CONSTEXPR const size_type leaves_count = int_exp2<2, size_type>(H), phantoms_count = (leaves_count - 1) / 3;
 
 		struct node_type {
 			value_type *element;
