@@ -82,7 +82,7 @@ namespace aa {
 
 	template<char D1 = ':', char D2 = ' '>
 	struct pair_inserter {
-		template<class S, pair_like T>
+		template<class S, tuple2_like T>
 			requires (output_stream<S, std::tuple_element_t<0, T>, std::tuple_element_t<1, T>>)
 		AA_CONSTEXPR void operator()(S &s, const T &t) const {
 			const auto &[m1, m2] = t;

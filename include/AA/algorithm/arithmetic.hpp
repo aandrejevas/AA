@@ -3,35 +3,13 @@
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t
 #include <cmath> // fmod
-#include <type_traits> // make_unsigned_t
-#include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as, convertible_to, equality_comparable
-#include <bit> // countl_zero, has_single_bit, bit_cast
+#include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as, equality_comparable
+#include <bit> // countl_zero, has_single_bit
 #include <limits> // numeric_limits
 
 
 
 namespace aa {
-
-	template<std::signed_integral X>
-	[[gnu::always_inline]] AA_CONSTEXPR std::make_unsigned_t<X> unsign(const X x) {
-		return std::bit_cast<std::make_unsigned_t<X>>(x);
-	}
-
-	template<std::unsigned_integral T, std::signed_integral X>
-	[[gnu::always_inline]] AA_CONSTEXPR T unsign(const X x) {
-		return static_cast<T>(unsign(x));
-	}
-
-	template<class T, std::convertible_to<T> X>
-	[[gnu::always_inline]] AA_CONSTEXPR T unsign_cast(const X &x) {
-		if constexpr (std::unsigned_integral<T> && std::signed_integral<X>) {
-			return unsign<T>(x);
-		} else {
-			return static_cast<T>(x);
-		}
-	}
-
-
 
 	template<std::floating_point T>
 	[[gnu::always_inline]] AA_CONSTEXPR T norm(const T value, const T mag) {

@@ -9,6 +9,7 @@
 #include <cstddef> // ptrdiff_t, size_t
 #include <functional> // invoke, identity
 #include <utility> // forward, exchange
+#include <type_traits> // remove_const_t
 #include <queue> // queue
 
 
@@ -27,7 +28,7 @@ namespace aa {
 		using const_reference = const value_type &;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
-		using position_type = vector2_getter_result_t<T, L>;
+		using position_type = vector2_getter_result_t<value_type, locator_type>;
 		using pair_type = array_t<array_element_t<position_type>, 2>;
 
 	protected:
@@ -238,7 +239,7 @@ namespace aa {
 		// Special member functions
 		template<class U = locator_type>
 		AA_CONSTEXPR fixed_quad_tree(const pair_type &pos, const pair_type &size, U &&u = {})
-			: sizes{[&](fixed_array<pair_type, H> &init_sizes) -> void
+			: sizes{[&](std::remove_const_t<decltype(sizes)> &init_sizes) -> void
 		{
 			if constexpr (H) {
 				init_sizes.front() = pair_type{halve(get_x(size)), halve(get_y(size))};

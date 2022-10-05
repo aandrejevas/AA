@@ -7,10 +7,9 @@
 #include <cstddef> // size_t, ptrdiff_t
 #include <limits> // numeric_limits
 #include <functional> // hash, invoke
-#include <concepts> // unsigned_integral
 #include <utility> // forward
 #include <iterator> // bidirectional_iterator_tag
-#include <bit> // countr_zero, countl_zero, popcount, has_single_bit, bit_cast
+#include <bit> // countr_zero, countl_zero, popcount, bit_cast
 
 
 
@@ -19,7 +18,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Perfect_hash_function
 	// https://en.wikipedia.org/wiki/Hash_table
 	// Konteineris laiko savyje maišos kodus.
-	template<std::unsigned_integral T, size_t N, size_t M = N, storable H = std::hash<size_t>>
+	template<regular_unsigned_integral T, size_t N, size_t M = N, storable H = std::hash<size_t>>
 		requires (N >= M)
 	struct fixed_perfect_hash_set {
 		// Member types
@@ -154,18 +153,13 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const { return used_bins.empty(); }
-		AA_CONSTEXPR bool full() const {
-			return used_bins.full()
-				&& unsafe_all_of(*this, [](const bucket_pointer bin) -> void {
-				return !~*bin;
-				});
-		}
+		AA_CONSTEXPR bool full() const { return used_bins.full() && unsafe_all_of(*this, bucket_full); }
 
 		AA_CONSTEXPR size_type size() const {
 			if (!empty()) {
 				size_type sum = 0;
 				unsafe_for_each(*this, [&sum](const bucket_pointer bin) -> void {
-					sum += unsign<size_type>(std::popcount(*bin));
+					sum += bucket_size(bin);
 				});
 				return sum;
 			} else return 0;
@@ -194,7 +188,10 @@ namespace aa {
 		}
 
 
-		AA_CONSTEXPR size_type bucket_size(const bucket_pointer bin) const {
+		[[gnu::always_inline]] static AA_CONSTEXPR bool bucket_empty(const bucket_pointer bin) { return !*bin; }
+		[[gnu::always_inline]] static AA_CONSTEXPR bool bucket_full(const bucket_pointer bin) { return !~*bin; }
+
+		[[gnu::always_inline]] static AA_CONSTEXPR size_type bucket_size(const bucket_pointer bin) {
 			return unsign<size_type>(std::popcount(*bin));
 		}
 
@@ -202,9 +199,6 @@ namespace aa {
 		static AA_CONSTEVAL size_type max_bucket_size() {
 			return std::numeric_limits<bucket_type>::digits;
 		}
-
-		// Nors tuo sunku patikėti, bet gal gali negražinti ko reikia funkcija todėl daromas tikrinimas.
-		static_assert(std::has_single_bit(max_bucket_size()));
 
 
 		AA_CONSTEXPR size_type bucket_count() const {

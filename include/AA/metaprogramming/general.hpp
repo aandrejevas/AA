@@ -8,21 +8,44 @@
 // • <type_traits> ir <concepts>, failai įterpti, kad išeitų lengvai protauti apie tipus.
 // • <utility> (<compare>, <initializer_list>), failas įterptas, kad išeitų lengvai protauti apie išraiškas.
 // • <limits>, failas įterptas, kad išeitų lengvai nautotis pamatinių tipų savybėmis.
+// • <bit>, failas įterptas, kad išeitų lengvai manipuliuoti pamatinių tipų bitus.
 // Failai paminėti skliausteliose prie įterpiamo failo nurodo kokie failai yra įterpiami pačio įterpiamo failo.
 
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, remove_const_t, is_pointer_v, remove_pointer_t, is_function_v
-#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable_with, constructible_from
+#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, remove_const_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t
+#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable_with, constructible_from, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <string_view> // string_view
 #include <array> // array
+#include <bit> // has_single_bit, bit_cast
 #include <utility> // forward, declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence
 
 
 
 namespace aa {
+
+	template<std::signed_integral X>
+	[[gnu::always_inline]] AA_CONSTEXPR std::make_unsigned_t<X> unsign(const X x) {
+		return std::bit_cast<std::make_unsigned_t<X>>(x);
+	}
+
+	template<std::unsigned_integral T, std::signed_integral X>
+	[[gnu::always_inline]] AA_CONSTEXPR T unsign(const X x) {
+		return static_cast<T>(unsign(x));
+	}
+
+	template<class T, std::convertible_to<T> X>
+	[[gnu::always_inline]] AA_CONSTEXPR T unsign_cast(const X &x) {
+		if constexpr (std::unsigned_integral<T> && std::signed_integral<X>) {
+			return unsign<T>(x);
+		} else {
+			return static_cast<T>(x);
+		}
+	}
+
+
 
 	template<class T>
 	concept char_traits_like = requires {
@@ -90,6 +113,15 @@ namespace aa {
 
 
 	template<class T>
+	concept pointer = std::is_pointer_v<T>;
+
+	template<class T>
+	concept lvalue_reference = std::is_lvalue_reference_v<T>;
+
+	template<class T>
+	concept rvalue_reference = std::is_rvalue_reference_v<T>;
+
+	template<class T>
 	concept arithmetic = std::is_arithmetic_v<T>;
 
 	template<class T>
@@ -115,6 +147,9 @@ namespace aa {
 
 	template<class L, template<class...> class R, template<class> class... A>
 	concept same_as_template = remove_ref_same_as<L, R<typename A<std::remove_reference_t<L>>::type...>>;
+
+	template<class T>
+	concept regular_unsigned_integral = std::unsigned_integral<T> && std::has_single_bit(unsign(std::numeric_limits<T>::digits));
 
 
 
@@ -224,7 +259,7 @@ namespace aa {
 	concept tupleN_like = tuple_like<T> && (std::tuple_size_v<T> == N);
 
 	template<class T>
-	concept pair_like = tupleN_like<2, T>;
+	concept tuple2_like = tupleN_like<2, T>;
 
 	template<size_t N, class T>
 	concept arrayN_like = array_like<T> && (std::tuple_size_v<T> == N);
@@ -241,7 +276,7 @@ namespace aa {
 
 
 	template<class F, class... A>
-	concept function_pointer = std::invocable<F, A...> && std::is_pointer_v<F> && std::is_function_v<std::remove_pointer_t<F>>;
+	concept function_pointer = std::invocable<F, A...> && pointer<F> && std::is_function_v<std::remove_pointer_t<F>>;
 
 	template<class F, class... A>
 	concept invocable_ref = std::invocable<F &, A...>;
@@ -264,16 +299,13 @@ namespace aa {
 	template<class T>
 	struct propagate_const : std::type_identity<const T> {};
 
-	template<class T>
-		requires (std::is_pointer_v<T>)
+	template<pointer T>
 	struct propagate_const<T> : std::type_identity<typename propagate_const<std::remove_pointer_t<T>>::type *const> {};
 
-	template<class T>
-		requires (std::is_lvalue_reference_v<T>)
+	template<lvalue_reference T>
 	struct propagate_const<T> : std::type_identity<typename propagate_const<std::remove_reference_t<T>>::type &> {};
 
-	template<class T>
-		requires (std::is_rvalue_reference_v<T>)
+	template<rvalue_reference T>
 	struct propagate_const<T> : std::type_identity<typename propagate_const<std::remove_reference_t<T>>::type &&> {};
 
 	template<class T>
