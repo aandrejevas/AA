@@ -14,7 +14,7 @@
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 #include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, remove_const_t, is_pointer_v, remove_pointer_t, is_function_v
-#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, semiregular, totally_ordered_with, equality_comparable_with, constructible_from
+#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable_with, constructible_from
 #include <limits> // numeric_limits
 #include <string_view> // string_view
 #include <array> // array
@@ -216,11 +216,8 @@ namespace aa {
 	template<class T>
 	using array_element_t = typename array_element<T>::type;
 
-	// Netikriname ar tipas gali būti sukonstruotas su elementų tipais, nes vis tiek nežinotume kokius
-	// elementus inicializuos nurodyti argumentai konstruktoriuje. Tai prašome užtat, kad tipas būtų
-	// default initializable, tada kode galime tiesiog rankomis inicializuoti elementus.
 	template<class T>
-	concept vector_like = array_like<T> && arithmetic<array_element_t<T>> && std::semiregular<std::remove_reference_t<T>>
+	concept vector_like = array_like<T> && arithmetic<array_element_t<T>>
 		&& apply_indices_t_v<is_tuple<T>::template regular, std::tuple_size_v<std::remove_reference_t<T>>>;
 
 	template<size_t N, class T>

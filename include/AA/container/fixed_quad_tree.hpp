@@ -7,7 +7,7 @@
 #include "fixed_array.hpp"
 #include "queue.hpp"
 #include <cstddef> // ptrdiff_t, size_t
-#include <functional> // invoke
+#include <functional> // invoke, identity
 #include <utility> // forward, exchange
 #include <queue> // queue
 
@@ -15,17 +15,8 @@
 
 namespace aa {
 
-	template<class T, storable_vector2_getter<T> L>
-	struct query_result {
-		using size_type = size_t;
-		using position_type = vector2_getter_result_t<T, L>;
-
-		size_type i;
-		position_type q;
-	};
-
 	// https://en.wikipedia.org/wiki/Quadtree
-	template<class T, storable_vector2_getter<T> L, size_t H, size_t N, class C = queue<query_result<T, L>>>
+	template<class T, size_t H, size_t N, storable_vector2_getter<T> L = std::identity>
 	struct fixed_quad_tree {
 		// Member types
 		using value_type = T;
@@ -36,11 +27,16 @@ namespace aa {
 		using const_reference = const value_type &;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
-		using query_result = query_result<value_type, locator_type>;
-		using position_type = typename query_result::position_type;
+		using position_type = vector2_getter_result_t<T, L>;
+		using pair_type = array_t<array_element_t<position_type>, 2>;
 
 	protected:
 		static AA_CONSTEXPR const size_type leaves_count = int_exp2<2, size_type>(H), phantoms_count = (leaves_count - 1) / 3;
+
+		struct query_type {
+			size_type i;
+			pair_type q;
+		};
 
 		struct node_type {
 			value_type *element;
@@ -77,7 +73,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &f, const fixed_quad_tree &t) const {
+			AA_CONSTEXPR void query_range(const pair_type &tl, const pair_type &br, F &f, const fixed_quad_tree &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
@@ -131,12 +127,12 @@ namespace aa {
 		AA_CONSTEXPR size_type find_leaf(const value_type &element) const {
 			if constexpr (H) {
 				size_type i = 0;
-				position_type q = position;
+				pair_type q = position;
 				const position_type &l = locate(element);
-				const position_type *size = sizes.data();
+				const pair_type *size = sizes.data();
 				do {
-					const position_type &s = *size;
-					const position_type m = position_type{get_x(q) + get_x(s), get_y(q) + get_y(s)};
+					const pair_type &s = *size;
+					const pair_type m = pair_type{get_x(q) + get_x(s), get_y(q) + get_y(s)};
 
 					if (get_y(l) < get_y(m)) {
 						if (get_x(l) < get_x(m)) {
@@ -163,27 +159,27 @@ namespace aa {
 				return 0;
 		}
 
-		AA_CONSTEXPR void find_leaves(const position_type &tl, const position_type &br) const {
+		AA_CONSTEXPR void find_leaves(const pair_type &tl, const pair_type &br) const {
 			queries.emplace(0, position);
 
 			if constexpr (H) {
-				const position_type *size = sizes.data();
+				const pair_type *size = sizes.data();
 				do {
-					const position_type &s = *size;
+					const pair_type &s = *size;
 					size_type count = queries.size();
 					do {
-						const query_result &q = queries.front();
-						const position_type m = position_type{get_x(q.q) + get_x(s), get_y(q.q) + get_y(s)};
+						const query_type &q = queries.front();
+						const pair_type m = pair_type{get_x(q.q) + get_x(s), get_y(q.q) + get_y(s)};
 
 						if (get_y(tl) < get_y(m)) {
 							if (get_x(tl) < get_x(m))
 								queries.emplace((q.i << 2) + 1, q.q);
 							if (get_x(br) > get_x(m))
-								queries.emplace((q.i << 2) + 2, position_type{get_x(m), get_y(q.q)});
+								queries.emplace((q.i << 2) + 2, pair_type{get_x(m), get_y(q.q)});
 						}
 						if (get_y(br) > get_y(m)) {
 							if (get_x(tl) < get_x(m))
-								queries.emplace((q.i << 2) + 3, position_type{get_x(q.q), get_y(m)});
+								queries.emplace((q.i << 2) + 3, pair_type{get_x(q.q), get_y(m)});
 							if (get_x(br) > get_x(m))
 								queries.emplace((q.i << 2) + 4, m);
 						}
@@ -197,7 +193,7 @@ namespace aa {
 
 	public:
 		template<invocable_ref<reference> F>
-		AA_CONSTEXPR void query_range(const position_type &tl, const position_type &br, F &&f) const {
+		AA_CONSTEXPR void query_range(const pair_type &tl, const pair_type &br, F &&f) const {
 			find_leaves(tl, br);
 			do {
 				leaves[queries.front().i - phantoms_count].query_range(tl, br, f, *this);
@@ -206,7 +202,7 @@ namespace aa {
 		}
 
 		template<invocable_ref<reference> F>
-		AA_CONSTEXPR void query_loose_range(const position_type &tl, const position_type &br, F &&f) const {
+		AA_CONSTEXPR void query_loose_range(const pair_type &tl, const pair_type &br, F &&f) const {
 			find_leaves(tl, br);
 			do {
 				leaves[queries.front().i - phantoms_count].query(f, *this);
@@ -241,16 +237,16 @@ namespace aa {
 
 		// Special member functions
 		template<class U = locator_type>
-		AA_CONSTEXPR fixed_quad_tree(const position_type &pos, const position_type &size, U &&u = {})
-			: sizes{[&](fixed_array<position_type, H> &init_sizes) -> void
+		AA_CONSTEXPR fixed_quad_tree(const pair_type &pos, const pair_type &size, U &&u = {})
+			: sizes{[&](fixed_array<pair_type, H> &init_sizes) -> void
 		{
 			if constexpr (H) {
-				init_sizes.front() = position_type{halve(get_x(size)), halve(get_y(size))};
+				init_sizes.front() = pair_type{halve(get_x(size)), halve(get_y(size))};
 				if constexpr (H != 1) {
-					position_type *iter_s = init_sizes.data() + 1;
+					pair_type *iter_s = init_sizes.data() + 1;
 					do {
-						const position_type &s = iter_s[-1];
-						*iter_s = position_type{halve(get_x(s)), halve(get_y(s))};
+						const pair_type &prev_s = iter_s[-1];
+						*iter_s = pair_type{halve(get_x(prev_s)), halve(get_y(prev_s))};
 						if (iter_s != init_sizes.rdata()) ++iter_s; else break;
 					} while (true);
 				}
@@ -260,12 +256,12 @@ namespace aa {
 
 
 		// Member objects
-		const fixed_array<position_type, H> sizes;
-		const position_type position;
+		const fixed_array<pair_type, H> sizes;
+		const pair_type position;
 
 	protected:
 		size_type pass = 0;
-		mutable std::queue<query_result, C> queries;
+		mutable std::queue<query_type, aa::queue<query_type>> queries;
 		array_t<leaf, leaves_count> leaves;
 		fixed_fast_free_vector<node_type, N> nodes;
 

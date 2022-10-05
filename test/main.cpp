@@ -42,9 +42,9 @@ int main() {
 
 	{
 		static_assert(std::numeric_limits<size_t>::digits == 64 && sizeof(size_t) == 8);
-		static_assert(int_log2<2uz>(1uz) == 0 && int_log2<2uz>(4uz) == 1 && int_log2<2uz>(16uz) == 2);
-		static_assert(int_log2<3uz>(1uz) == 0 && int_log2<3uz>(8uz) == 1 && int_log2<3uz>(64uz) == 2);
-		static_assert(int_log2<4uz>(1uz) == 0 && int_log2<4uz>(16uz) == 1 && int_log2<4uz>(256uz) == 2);
+		static_assert(int_log2<2>(1uz) == 0 && int_log2<2>(4uz) == 1 && int_log2<2>(16uz) == 2);
+		static_assert(int_log2<3>(1uz) == 0 && int_log2<3>(8uz) == 1 && int_log2<3>(64uz) == 2);
+		static_assert(int_log2<4>(1uz) == 0 && int_log2<4>(16uz) == 1 && int_log2<4>(256uz) == 2);
 	}
 
 	std::ios_base::sync_with_stdio(false);
@@ -212,7 +212,7 @@ int main() {
 		static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
 	{
-		using quad_tree_type = fixed_quad_tree<array_t<float, 2>, std::identity, 5, 500>;
+		using quad_tree_type = fixed_quad_tree<array_t<float, 2>, 5, 500>;
 		quad_tree_type tree = {{0, 0}, {100, 100}};
 		printl(make_range_writer(tree.sizes, pair_inserter{}));
 		fixed_vector<quad_tree_type::value_type, tree.max_size()> positions;

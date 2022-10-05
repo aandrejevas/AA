@@ -100,6 +100,7 @@ namespace aa {
 		AA_CONSTEXPR void push_back(A &&value) { elements.push_back(std::forward<A>(value)); }
 
 		template<class... A>
+			requires (std::constructible_from<value_type, A...>)
 		AA_CONSTEXPR reference emplace_back(A&&... args) { return elements.emplace_back(std::forward<A>(args)...); }
 
 		AA_CONSTEXPR void pop_front() {
