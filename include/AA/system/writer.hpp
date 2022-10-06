@@ -85,8 +85,7 @@ namespace aa {
 		template<class S, tuple2_like T>
 			requires (output_stream<S, std::tuple_element_t<0, T>, std::tuple_element_t<1, T>>)
 		AA_CONSTEXPR void operator()(S &s, const T &t) const {
-			const auto &[m1, m2] = t;
-			s << m1 << D1 << m2 << D2;
+			s << get_0(t) << D1 << get_1(t) << D2;
 		}
 	};
 

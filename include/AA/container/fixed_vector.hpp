@@ -72,8 +72,8 @@ namespace aa {
 		AA_CONSTEXPR const_iterator begin() const { return data(); }
 		AA_CONSTEXPR const_iterator cbegin() const { return begin(); }
 
-		AA_CONSTEXPR iterator end() { return r_begin + 1; }
-		AA_CONSTEXPR const_iterator end() const { return r_begin + 1; }
+		AA_CONSTEXPR iterator end() { return rdata() + 1; }
+		AA_CONSTEXPR const_iterator end() const { return rdata() + 1; }
 		AA_CONSTEXPR const_iterator cend() const { return end(); }
 
 		AA_CONSTEXPR iterator rbegin() { return rdata(); }

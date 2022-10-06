@@ -169,7 +169,7 @@ namespace aa {
 
 		// Member objects
 	protected:
-		fixed_vector<T, N> elements;
+		fixed_vector<value_type, N> elements;
 
 	public:
 		[[no_unique_address]] const comparer_type comparer;

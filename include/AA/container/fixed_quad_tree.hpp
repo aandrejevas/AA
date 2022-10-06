@@ -5,19 +5,18 @@
 #include "../algorithm/find.hpp"
 #include "fixed_fast_free_vector.hpp"
 #include "fixed_array.hpp"
-#include "queue.hpp"
+#include "fixed_queue.hpp"
 #include <cstddef> // ptrdiff_t, size_t
 #include <functional> // invoke, identity
 #include <utility> // forward, exchange
 #include <type_traits> // remove_const_t
-#include <queue> // queue
 
 
 
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Quadtree
-	template<class T, size_t H, size_t N, storable_vector2_getter<T> L = std::identity>
+	template<class T, size_t H, size_t N, size_t M = N, storable_vector2_getter<T> L = std::identity>
 	struct fixed_quad_tree {
 		// Member types
 		using value_type = T;
@@ -161,7 +160,7 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR void find_leaves(const pair_type &tl, const pair_type &br) const {
-			queries.emplace(0, position);
+			queries.emplace_back(0, position);
 
 			if constexpr (H) {
 				const pair_type *size = sizes.data();
@@ -174,17 +173,17 @@ namespace aa {
 
 						if (get_y(tl) < get_y(m)) {
 							if (get_x(tl) < get_x(m))
-								queries.emplace((q.i << 2) + 1, q.q);
+								queries.emplace_back((q.i << 2) + 1, q.q);
 							if (get_x(br) > get_x(m))
-								queries.emplace((q.i << 2) + 2, pair_type{get_x(m), get_y(q.q)});
+								queries.emplace_back((q.i << 2) + 2, pair_type{get_x(m), get_y(q.q)});
 						}
 						if (get_y(br) > get_y(m)) {
 							if (get_x(tl) < get_x(m))
-								queries.emplace((q.i << 2) + 3, pair_type{get_x(q.q), get_y(m)});
+								queries.emplace_back((q.i << 2) + 3, pair_type{get_x(q.q), get_y(m)});
 							if (get_x(br) > get_x(m))
-								queries.emplace((q.i << 2) + 4, m);
+								queries.emplace_back((q.i << 2) + 4, m);
 						}
-						queries.pop();
+						queries.pop_front();
 					} while (--count);
 
 					if (size != sizes.rdata()) ++size; else break;
@@ -198,7 +197,7 @@ namespace aa {
 			find_leaves(tl, br);
 			do {
 				leaves[queries.front().i - phantoms_count].query_range(tl, br, f, *this);
-				queries.pop();
+				queries.pop_front();
 			} while (!queries.empty());
 		}
 
@@ -207,7 +206,7 @@ namespace aa {
 			find_leaves(tl, br);
 			do {
 				leaves[queries.front().i - phantoms_count].query(f, *this);
-				queries.pop();
+				queries.pop_front();
 			} while (!queries.empty());
 		}
 
@@ -262,7 +261,7 @@ namespace aa {
 
 	protected:
 		size_type pass = 0;
-		mutable std::queue<query_type, aa::queue<query_type>> queries;
+		mutable fixed_queue<query_type, M> queries;
 		array_t<leaf, leaves_count> leaves;
 		fixed_fast_free_vector<node_type, N> nodes;
 
