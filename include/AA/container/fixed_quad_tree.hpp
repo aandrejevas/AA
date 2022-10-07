@@ -47,6 +47,7 @@ namespace aa {
 		// Reikia mintyje turėti tokį įdomų scenarijų, kad tame pačiame pass, mes įdedame elementą į lapą, po
 		// to išemame elementą ir tada kažką darome, pass bus tas pats, bet first tuo atveju bus nullptr.
 		struct leaf {
+			// Modifiers
 			AA_CONSTEXPR void insert(const pointer e, fixed_quad_tree &t) {
 				if (pass != t.pass) {
 					pass = t.pass;
@@ -73,6 +74,9 @@ namespace aa {
 				}
 			}
 
+
+
+			// Lookup
 			template<invocable_ref<reference> F>
 			AA_CONSTEXPR void query_range(const pair_type &tl, const pair_type &br, F &&f, const fixed_quad_tree &t) const {
 				if (pass == t.pass && first) {
@@ -134,41 +138,38 @@ namespace aa {
 				size_type i = 0;
 				pair_type q = position;
 				const position_type &l = locate(element);
-				const pair_type *size = sizes.data();
-				do {
-					const pair_type &s = *size;
+
+				return unsafe_for_each(sizes, [&](const pair_type &s) -> void {
 					const pair_type m = pair_type{get_x(q) + get_x(s), get_y(q) + get_y(s)};
 
 					if (get_y(l) < get_y(m)) {
-						if (get_x(l) < get_x(m)) {
-							i = (i << 2) + 1;
-							// q = q;
-						} else {
-							i = (i << 2) + 2;
-							get_x(q) = get_x(m);
-						}
+						if (get_x(l) < get_x(m)) { {	i = (i << 2) + 1; /*q = q;*/			}
+						} else { {						i = (i << 2) + 2; get_x(q) = get_x(m);	} }
 					} else {
-						if (get_x(l) < get_x(m)) {
-							i = (i << 2) + 3;
-							get_y(q) = get_y(m);
-						} else {
-							i = (i << 2) + 4;
-							q = m;
-						}
+						if (get_x(l) < get_x(m)) { {	i = (i << 2) + 3; get_y(q) = get_y(m);	}
+						} else { {						i = (i << 2) + 4; q = m;				} }
 					}
-					if (size != sizes.rdata()) ++size; else break;
-				} while (true);
+				}, [&](const pair_type &s) -> size_t {
+					const pair_type m = pair_type{get_x(q) + get_x(s), get_y(q) + get_y(s)};
 
-				return i - phantoms_count;
-			} else
+					if (get_y(l) < get_y(m)) {
+						if (get_x(l) < get_x(m))		return (i << 2) + 1 - phantoms_count;
+						else							return (i << 2) + 2 - phantoms_count;
+					} else {
+						if (get_x(l) < get_x(m))		return (i << 2) + 3 - phantoms_count;
+						else							return (i << 2) + 4 - phantoms_count;
+					}
+				});
+			} else {
 				return 0;
+			}
 		}
 
 		template<invocable_ref<size_type> F>
 		AA_CONSTEXPR void find_leaves(const pair_type &tl, const pair_type &br, F &&f) const {
-			queries.emplace_back(0, position);
-
 			if constexpr (H) {
+				queries.emplace_back(0, position);
+
 				unsafe_for_each(sizes, [&](const pair_type &s) -> void {
 					size_type count = queries.size();
 					do {
@@ -176,16 +177,12 @@ namespace aa {
 						const pair_type m = pair_type{get_x(q.q) + get_x(s), get_y(q.q) + get_y(s)};
 
 						if (get_y(tl) < get_y(m)) {
-							if (get_x(tl) < get_x(m))
-								queries.emplace_back((q.i << 2) + 1, q.q);
-							if (get_x(br) > get_x(m))
-								queries.emplace_back((q.i << 2) + 2, pair_type{get_x(m), get_y(q.q)});
+							if (get_x(tl) < get_x(m))	queries.emplace_back((q.i << 2) + 1, q.q);
+							if (get_x(br) > get_x(m))	queries.emplace_back((q.i << 2) + 2, pair_type{get_x(m), get_y(q.q)});
 						}
 						if (get_y(br) > get_y(m)) {
-							if (get_x(tl) < get_x(m))
-								queries.emplace_back((q.i << 2) + 3, pair_type{get_x(q.q), get_y(m)});
-							if (get_x(br) > get_x(m))
-								queries.emplace_back((q.i << 2) + 4, m);
+							if (get_x(tl) < get_x(m))	queries.emplace_back((q.i << 2) + 3, pair_type{get_x(q.q), get_y(m)});
+							if (get_x(br) > get_x(m))	queries.emplace_back((q.i << 2) + 4, m);
 						}
 						queries.pop_front();
 					} while (--count);
@@ -195,20 +192,18 @@ namespace aa {
 						const pair_type m = pair_type{get_x(q.q) + get_x(s), get_y(q.q) + get_y(s)};
 
 						if (get_y(tl) < get_y(m)) {
-							if (get_x(tl) < get_x(m))
-								std::invoke(f, (q.i << 2) + 1 - phantoms_count);
-							if (get_x(br) > get_x(m))
-								std::invoke(f, (q.i << 2) + 2 - phantoms_count);
+							if (get_x(tl) < get_x(m))	std::invoke(f, (q.i << 2) + 1 - phantoms_count);
+							if (get_x(br) > get_x(m))	std::invoke(f, (q.i << 2) + 2 - phantoms_count);
 						}
 						if (get_y(br) > get_y(m)) {
-							if (get_x(tl) < get_x(m))
-								std::invoke(f, (q.i << 2) + 3 - phantoms_count);
-							if (get_x(br) > get_x(m))
-								std::invoke(f, (q.i << 2) + 4 - phantoms_count);
+							if (get_x(tl) < get_x(m))	std::invoke(f, (q.i << 2) + 3 - phantoms_count);
+							if (get_x(br) > get_x(m))	std::invoke(f, (q.i << 2) + 4 - phantoms_count);
 						}
 						queries.pop_front();
 					} while (!queries.empty());
 				});
+			} else {
+				std::invoke(f, 0);
 			}
 		}
 

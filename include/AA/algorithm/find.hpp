@@ -110,12 +110,12 @@ namespace aa {
 
 	template<std::ranges::input_range R,
 		std::indirectly_unary_invocable<std::ranges::iterator_t<R>> F1, std::indirectly_unary_invocable<std::ranges::iterator_t<R>> F2>
-	AA_CONSTEXPR void unsafe_for_each(R &&r, F1 &&f1, F2 &&f2) {
+	AA_CONSTEXPR decltype(auto) unsafe_for_each(R &&r, F1 &&f1, F2 &&f2) {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		const std::ranges::sentinel_t<R> last = get_rbegin(r);
 		while (first != last)
 			std::invoke(f1, *first++);
-		std::invoke(f2, *first);
+		return std::invoke(f2, *first);
 	}
 
 }
