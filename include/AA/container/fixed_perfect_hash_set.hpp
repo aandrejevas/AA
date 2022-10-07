@@ -228,7 +228,9 @@ namespace aa {
 
 		// Kituose konteineriuose vidinio konteinerio nerodome, nes kituose konteineriuose vidinis
 		// konteineris galima sakyti yra pats konteineris tai nėra tikslo to daryti.
-		AA_CONSTEXPR const array_t<bucket_type, N> &buckets() const { return bins; }
+		//
+		// decltype(bins) kompiliatorius neleidžia naudoti, nes bins kintamasis tik vėliau deklaruojamas.
+		AA_CONSTEXPR const auto &buckets() const { return bins; }
 
 
 

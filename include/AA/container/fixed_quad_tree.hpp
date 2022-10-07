@@ -30,9 +30,9 @@ namespace aa {
 		using position_type = vector2_getter_result_t<value_type, locator_type>;
 		using pair_type = array_t<array_element_t<position_type>, 2>;
 
-	protected:
 		static AA_CONSTEXPR const size_type leaves_count = int_exp2<2, size_type>(H), phantoms_count = (leaves_count - 1) / 3;
 
+	protected:
 		struct query_type {
 			size_type i;
 			pair_type q;
@@ -43,6 +43,7 @@ namespace aa {
 			node_type *next;
 		};
 
+	public:
 		// Reikia mintyje turėti tokį įdomų scenarijų, kad tame pačiame pass, mes įdedame elementą į lapą, po
 		// to išemame elementą ir tada kažką darome, pass bus tas pats, bet first tuo atveju bus nullptr.
 		struct leaf {
@@ -73,7 +74,7 @@ namespace aa {
 			}
 
 			template<invocable_ref<reference> F>
-			AA_CONSTEXPR void query_range(const pair_type &tl, const pair_type &br, F &f, const fixed_quad_tree &t) const {
+			AA_CONSTEXPR void query_range(const pair_type &tl, const pair_type &br, F &&f, const fixed_quad_tree &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
@@ -95,10 +96,13 @@ namespace aa {
 				}
 			}
 
+
+
+			// Member objects
+		protected:
 			size_type pass = 0;
 			node_type *first = nullptr;
 		};
-	public:
 
 
 
@@ -120,10 +124,11 @@ namespace aa {
 			return std::invoke(locator, e);
 		}
 
+		AA_CONSTEXPR const auto &grid() const { return leaves; }
+
 
 
 		// Lookup
-	protected:
 		AA_CONSTEXPR size_type find_leaf(const value_type &element) const {
 			if constexpr (H) {
 				size_type i = 0;
@@ -159,13 +164,12 @@ namespace aa {
 				return 0;
 		}
 
-		AA_CONSTEXPR void find_leaves(const pair_type &tl, const pair_type &br) const {
+		template<invocable_ref<size_type> F>
+		AA_CONSTEXPR void find_leaves(const pair_type &tl, const pair_type &br, F &&f) const {
 			queries.emplace_back(0, position);
 
 			if constexpr (H) {
-				const pair_type *size = sizes.data();
-				do {
-					const pair_type &s = *size;
+				unsafe_for_each(sizes, [&](const pair_type &s) -> void {
 					size_type count = queries.size();
 					do {
 						const query_type &q = queries.front();
@@ -185,29 +189,41 @@ namespace aa {
 						}
 						queries.pop_front();
 					} while (--count);
+				}, [&](const pair_type &s) -> void {
+					do {
+						const query_type &q = queries.front();
+						const pair_type m = pair_type{get_x(q.q) + get_x(s), get_y(q.q) + get_y(s)};
 
-					if (size != sizes.rdata()) ++size; else break;
-				} while (true);
+						if (get_y(tl) < get_y(m)) {
+							if (get_x(tl) < get_x(m))
+								std::invoke(f, (q.i << 2) + 1 - phantoms_count);
+							if (get_x(br) > get_x(m))
+								std::invoke(f, (q.i << 2) + 2 - phantoms_count);
+						}
+						if (get_y(br) > get_y(m)) {
+							if (get_x(tl) < get_x(m))
+								std::invoke(f, (q.i << 2) + 3 - phantoms_count);
+							if (get_x(br) > get_x(m))
+								std::invoke(f, (q.i << 2) + 4 - phantoms_count);
+						}
+						queries.pop_front();
+					} while (!queries.empty());
+				});
 			}
 		}
 
-	public:
 		template<invocable_ref<reference> F>
 		AA_CONSTEXPR void query_range(const pair_type &tl, const pair_type &br, F &&f) const {
-			find_leaves(tl, br);
-			do {
-				leaves[queries.front().i - phantoms_count].query_range(tl, br, f, *this);
-				queries.pop_front();
-			} while (!queries.empty());
+			find_leaves(tl, br, [&](const size_type i) -> void {
+				leaves[i].query_range(tl, br, f, *this);
+			});
 		}
 
 		template<invocable_ref<reference> F>
 		AA_CONSTEXPR void query_loose_range(const pair_type &tl, const pair_type &br, F &&f) const {
-			find_leaves(tl, br);
-			do {
-				leaves[queries.front().i - phantoms_count].query(f, *this);
-				queries.pop_front();
-			} while (!queries.empty());
+			find_leaves(tl, br, [&](const size_type i) -> void {
+				leaves[i].query(f, *this);
+			});
 		}
 
 		template<invocable_ref<reference> F>
