@@ -13,7 +13,7 @@
 
 namespace std {
 
-	template<class T>
+	template<aa::arithmetic T>
 	struct tuple_size<sf::Vector2<T>> : std::integral_constant<size_t, 2> {};
 
 	template<size_t I, aa::arithmetic T>
@@ -22,22 +22,22 @@ namespace std {
 
 }
 
+
+
 namespace sf {
 
-	template<size_t I, class T>
-	std::tuple_element_t<I, sf::Vector2<T>> &get(sf::Vector2<T> &v) {
-		if constexpr (!I)
-			return v.x;
-		else
-			return v.y;
+	template<size_t I, aa::arithmetic T>
+		requires (I < std::tuple_size_v<sf::Vector2<T>>)
+	AA_CONSTEXPR std::tuple_element_t<I, sf::Vector2<T>> &get(sf::Vector2<T> &v) {
+		if constexpr (!I)	return v.x;
+		else				return v.y;
 	}
 
-	template<size_t I, class T>
-	const std::tuple_element_t<I, sf::Vector2<T>> &get(const sf::Vector2<T> &v) {
-		if constexpr (!I)
-			return v.x;
-		else
-			return v.y;
+	template<size_t I, aa::arithmetic T>
+		requires (I < std::tuple_size_v<sf::Vector2<T>>)
+	AA_CONSTEXPR const std::tuple_element_t<I, sf::Vector2<T>> &get(const sf::Vector2<T> &v) {
+		if constexpr (!I)	return v.x;
+		else				return v.y;
 	}
 
 

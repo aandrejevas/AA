@@ -6,6 +6,7 @@
 #include "fixed_fast_free_vector.hpp"
 #include "fixed_array.hpp"
 #include "fixed_queue.hpp"
+#include "tuple.hpp"
 #include <cstddef> // ptrdiff_t, size_t
 #include <functional> // invoke, identity
 #include <utility> // forward, exchange
@@ -28,7 +29,7 @@ namespace aa {
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
 		using position_type = vector2_getter_result_t<value_type, locator_type>;
-		using pair_type = array_t<array_element_t<position_type>, 2>;
+		using pair_type = pair<array_element_t<position_type>>;
 
 		static AA_CONSTEXPR const size_type leaves_count = int_exp2<2, size_type>(H), phantoms_count = (leaves_count - 1) / 3;
 
