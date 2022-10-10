@@ -7,7 +7,7 @@
 #include <cstddef> // size_t
 #include <cmath> // hypot
 #include <utility> // tuple_size, tuple_size_v, tuple_element, tuple_element_t
-#include <type_traits> // integral_constant, type_identity
+#include <type_traits> // integral_constant, type_identity, remove_reference_t
 
 
 
@@ -26,16 +26,9 @@ namespace std {
 
 namespace sf {
 
-	template<size_t I, aa::arithmetic T>
-		requires (I < std::tuple_size_v<sf::Vector2<T>>)
-	AA_CONSTEXPR std::tuple_element_t<I, sf::Vector2<T>> &get(sf::Vector2<T> &v) {
-		if constexpr (!I)	return v.x;
-		else				return v.y;
-	}
-
-	template<size_t I, aa::arithmetic T>
-		requires (I < std::tuple_size_v<sf::Vector2<T>>)
-	AA_CONSTEXPR const std::tuple_element_t<I, sf::Vector2<T>> &get(const sf::Vector2<T> &v) {
+	template<size_t I, aa::arithmetic T, template<aa::arithmetic> class V>
+		requires (aa::remove_cvref_same_as<V<T>, sf::Vector2<T>> && (I < std::tuple_size_v<std::remove_reference_t<V<T>>>))
+	AA_CONSTEXPR std::tuple_element_t<I, std::remove_reference_t<V<T>>> &get(V<T> &&v) {
 		if constexpr (!I)	return v.x;
 		else				return v.y;
 	}

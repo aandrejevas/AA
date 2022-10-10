@@ -6,7 +6,6 @@
 #include "fixed_fast_free_vector.hpp"
 #include "fixed_array.hpp"
 #include "fixed_queue.hpp"
-#include "tuple.hpp"
 #include <cstddef> // ptrdiff_t, size_t
 #include <functional> // invoke, identity
 #include <utility> // forward, exchange
@@ -78,8 +77,8 @@ namespace aa {
 
 
 			// Lookup
-			template<invocable_ref<reference> F>
-			AA_CONSTEXPR void query_range(const pair_type &tl, const pair_type &br, F &&f, const fixed_quad_tree &t) const {
+			template<invocable_ref<reference> F, vector2_like T1 = pair_type, vector2_like T2 = pair_type>
+			AA_CONSTEXPR void query_range(const T1 &tl, const T2 &br, F &&f, const fixed_quad_tree &t) const {
 				if (pass == t.pass && first) {
 					const node_type *iter = first;
 					do {
@@ -140,7 +139,7 @@ namespace aa {
 				pair_type q = position;
 				const position_type &l = locate(element);
 
-				return unsafe_for_each(sizes, [&](const pair_type &s) -> void {
+				return unsafe_for_each_peel_last(sizes, [&](const pair_type &s) -> void {
 					const pair_type m = pair_type{get_x(q) + get_x(s), get_y(q) + get_y(s)};
 
 					if (get_y(l) < get_y(m)) {
@@ -166,12 +165,12 @@ namespace aa {
 			}
 		}
 
-		template<invocable_ref<size_type> F>
-		AA_CONSTEXPR void find_leaves(const pair_type &tl, const pair_type &br, F &&f) const {
+		template<invocable_ref<size_type> F, vector2_like T1 = pair_type, vector2_like T2 = pair_type>
+		AA_CONSTEXPR void find_leaves(const T1 &tl, const T2 &br, F &&f) const {
 			if constexpr (H) {
 				queries.emplace_back(0, position);
 
-				unsafe_for_each(sizes, [&](const pair_type &s) -> void {
+				unsafe_for_each_peel_last(sizes, [&](const pair_type &s) -> void {
 					size_type count = queries.size();
 					do {
 						const query_type &q = queries.front();
@@ -208,15 +207,15 @@ namespace aa {
 			}
 		}
 
-		template<invocable_ref<reference> F>
-		AA_CONSTEXPR void query_range(const pair_type &tl, const pair_type &br, F &&f) const {
+		template<invocable_ref<reference> F, vector2_like T1 = pair_type, vector2_like T2 = pair_type>
+		AA_CONSTEXPR void query_range(const T1 &tl, const T2 &br, F &&f) const {
 			find_leaves(tl, br, [&](const size_type i) -> void {
 				leaves[i].query_range(tl, br, f, *this);
 			});
 		}
 
-		template<invocable_ref<reference> F>
-		AA_CONSTEXPR void query_loose_range(const pair_type &tl, const pair_type &br, F &&f) const {
+		template<invocable_ref<reference> F, vector2_like T1 = pair_type, vector2_like T2 = pair_type>
+		AA_CONSTEXPR void query_loose_range(const T1 &tl, const T2 &br, F &&f) const {
 			find_leaves(tl, br, [&](const size_type i) -> void {
 				leaves[i].query(f, *this);
 			});
@@ -248,22 +247,19 @@ namespace aa {
 
 
 		// Special member functions
-		template<class U = locator_type>
-		AA_CONSTEXPR fixed_quad_tree(const pair_type &pos, const pair_type &size, U &&u = {})
+		template<class U = locator_type, vector2_like T1 = pair_type, vector2_like T2 = pair_type>
+		AA_CONSTEXPR fixed_quad_tree(const T1 &pos, const T2 &size, U &&u = {})
 			: sizes{[&](std::remove_const_t<decltype(sizes)> &init_sizes) -> void
 		{
 			if constexpr (H) {
-				init_sizes.front() = pair_type{halve(get_x(size)), halve(get_y(size))};
-				if constexpr (H != 1) {
-					pair_type *iter_s = init_sizes.data() + 1;
-					do {
-						const pair_type &prev_s = iter_s[-1];
-						*iter_s = pair_type{halve(get_x(prev_s)), halve(get_y(prev_s))};
-						if (iter_s != init_sizes.rdata()) ++iter_s; else break;
-					} while (true);
-				}
+				unsafe_for_each_peel_first(init_sizes, [&](pair_type &s) -> void {
+					s = pair_type{halve(get_x(size)), halve(get_y(size))};
+				}, [](pair_type &s) -> void {
+					const pair_type &prev_s = (&s)[-1];
+					s = pair_type{halve(get_x(prev_s)), halve(get_y(prev_s))};
+				});
 			}
-		}}, position{pos}, locator{std::forward<U>(u)} {}
+		}}, position{get_x(pos), get_y(pos)}, locator{std::forward<U>(u)} {}
 
 
 
