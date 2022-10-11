@@ -292,7 +292,7 @@ namespace aa {
 		params_map params = {};
 	};
 
-	template<class T, class... A>
+	template<input_stream T, class... A>
 	lexer(T &&, A&&...)->lexer<A...>;
 
 }

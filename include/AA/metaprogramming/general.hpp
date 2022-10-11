@@ -205,8 +205,8 @@ namespace aa {
 		}
 	};
 
-	AA_CONSTEXPR const getter<0> get_0, get_x;
-	AA_CONSTEXPR const getter<1> get_1, get_y;
+	AA_CONSTEXPR const getter<0> get_0, get_x, get_w;
+	AA_CONSTEXPR const getter<1> get_1, get_y, get_h;
 
 	template<class T>
 	struct is_tuple {
