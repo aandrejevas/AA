@@ -77,7 +77,7 @@ namespace aa {
 
 	template<template<size_t...> class F, size_t N>
 	struct apply_indices : decltype(([]<size_t... I>(const std::index_sequence<I...> &&) ->
-		std::type_identity<F<I...>> { return {}; })(std::make_index_sequence<N>{})) {};
+		std::type_identity<F<I...>> { return {}; })(std::declval<std::make_index_sequence<N>>())) {};
 
 	template<template<size_t...> class F, size_t N>
 	using apply_indices_t = typename apply_indices<F, N>::type;
@@ -601,8 +601,9 @@ namespace aa {
 
 	// https://ldionne.com/2015/11/29/efficient-parameter-pack-indexing/
 	template<size_t I, class... T>
+		requires (I < sizeof...(T))
 	struct pack_element : decltype(([]<class U>(const tuple_unit<I, U> &&) ->
-		std::type_identity<U> { return {}; })(tuple_base<std::index_sequence_for<T...>, T...>{})) {};
+		std::type_identity<U> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
 
 	template<size_t I, class... T>
 	using pack_element_t = typename pack_element<I, T...>::type;
@@ -621,11 +622,9 @@ namespace aa {
 
 		// Element access
 		template<size_t I>
-			requires (I < sizeof...(T))
 		AA_CONSTEXPR value_type<I> &get() { return unit_type<I>::value; }
 
 		template<size_t I>
-			requires (I < sizeof...(T))
 		AA_CONSTEXPR const value_type<I> &get() const { return unit_type<I>::value; }
 	};
 
