@@ -212,15 +212,15 @@ int main() {
 		static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
 	{
-		using quad_tree_type = fixed_quad_tree<array_t<float, 2>, 5, 500>;
+		using quad_tree_type = fixed_quad_tree<array_t<double, 2>, 5, 500>;
 		quad_tree_type tree = {{0, 0}, {100, 100}};
 		printl(make_range_writer(tree.sizes, pair_inserter{}));
 		fixed_vector<quad_tree_type::value_type, tree.max_size()> positions;
 
 		{
 			repeat(tree.max_size(), [&]() {
-				positions.emplace_back(quad_tree_type::value_type{real_distribution<float>(g, 25.),
-					norm_map<0>(real_distribution<float>(g, 50., 10.), 50.f, 10.f, 25.f)});
+				positions.emplace_back(quad_tree_type::value_type{real_distribution<double>(g, 25.),
+					norm_map<0>(real_distribution<double>(g, 50., 10.), 50., 10., 25.)});
 				tree.insert(positions.back());
 			});
 			size_t sum = 0;

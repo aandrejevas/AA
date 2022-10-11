@@ -5,7 +5,8 @@
 #include "../algorithm/find.hpp"
 #include "fixed_fast_free_vector.hpp"
 #include "fixed_array.hpp"
-#include "fixed_queue.hpp"
+#include "fixed_vector.hpp"
+#include "swap_pair.hpp"
 #include <cstddef> // ptrdiff_t, size_t
 #include <functional> // invoke, identity
 #include <utility> // forward, exchange
@@ -16,6 +17,7 @@
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Quadtree
+	// https://stackoverflow.com/questions/41946007/efficient-and-well-explained-implementation-of-a-quadtree-for-2d-collision-det
 	template<class T, size_t H, size_t N, size_t M = N, storable_vector2_getter<T> L = std::identity>
 	struct fixed_quad_tree {
 		// Member types
@@ -42,6 +44,8 @@ namespace aa {
 			value_type *element;
 			node_type *next;
 		};
+
+		using stack_type = fixed_vector<query_type, M>;
 
 	public:
 		// Reikia mintyje turėti tokį įdomų scenarijų, kad tame pačiame pass, mes įdedame elementą į lapą, po
@@ -168,27 +172,29 @@ namespace aa {
 		template<invocable_ref<size_type> F, vector2_like T1 = pair_type, vector2_like T2 = pair_type>
 		AA_CONSTEXPR void find_leaves(const T1 &tl, const T2 &br, F &&f) const {
 			if constexpr (H) {
-				queries.emplace_back(0, position);
+				get_0(queries).emplace_back(0, position);
 
 				unsafe_for_each_peel_last(sizes, [&](const pair_type &s) -> void {
-					size_type count = queries.size();
+					stack_type &in_stack = get_0(queries), &out_stack = get_1(queries);
 					do {
-						const query_type &q = queries.front();
+						const query_type &q = in_stack.back();
 						const pair_type m = pair_type{get_x(q.q) + get_x(s), get_y(q.q) + get_y(s)};
 
 						if (get_y(tl) < get_y(m)) {
-							if (get_x(tl) < get_x(m))	queries.emplace_back((q.i << 2) + 1, q.q);
-							if (get_x(br) > get_x(m))	queries.emplace_back((q.i << 2) + 2, pair_type{get_x(m), get_y(q.q)});
+							if (get_x(tl) < get_x(m))	out_stack.emplace_back((q.i << 2) + 1, q.q);
+							if (get_x(br) > get_x(m))	out_stack.emplace_back((q.i << 2) + 2, pair_type{get_x(m), get_y(q.q)});
 						}
 						if (get_y(br) > get_y(m)) {
-							if (get_x(tl) < get_x(m))	queries.emplace_back((q.i << 2) + 3, pair_type{get_x(q.q), get_y(m)});
-							if (get_x(br) > get_x(m))	queries.emplace_back((q.i << 2) + 4, m);
+							if (get_x(tl) < get_x(m))	out_stack.emplace_back((q.i << 2) + 3, pair_type{get_x(q.q), get_y(m)});
+							if (get_x(br) > get_x(m))	out_stack.emplace_back((q.i << 2) + 4, m);
 						}
-						queries.pop_front();
-					} while (--count);
+						in_stack.pop_back();
+					} while (!in_stack.empty());
+					queries.swap();
 				}, [&](const pair_type &s) -> void {
+					stack_type &in_stack = get_0(queries);
 					do {
-						const query_type &q = queries.front();
+						const query_type &q = in_stack.back();
 						const pair_type m = pair_type{get_x(q.q) + get_x(s), get_y(q.q) + get_y(s)};
 
 						if (get_y(tl) < get_y(m)) {
@@ -199,8 +205,8 @@ namespace aa {
 							if (get_x(tl) < get_x(m))	std::invoke(f, (q.i << 2) + 3 - phantoms_count);
 							if (get_x(br) > get_x(m))	std::invoke(f, (q.i << 2) + 4 - phantoms_count);
 						}
-						queries.pop_front();
-					} while (!queries.empty());
+						in_stack.pop_back();
+					} while (!in_stack.empty());
 				});
 			} else {
 				std::invoke(f, 0);
@@ -269,7 +275,8 @@ namespace aa {
 
 	protected:
 		size_type pass = 0;
-		mutable fixed_queue<query_type, M> queries;
+		// Čia greičiausias konteineris, nes kitų svarstytų konteinerių metodai naudoja sąlygos sakinius.
+		mutable swap_pair<stack_type> queries;
 		array_t<leaf, leaves_count> leaves;
 		fixed_fast_free_vector<node_type, N> nodes;
 
