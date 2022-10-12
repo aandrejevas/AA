@@ -15,12 +15,12 @@
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 #include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t
-#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable_with, constructible_from, signed_integral, unsigned_integral
+#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <string_view> // string_view
 #include <array> // array
 #include <bit> // has_single_bit, bit_cast
-#include <utility> // forward, declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence, index_sequence_for
+#include <utility> // declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence, index_sequence_for
 
 
 
@@ -151,32 +151,12 @@ namespace aa {
 	template<class T>
 	concept regular_unsigned_integral = std::unsigned_integral<T> && std::has_single_bit(unsign(std::numeric_limits<T>::digits));
 
-
-
 	// https://en.wikipedia.org/wiki/Function_object
 	template<class T>
 	concept functor = requires { &T::operator(); };
 
 	template<class F, auto... A>
 	concept nttp_accepting_functor = std::invocable<decltype(&(std::remove_reference_t<F>::template AA_CALL_OPERATOR<A...>)), F>;
-
-	// Vietoje requires parametrų galima naudoti declval, bet atrodo tai negražiai, nėra reikalo to daryti.
-	// https://mathworld.wolfram.com/Multiplier.html
-	template<class L, class R = L>
-	concept multiplier = requires(L && l, R && r) { (std::forward<L>(l) * std::forward<R>(r)); };
-
-	// https://mathworld.wolfram.com/Multiplicand.html
-	template<class R, class L = R>
-	concept multiplicand = multiplier<L, R>;
-
-	// AA_MUL uždeda skliaustelius apie išraišką, bet šiuo atveju tai nesvarbu, nes decltype ir su
-	// skliausteliais ir be jų nustatytų tą patį tipą, nes jam paduodama išraiška, o ne kintamojo vardas.
-	template<class L, multiplicand<L> R = L>
-	struct product_result
-		: std::type_identity<decltype(AA_MUL(std::declval<L>(), std::declval<R>()))> {};
-
-	template<class L, class R = L>
-	using product_result_t = typename product_result<L, R>::type;
 
 
 
@@ -336,6 +316,9 @@ namespace aa {
 
 	template<class U, class T>
 	using vector2_getter_result_t = typename vector2_getter_result<U, T>::type;
+
+	template<class T, class U>
+	concept vector2_similar_to = vector2_like<T> && std::same_as<array_element_t<T>, array_element_t<U>>;
 
 
 
@@ -514,6 +497,16 @@ namespace aa {
 		template<class T>
 		AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::min(); }
 	} numeric_min;
+
+	template<std::equality_comparable T>
+	AA_CONSTEXPR bool is_numeric_max(const T &x) {
+		return x == std::numeric_limits<T>::max();
+	}
+
+	template<std::equality_comparable T>
+	AA_CONSTEXPR bool is_numeric_min(const T &x) {
+		return x == std::numeric_limits<T>::min();
+	}
 
 
 

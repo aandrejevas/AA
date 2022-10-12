@@ -48,7 +48,6 @@
 #
 #define AA_SHL(l, r) ((l) << (r))
 #define AA_SHR(l, r) ((l) >> (r))
-#define AA_MUL(l, r) ((l) * (r))
 #
 #
 #

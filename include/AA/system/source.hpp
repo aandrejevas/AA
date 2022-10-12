@@ -3,7 +3,6 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
 #include "../container/fixed_string.hpp"
-#include "../algorithm/arithmetic.hpp"
 #include "print.hpp"
 #include <cstdint> // uint32_t
 #include <cstdlib> // abort

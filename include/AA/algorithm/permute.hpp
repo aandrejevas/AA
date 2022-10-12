@@ -4,7 +4,6 @@
 #include "../metaprogramming/generator.hpp"
 #include "../metaprogramming/range.hpp"
 #include "generate.hpp"
-#include "arithmetic.hpp"
 #include <iterator> // iter_swap, sentinel_for
 #include <ranges> // iterator_t, sentinel_t, range_value_t, begin, end
 

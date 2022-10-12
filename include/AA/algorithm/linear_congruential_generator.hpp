@@ -12,10 +12,16 @@
 
 namespace aa {
 
-	// Idėja kilo turėti iterator tipą, bet tai bloga idėja, nes lcg reiktų naudoti kaip function object.
 	// lcg būsenos nėra ordered, jos sudaro ciklą.
+	//
+	// requires paaiškinimas, kad prie visų SEED reikšmių, periodas būtų MODULUS reikia tinkamų parametrų.
+	// 1) MODULUS ir INCREMENT turi būti tarpusavyje pirminiai skaičiai.
+	// 2) MULTIPLIER-1 turi dalintis iš visų MODULUS pirminių dauginamųjų.
+	// 3) MULTIPLIER-1 turi dalintis iš 4 jei MODULUS dalinasi iš 4.
+	// Kadangi MODULUS pirminė faktorizacija yra lygi 2^n tai mūsų atveju 3 sąlyga apima 2.
 	// https://en.wikipedia.org/wiki/Linear_congruential_generator
 	template<std::unsigned_integral T = prev_unsigned_t<size_t>, T A = 0x8088405, T C = 1>
+		requires (std::gcd(representable_values_v<T>, C) == 1 && !remainder<4>(A - 1))
 	struct linear_congruential_generator {
 		// Member types
 		using result_type = T;
@@ -23,17 +29,15 @@ namespace aa {
 
 
 
-		//  Member constants
+		// Member constants
 		// https://cp-algorithms.com/algebra/module-inverse.html
 		// https://en.wikipedia.org/wiki/Euler%27s_totient_function
 		// https://en.wikipedia.org/wiki/Modular_multiplicative_inverse#Using_Euler's_theorem
-		static AA_CONSTEXPR const modulus_type modulus = representable_values_v<result_type>;
-		static AA_CONSTEXPR const result_type multiplier = A, increment = C, decremented_multiplier = multiplier - 1,
+		static AA_CONSTEXPR const modulus_type
+			modulus = representable_values_v<result_type>;
+		static AA_CONSTEXPR const result_type
+			multiplier = A, increment = C,
 			inverse = power(multiplier, (modulus >> 1) - 1);
-
-		// Nedarome requires, nes tame kontekste neturėtume modulus ir decremented_multiplier konstantų.
-		static_assert(std::gcd(modulus, increment) == 1
-			&& !remainder<2>(decremented_multiplier) && !remainder<4>(decremented_multiplier));
 
 
 

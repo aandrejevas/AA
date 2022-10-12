@@ -2,6 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
+#include "arithmetic.hpp"
 #include <ranges> // iterator_t, sentinel_t, borrowed_iterator_t, range_reference_t, range_size_t, begin, size, forward_range, bidirectional_range, input_range
 #include <iterator> // indirect_strict_weak_order, indirect_binary_predicate, indirectly_unary_invocable, indirect_unary_predicate
 #include <functional> // invoke, less, equal_to
@@ -20,7 +21,7 @@ namespace aa {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		std::ranges::range_size_t<R> len = std::ranges::size(r);
 		do {
-			const std::ranges::range_size_t<R> half = len >> 1;
+			const std::ranges::range_size_t<R> half = halve(len);
 			const std::ranges::iterator_t<R> middle = first + half;
 			if (std::invoke(comp, value, std::as_const(*middle))) {
 				len = half;
@@ -37,7 +38,7 @@ namespace aa {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		std::ranges::range_size_t<R> len = std::ranges::size(r);
 		do {
-			const std::ranges::range_size_t<R> half = len >> 1;
+			const std::ranges::range_size_t<R> half = halve(len);
 			const std::ranges::iterator_t<R> middle = first + half;
 			if (std::invoke(comp, std::as_const(*middle), value)) {
 				first = middle + 1;

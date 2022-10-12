@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../algorithm/arithmetic.hpp"
 #include "general.hpp"
 #include <random> // uniform_random_bit_generator
 #include <type_traits> // invoke_result, remove_reference_t

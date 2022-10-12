@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../algorithm/arithmetic.hpp"
 #include <cstring> // memmove
 #include <cstddef> // size_t, ptrdiff_t, byte
 #include <memory> // construct_at

@@ -3,7 +3,7 @@
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t
 #include <cmath> // fmod
-#include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as, equality_comparable
+#include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as
 #include <bit> // countl_zero, has_single_bit
 #include <limits> // numeric_limits
 
@@ -155,25 +155,9 @@ namespace aa {
 		} while (true);
 	}
 
-	// product_result_t tipas gali būti void, bet nieko tokio tai, nes return sakinys gali būti naudojamas
-	// su išraišką, jei tos išraiškos tipas yra void, funkcijoje, kurios gražinamas tipas yra void.
-	//
-	// Galima būtų leisti kompiliatoriui nustatyti gražinamą tipą, bet tada vis tiek reiktų naudoti concept.
-	template<class T>
-	AA_CONSTEXPR product_result_t<const T &> sq(const T &x) {
+	template<arithmetic T>
+	[[gnu::always_inline]] AA_CONSTEXPR auto sq(const T x) {
 		return x * x;
-	}
-
-
-
-	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_numeric_max(const T &x) {
-		return x == std::numeric_limits<T>::max();
-	}
-
-	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_numeric_min(const T &x) {
-		return x == std::numeric_limits<T>::min();
 	}
 
 }
