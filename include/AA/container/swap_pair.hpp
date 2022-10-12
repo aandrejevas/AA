@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include <cstddef> // size_t
 #include <concepts> // swap
 #include <utility> // forward, tuple_size, tuple_size_v, tuple_element
 #include <type_traits> // common_type_t, integral_constant, type_identity
@@ -15,37 +16,34 @@ namespace aa {
 		using value_type = T;
 
 	protected:
-		template<size_t I>
-		using p_unit_type = typename pair<value_type *>::unit_type<I>;
-
+		using b1 = pair<value_type>;
+		using b2 = pair<value_type *>;
 	public:
-		template<size_t I>
-		using unit_type = typename pair<value_type>::unit_type<I>;
 
 
 
 		// Element access
 		template<size_t I>
-		AA_CONSTEXPR value_type &get() { return *p_unit_type<I>::value; }
+		AA_CONSTEXPR value_type &get() { return *b2::template get<I>(); }
 
 		template<size_t I>
-		AA_CONSTEXPR const value_type &get() const { return *p_unit_type<I>::value; }
+		AA_CONSTEXPR const value_type &get() const { return *b2::template get<I>(); }
 
 
 
 		// Modifiers
-		AA_CONSTEXPR void swap() { std::ranges::swap(p_unit_type<0>::value, p_unit_type<1>::value); }
+		AA_CONSTEXPR void swap() { std::ranges::swap(b2::template get<0>(), b2::template get<1>()); }
 
 
 
 		// Special member functions
 		AA_CONSTEXPR swap_pair()
-			: pair<value_type *>{&(unit_type<0>::value), &(unit_type<1>::value)} {}
+			: b2{&(b1::template get<0>()), &(b1::template get<1>())} {}
 
 		template<class T1 = value_type, class T2 = value_type>
 		AA_CONSTEXPR swap_pair(T1 &&t1, T2 &&t2)
-			: pair<value_type>{std::forward<T1>(t1), std::forward<T2>(t2)},
-			pair<value_type *>{&(unit_type<0>::value), &(unit_type<1>::value)} {}
+			: b1{std::forward<T1>(t1), std::forward<T2>(t2)},
+			b2{&(b1::template get<0>()), &(b1::template get<1>())} {}
 	};
 
 	template<class T1, class T2>

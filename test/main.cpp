@@ -1,7 +1,8 @@
-#include <AA/container/fixed_quad_tree.hpp>
+#include <AA/container/fixed_grid.hpp>
 #include <AA/container/fixed_free_vector.hpp>
 #include <AA/container/fixed_perfect_hash_set.hpp>
 #include <AA/container/fixed_flat_set.hpp>
+#include <AA/container/fixed_vector.hpp>
 #include <AA/algorithm/arithmetic.hpp>
 #include <AA/algorithm/find.hpp>
 #include <AA/algorithm/shift.hpp>
@@ -212,19 +213,18 @@ int main() {
 		static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
 	{
-		using quad_tree_type = fixed_quad_tree<array_t<double, 2>, 5, 500>;
-		quad_tree_type tree = {{0, 0}, {100, 100}};
-		printl(make_range_writer(tree.sizes, pair_inserter{}));
-		fixed_vector<quad_tree_type::value_type, tree.max_size()> positions;
+		using grid_type = fixed_grid<array_t<double, 2>, 100, 100, 500>;
+		grid_type tree = {{1, 1}};
+		fixed_vector<grid_type::value_type, tree.max_size()> positions;
 
 		{
 			repeat(tree.max_size(), [&]() {
-				positions.emplace_back(quad_tree_type::value_type{real_distribution<double>(g, 25.),
+				positions.emplace_back(grid_type::value_type{real_distribution<double>(g, 25.),
 					norm_map<0>(real_distribution<double>(g, 50., 10.), 50., 10., 25.)});
 				tree.insert(positions.back());
 			});
 			size_t sum = 0;
-			tree.query_range({0, 0}, {25, 25}, [&](const quad_tree_type::value_type &) { ++sum; });
+			tree.query_range({0, 0}, {25, 25}, [&](const grid_type::value_type &) { ++sum; });
 			AA_TRACE_ASSERT(tree.max_size() == sum);
 		}
 		{
@@ -233,7 +233,7 @@ int main() {
 				positions.pop_back();
 			});
 			size_t sum = 0;
-			tree.query_range({0, 0}, {25, 25}, [&](const quad_tree_type::value_type &) { ++sum; });
+			tree.query_range({0, 0}, {25, 25}, [&](const grid_type::value_type &) { ++sum; });
 			AA_TRACE_ASSERT((tree.max_size() >> 1) == sum);
 		}
 	}
