@@ -499,12 +499,12 @@ namespace aa {
 	} numeric_min;
 
 	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_numeric_max(const T &x) {
+	[[gnu::always_inline]] AA_CONSTEXPR bool is_numeric_max(const T &x) {
 		return x == std::numeric_limits<T>::max();
 	}
 
 	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_numeric_min(const T &x) {
+	[[gnu::always_inline]] AA_CONSTEXPR bool is_numeric_min(const T &x) {
 		return x == std::numeric_limits<T>::min();
 	}
 
@@ -583,7 +583,7 @@ namespace aa {
 
 
 		// Member objects
-		value_type value;
+		[[no_unique_address]] value_type value;
 	};
 
 	template<class, class...>
@@ -615,10 +615,10 @@ namespace aa {
 
 		// Element access
 		template<size_t I>
-		AA_CONSTEXPR value_type<I> &get() { return unit_type<I>::value; }
+		[[gnu::always_inline]] AA_CONSTEXPR value_type<I> &get() { return unit_type<I>::value; }
 
 		template<size_t I>
-		AA_CONSTEXPR const value_type<I> &get() const { return unit_type<I>::value; }
+		[[gnu::always_inline]] AA_CONSTEXPR const value_type<I> &get() const { return unit_type<I>::value; }
 	};
 
 	template<class... T>
