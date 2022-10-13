@@ -2,11 +2,13 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../algorithm/find.hpp"
+#include "../algorithm/arithmetic.hpp"
 #include "fixed_fast_free_vector.hpp"
 #include "unsafe_subrange.hpp"
 #include <cstddef> // ptrdiff_t, size_t
 #include <functional> // invoke, identity
 #include <utility> // forward, exchange, as_const
+#include <algorithm> // min, max
 
 
 
@@ -27,6 +29,9 @@ namespace aa {
 		using position_type = vector2_getter_result_t<value_type, locator_type>;
 		using pair_type = pair<array_element_t<position_type>>;
 
+		static AA_CONSTEXPR const array_element_t<position_type> min_loc = 0;
+		static AA_CONSTEXPR const size_type first_pass = 1;
+
 	protected:
 		struct node_type {
 			value_type *element;
@@ -34,8 +39,6 @@ namespace aa {
 		};
 
 	public:
-		// Reikia mintyje turėti tokį įdomų scenarijų, kad tame pačiame pass, mes įdedame elementą į lapą, po
-		// to išemame elementą ir tada kažką darome, pass bus tas pats, bet first tuo atveju bus nullptr.
 		struct leaf {
 			// Modifiers
 			AA_CONSTEXPR void insert(const pointer e, fixed_grid &t) {
@@ -48,9 +51,14 @@ namespace aa {
 			}
 
 			AA_CONSTEXPR void erase(const const_pointer e, fixed_grid &t) {
-				if (pass == t.pass && first) {
+				if (pass == t.pass) {
 					if (first->element == e) {
 						t.nodes.erase(std::exchange(first, first->next));
+						// Reikia mintyje turėti tokį įdomų scenarijų, kad tame pačiame pass, mes įdedame elementą į lapą, po
+						// to išemame elementą ir tada kažką darome, pass bus tas pats, bet first tuo atveju bus nullptr.
+						if (first == nullptr) {
+							--pass;
+						}
 					} else {
 						node_type *iter = first;
 						while (iter->next) {
@@ -69,7 +77,7 @@ namespace aa {
 			// Lookup
 			template<invocable_ref<reference> F, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
 			AA_CONSTEXPR void query_range(const P1 &tl, const P2 &br, F &&f, const fixed_grid &t) const {
-				if (pass == t.pass && first) {
+				if (pass == t.pass) {
 					const node_type *iter = first;
 					do {
 						const position_type &l = t.locate(*iter->element);
@@ -82,7 +90,7 @@ namespace aa {
 
 			template<invocable_ref<reference> F>
 			AA_CONSTEXPR void query(F &f, const fixed_grid &t) const {
-				if (pass == t.pass && first) {
+				if (pass == t.pass) {
 					const node_type *iter = first;
 					do {
 						std::invoke(f, *iter->element);
@@ -94,8 +102,8 @@ namespace aa {
 
 			// Member objects
 		protected:
-			size_type pass = 0;
-			node_type *first = nullptr;
+			size_type pass;
+			node_type *first;
 		};
 
 
@@ -108,6 +116,10 @@ namespace aa {
 		AA_CONSTEXPR size_type size() const { return nodes.size(); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
+		static AA_CONSTEVAL size_type max_row_size() { return W; }
+		static AA_CONSTEVAL size_type max_col_size() { return H; }
+		static AA_CONSTEVAL size_type max_row_index() { return W - 1; }
+		static AA_CONSTEVAL size_type max_col_index() { return H - 1; }
 
 
 
@@ -141,13 +153,17 @@ namespace aa {
 
 		template<invocable_ref<const leaf &> F, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
 		AA_CONSTEXPR void find_leaves(const P1 &tl, const P2 &br, F &&f) const {
+			if (get_x(br) < min_loc || get_y(br) < min_loc || get_x(max_loc) < get_x(tl) || get_y(max_loc) < get_y(tl)) return;
+
 			const size_type
-				jb = unsign_cast<size_type>(get_x(tl) / get_w(leaf_size)),
-				je = unsign_cast<size_type>(get_x(br) / get_w(leaf_size));
+				jb = unsign_cast<size_type>(std::ranges::max(get_x(tl), min_loc) / get_w(leaf_size)),
+				ib = unsign_cast<size_type>(std::ranges::max(get_y(tl), min_loc) / get_h(leaf_size)),
+				je = unsign_cast<size_type>(std::ranges::min(get_x(br), get_x(max_loc)) / get_w(leaf_size)),
+				ie = unsign_cast<size_type>(std::ranges::min(get_y(br), get_y(max_loc)) / get_h(leaf_size));
 
 			unsafe_for_each(unsafe_subrange{
-				leaves.data() + unsign_cast<size_type>(get_y(tl) / get_h(leaf_size)),
-				leaves.data() + unsign_cast<size_type>(get_y(br) / get_h(leaf_size))
+				leaves.data() + ib,
+				leaves.data() + ie
 			},
 			[&](const array_t<leaf, W> &row) -> void {
 				unsafe_for_each(unsafe_subrange{
@@ -195,17 +211,21 @@ namespace aa {
 		// Special member functions
 		template<class U = locator_type, vector2_similar_to<pair_type> P = pair_type>
 		AA_CONSTEXPR fixed_grid(const P &size, U &&u = {})
-			: leaf_size{get_w(size), get_h(size)}, locator{std::forward<U>(u)} {}
+			: fixed_grid{size, {product<W>(get_w(size)) - 1, product<H>(get_h(size)) - 1}, std::forward<U>(u)} {}
+
+		template<class U = locator_type, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
+		AA_CONSTEXPR fixed_grid(const P1 &size, const P2 &l, U &&u = {})
+			: leaf_size{get_w(size), get_h(size)}, max_loc{get_x(l), get_y(l)}, locator{std::forward<U>(u)} {}
 
 
 
 		// Member objects
-		const pair_type leaf_size;
+		const pair_type leaf_size, max_loc;
 		array_t<leaf, W, H> leaves;
 
 	protected:
 		fixed_fast_free_vector<node_type, N> nodes;
-		size_type pass = 0;
+		size_type pass = first_pass;
 
 	public:
 		[[no_unique_address]] const locator_type locator;

@@ -26,9 +26,9 @@ namespace std {
 
 namespace sf {
 
-	template<size_t I, aa::arithmetic T, template<aa::arithmetic> class V>
-		requires (aa::remove_cvref_same_as<V<T>, sf::Vector2<T>> && (I < std::tuple_size_v<std::remove_reference_t<V<T>>>))
-	AA_CONSTEXPR std::tuple_element_t<I, std::remove_reference_t<V<T>>> &get(V<T> &&v) {
+	template<size_t I, aa::instantiation_of<sf::Vector2> V>
+		requires (I < std::tuple_size_v<std::remove_reference_t<V>>)
+	AA_CONSTEXPR std::tuple_element_t<I, std::remove_reference_t<V>> &get(V &&v) {
 		if constexpr (!I)	return v.x;
 		else				return v.y;
 	}

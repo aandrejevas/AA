@@ -224,7 +224,7 @@ int main() {
 				tree.insert(positions.back());
 			});
 			size_t sum = 0;
-			tree.query_range({0, 0}, {25, 25}, [&](const grid_type::value_type &) { ++sum; });
+			tree.query_range({-25, -25}, {25, 25}, [&](const grid_type::value_type &) { ++sum; });
 			AA_TRACE_ASSERT(tree.max_size() == sum);
 		}
 		{
@@ -233,7 +233,7 @@ int main() {
 				positions.pop_back();
 			});
 			size_t sum = 0;
-			tree.query_range({0, 0}, {25, 25}, [&](const grid_type::value_type &) { ++sum; });
+			tree.query_range({-25, -25}, {25, 25}, [&](const grid_type::value_type &) { ++sum; });
 			AA_TRACE_ASSERT((tree.max_size() >> 1) == sum);
 		}
 	}

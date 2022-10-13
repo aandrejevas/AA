@@ -14,7 +14,7 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t
+#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t
 #include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <string_view> // string_view
@@ -111,6 +111,20 @@ namespace aa {
 	AA_CONSTEXPR const bool are_same_v = are_same<A...>::value;
 
 
+
+	template<class, template<class...> class>
+	struct is_instantiation_of : std::false_type {};
+
+	template<template<class...> class T, class... A>
+	struct is_instantiation_of<T<A...>, T> : std::true_type {};
+
+	template<class T, template<class...> class U>
+	AA_CONSTEXPR const bool is_instantiation_of_v = is_instantiation_of<T, U>::value;
+
+
+
+	template<class T, template<class...> class U>
+	concept instantiation_of = is_instantiation_of_v<std::remove_cvref_t<T>, U>;
 
 	template<class T>
 	concept pointer = std::is_pointer_v<T>;
