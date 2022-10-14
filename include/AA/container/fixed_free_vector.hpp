@@ -139,11 +139,23 @@ namespace aa {
 		// Capacity
 		AA_CONSTEXPR bool has_holes() const { return first_hole; }
 
-		AA_CONSTEXPR bool empty() const { return elements.empty(); }
+		AA_CONSTEXPR size_type holes_count() const {
+			if (first_hole) {
+				size_type count = 0;
+				node_type *iter = first_hole;
+				do {
+					++count;
+				} while ((iter = std::get<hole_index>(unwrap(iter))));
+				return count;
+			}
+			return 0;
+		}
+
+		AA_CONSTEXPR bool empty() const { return size() == 0; }
 		AA_CONSTEXPR bool full() const { return elements.full(); }
 
-		AA_CONSTEXPR difference_type ssize() const { return elements.ssize(); }
-		AA_CONSTEXPR size_type size() const { return elements.size(); }
+		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
+		AA_CONSTEXPR size_type size() const { return elements.size() - holes_count(); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
 

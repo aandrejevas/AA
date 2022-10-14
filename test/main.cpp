@@ -199,21 +199,21 @@ int main() {
 	{
 		fixed_free_vector<size_t, 50'000> a;
 
-		repeat(a.max_size(), [&]() { a.emplace(a.size()); });
-		unsafe_for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { a.erase(a[i]); AA_TRACE_ASSERT(!a[i]); });
-		unsafe_for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
+		unsafe_for_each(std::views::iota(0uz, a.max_size()), [&](const size_t i) { a.emplace(i); });
+		AA_TRACE_ASSERT(a.full() && !a.has_holes());
+		unsafe_for_each(a, [&](size_t *const ptr) { a.erase(ptr); });
+		AA_TRACE_ASSERT(a.full() && a.empty());
 
-		AA_TRACE_ASSERT(a.max_size() == a.size());
-		repeat(a.size() >> 1, [&]() { a.emplace(a.size()); });
-		AA_TRACE_ASSERT(a.max_size() == a.size());
-
-		unsafe_for_each(std::views::iota(0uz, a.size() >> 1), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == a.size()); });
-		unsafe_for_each(std::views::iota(a.size() >> 1, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
+		unsafe_for_each(std::views::iota(0uz, a.max_size()) | std::views::reverse, [&](const size_t i) {
+			AA_TRACE_ASSERT(!a[i]); a.emplace(i); AA_TRACE_ASSERT(a[i]);
+		});
+		AA_TRACE_ASSERT(a.full() && !a.has_holes());
+		unsafe_for_each(std::views::iota(0uz, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
 
 		static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
 	{
-		using grid_type = fixed_grid<array_t<double, 2>, 100, 100, 500>;
+		using grid_type = fixed_erasable_grid<array_t<double, 2>, 100, 100, 500>;
 		grid_type tree = {{1, 1}};
 		fixed_vector<grid_type::value_type, tree.max_size()> positions;
 
