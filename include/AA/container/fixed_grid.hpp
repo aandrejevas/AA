@@ -4,18 +4,20 @@
 #include "../algorithm/find.hpp"
 #include "../algorithm/arithmetic.hpp"
 #include "fixed_fast_free_vector.hpp"
+#include "fixed_vector.hpp"
 #include "unsafe_subrange.hpp"
 #include <cstddef> // ptrdiff_t, size_t
 #include <functional> // invoke, identity
 #include <utility> // forward, exchange, as_const
 #include <algorithm> // min, max
+#include <type_traits> // conditional_t
 
 
 
 namespace aa {
 
 	// https://stackoverflow.com/questions/41946007/efficient-and-well-explained-implementation-of-a-quadtree-for-2d-collision-det
-	template<class T, size_t W, size_t H, size_t N, storable_vector2_getter<T> L = std::identity>
+	template<class T, size_t W, size_t H, size_t N, storable_vector2_getter<T> L = std::identity, bool ERASABLE = false>
 	struct fixed_grid {
 		// Member types
 		using value_type = T;
@@ -38,26 +40,37 @@ namespace aa {
 			node_type *next;
 		};
 
+		using container_type = std::conditional_t<ERASABLE, fixed_fast_free_vector<node_type, N>, fixed_vector<node_type, N>>;
+
+		template<class... A>
+		[[gnu::always_inline]] AA_CONSTEXPR node_type *emplace(A&&... args) {
+			if constexpr (ERASABLE) {
+				return nodes.emplace(std::forward<A>(args)...);
+			} else {
+				return nodes.emplace_back(std::forward<A>(args)...);
+			}
+		}
+
 	public:
 		struct leaf {
 			// Modifiers
 			AA_CONSTEXPR void insert(const pointer e, fixed_grid &t) {
-				if (pass != t.pass) {
+				if (empty(t)) {
 					pass = t.pass;
-					first = t.nodes.emplace(e, nullptr);
+					first = t.emplace(e, nullptr);
 				} else {
-					first = t.nodes.emplace(e, first);
+					first = t.emplace(e, first);
 				}
 			}
 
-			AA_CONSTEXPR void erase(const const_pointer e, fixed_grid &t) {
-				if (pass == t.pass) {
+			AA_CONSTEXPR void erase(const const_pointer e, fixed_grid &t) requires (ERASABLE) {
+				if (!empty(t)) {
 					if (first->element == e) {
 						t.nodes.erase(std::exchange(first, first->next));
 						// Reikia mintyje turėti tokį įdomų scenarijų, kad tame pačiame pass, mes įdedame elementą į lapą, po
 						// to išemame elementą ir tada kažką darome, pass bus tas pats, bet first tuo atveju bus nullptr.
 						if (first == nullptr) {
-							--pass;
+							pass = 0;
 						}
 					} else {
 						node_type *iter = first;
@@ -77,7 +90,7 @@ namespace aa {
 			// Lookup
 			template<invocable_ref<reference> F, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
 			AA_CONSTEXPR void query_range(const P1 &tl, const P2 &br, F &&f, const fixed_grid &t) const {
-				if (pass == t.pass) {
+				if (!empty(t)) {
 					const node_type *iter = first;
 					do {
 						const position_type &l = t.locate(*iter->element);
@@ -90,13 +103,25 @@ namespace aa {
 
 			template<invocable_ref<reference> F>
 			AA_CONSTEXPR void query(F &f, const fixed_grid &t) const {
-				if (pass == t.pass) {
+				if (!empty(t)) {
 					const node_type *iter = first;
 					do {
 						std::invoke(f, *iter->element);
 					} while ((iter = iter->next));
 				}
 			}
+
+
+
+			// Observers
+			AA_CONSTEXPR size_type get_pass() const { return pass; }
+
+			AA_CONSTEXPR bool empty(const fixed_grid &t) const { return pass != t.pass; }
+
+
+
+			// Special member functions
+			AA_CONSTEXPR leaf() = default;
 
 
 
@@ -202,7 +227,7 @@ namespace aa {
 			find_leaf(locate(element)).insert(&element, *this);
 		}
 
-		AA_CONSTEXPR void erase(const value_type &element) {
+		AA_CONSTEXPR void erase(const value_type &element) requires (ERASABLE) {
 			find_leaf(locate(element)).erase(&element, *this);
 		}
 
@@ -224,11 +249,14 @@ namespace aa {
 		array_t<leaf, W, H> leaves;
 
 	protected:
-		fixed_fast_free_vector<node_type, N> nodes;
+		container_type nodes;
 		size_type pass = first_pass;
 
 	public:
 		[[no_unique_address]] const locator_type locator;
 	};
+
+	template<class T, size_t W, size_t H, size_t N, class L = std::identity>
+	using fixed_erasable_grid = fixed_grid<T, W, H, N, L, true>;
 
 }

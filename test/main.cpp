@@ -199,16 +199,18 @@ int main() {
 	{
 		fixed_free_vector<size_t, 50'000> a;
 
-		unsafe_for_each(std::views::iota(0uz, a.max_size()), [&](const size_t i) { a.emplace(i); });
+		unsafe_for_each(std::views::iota(0uz, a.max_size()), [&](const size_t i) {
+			AA_TRACE_ASSERT(!a[i]); a.emplace(i); AA_TRACE_ASSERT(a[i]); AA_TRACE_ASSERT(*a[i] == i);
+		});
 		AA_TRACE_ASSERT(a.full() && !a.has_holes());
+
 		unsafe_for_each(a, [&](size_t *const ptr) { a.erase(ptr); });
 		AA_TRACE_ASSERT(a.full() && a.empty());
 
 		unsafe_for_each(std::views::iota(0uz, a.max_size()) | std::views::reverse, [&](const size_t i) {
-			AA_TRACE_ASSERT(!a[i]); a.emplace(i); AA_TRACE_ASSERT(a[i]);
+			AA_TRACE_ASSERT(!a[i]); a.emplace(i); AA_TRACE_ASSERT(a[i]); AA_TRACE_ASSERT(*a[i] == i);
 		});
 		AA_TRACE_ASSERT(a.full() && !a.has_holes());
-		unsafe_for_each(std::views::iota(0uz, a.size()), [&](const size_t i) { AA_TRACE_ASSERT(*a[i] == i); });
 
 		static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
