@@ -35,11 +35,8 @@ namespace aa {
 
 	template<source_data D, class... A>
 	[[gnu::always_inline]] AA_CONSTEXPR void log(std::ostream &s, const A&... args) {
-		if constexpr (sizeof...(A)) {
-			printl(s, D, ": ", args...);
-		} else {
-			log<D>(s, "Info logged.");
-		}
+		if constexpr (sizeof...(A))		printl(s, D, ": ", args...);
+		else							log<D>(s, "Info logged.");
 	}
 
 	template<source_data D, class... A>
@@ -50,11 +47,8 @@ namespace aa {
 
 	template<source_data D, class... A>
 	[[gnu::always_inline, noreturn]] AA_CONSTEXPR void abort(std::ostream &s, const A&... args) {
-		if constexpr (sizeof...(A)) {
-			log<D>(s, args...);
-		} else {
-			log<D>(s, "Program aborted.");
-		}
+		if constexpr (sizeof...(A))		log<D>(s, args...);
+		else							log<D>(s, "Program aborted.");
 		std::abort();
 	}
 
@@ -79,11 +73,8 @@ namespace aa {
 	[[gnu::always_inline]] AA_CONSTEXPR void assert(const bool condition, std::ostream &s, const A&... args) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {
-				if constexpr (sizeof...(A)) {
-					abort<D>(s, args...);
-				} else {
-					abort<D>(s, "Assertion failed.");
-				}
+				if constexpr (sizeof...(A))		abort<D>(s, args...);
+				else							abort<D>(s, "Assertion failed.");
 			}
 		}
 	}

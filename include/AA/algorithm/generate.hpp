@@ -17,11 +17,8 @@ namespace aa {
 	AA_CONSTEXPR std::conditional_t<std::floating_point<T>, std::uniform_real_distribution<T>, std::uniform_int_distribution<T>>
 		make_uniform_distribution(const T a, const T b)
 	{
-		if constexpr (std::floating_point<T>) {
-			return std::uniform_real_distribution<T>{a, b};
-		} else {
-			return std::uniform_int_distribution<T>{a, b};
-		}
+		if constexpr (std::floating_point<T>)		return std::uniform_real_distribution<T>{a, b};
+		else										return std::uniform_int_distribution<T>{a, b};
 	}
 
 

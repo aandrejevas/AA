@@ -11,12 +11,16 @@
 
 namespace aa {
 
+	template<class R>
+	concept unusual_range = std::ranges::range<R>
+		&& requires(R & r) { { std::ranges::rbegin(r) } -> std::same_as<std::ranges::sentinel_t<R>>; };
+
 	// Darome daug prielaidų čia, nes atrodo, kad c++ standartas jas daro taip pat.
 	//
 	// Nėra atitinkamos funkcijos rend iteratoriui, nes jis nėra svarbus.
 	template<std::ranges::range R>
-	AA_CONSTEXPR std::ranges::sentinel_t<R> get_rbegin(R &&r) {
-		if constexpr (requires { { std::ranges::rbegin(r) } -> std::same_as<std::ranges::sentinel_t<R>>; }) {
+	[[gnu::always_inline]] AA_CONSTEXPR std::ranges::sentinel_t<R> get_rbegin(R &&r) {
+		if constexpr (unusual_range<R>) {
 			return std::ranges::rbegin(r);
 		} else if constexpr (std::ranges::bidirectional_range<R>) {
 			return std::ranges::prev(std::ranges::end(r));

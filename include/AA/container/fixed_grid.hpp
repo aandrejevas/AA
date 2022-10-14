@@ -44,11 +44,8 @@ namespace aa {
 
 		template<class... A>
 		[[gnu::always_inline]] AA_CONSTEXPR node_type *emplace(A&&... args) {
-			if constexpr (ERASABLE) {
-				return nodes.emplace(std::forward<A>(args)...);
-			} else {
-				return nodes.emplace_back(std::forward<A>(args)...);
-			}
+			if constexpr (ERASABLE)		return nodes.emplace(std::forward<A>(args)...);
+			else						return nodes.emplace_back(std::forward<A>(args)...);
 		}
 
 	public:
