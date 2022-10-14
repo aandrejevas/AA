@@ -11,7 +11,6 @@
 #include <initializer_list> // initializer_list
 #include <functional> // invoke, hash
 #include <string_view> // string_view, hash
-#include <tuple> // tuple, get
 #include <utility> // unreachable, forward
 #include <bit> // bit_cast
 #include <type_traits> // remove_reference_t
@@ -37,13 +36,13 @@ namespace aa {
 			template<class T>
 			AA_CONSTEXPR void evaluate() const {
 				params_iter->second.template emplace<evaluator_result_t<T>>(
-					std::invoke(std::get<T>(evaluators), token.operator std::string_view()));
+					std::invoke(evaluators.template get<T>(), token.operator std::string_view()));
 			}
 
 			using types_map = std::unordered_map<std::string_view, void(params_lexer:: *)() const,
 				typename params_map::hasher, typename params_map::key_equal>;
 
-			[[no_unique_address]] const std::tuple<A...> evaluators;
+			[[no_unique_address]] const tuple<A...> evaluators;
 			const types_map types = {std::initializer_list<typename types_map::value_type>{
 				typename types_map::value_type{type_name<evaluator_result_t<A>>(), &params_lexer::evaluate<A>}...
 			}};
