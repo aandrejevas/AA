@@ -56,9 +56,9 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		AA_CONSTEXPR pointer emplace(A&&... args) {
 			if (first_hole) {
-				node_type *const hole = first_hole;
-				first_hole = hole->next;
-				return std::ranges::construct_at(&hole->element, std::forward<A>(args)...);
+				node_type &hole = *first_hole;
+				first_hole = hole.next;
+				return std::ranges::construct_at(&hole.element, std::forward<A>(args)...);
 			} else {
 				return std::ranges::construct_at(&elements.push_back()->element, std::forward<A>(args)...);
 			}
@@ -66,9 +66,9 @@ namespace aa {
 
 		AA_CONSTEXPR void insert(const value_type &value) {
 			if (first_hole) {
-				node_type *const hole = first_hole;
-				first_hole = hole->next;
-				hole->element = value;
+				node_type &hole = *first_hole;
+				first_hole = hole.next;
+				hole.element = value;
 			} else {
 				elements.push_back()->element = value;
 			}

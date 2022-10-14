@@ -32,9 +32,15 @@ namespace aa {
 		// void* turi būti pirmas tipas, nes masyvo inicializavimo metu, bus inicializuojami visi jo elementai
 		// ir variant default kontruktorius inicializuoja pirmą alternatyvą, makes sence, kad by default aktyvi
 		// alternatyva būtų void* ir apskritai value_type gali neturėti default konstruktoriaus.
-		using node_type = std::variant<void *, value_type>;
+		struct node_type {
+			using union_type = std::variant<node_type *, value_type>;
 
-		static AA_CONSTEXPR const size_t hole_index = 0, elem_index = 1;
+			union_type v;
+		};
+
+		using union_type = typename node_type::union_type;
+
+		static AA_CONSTEXPR const size_type hole_index = 0, elem_index = 1;
 
 		template<class P1, class P2>
 		struct variant_iterator {
@@ -44,8 +50,8 @@ namespace aa {
 			using pointer = value_type;
 			using iterator_category = std::random_access_iterator_tag;
 
-			AA_CONSTEXPR reference operator*() const { return std::get_if<elem_index>(ptr); }
-			AA_CONSTEXPR pointer operator->() const { return std::get_if<elem_index>(ptr); }
+			AA_CONSTEXPR reference operator*() const { return get_elem(ptr); }
+			AA_CONSTEXPR pointer operator->() const { return get_elem(ptr); }
 
 			AA_CONSTEXPR variant_iterator &operator++() { ++ptr; return *this; }
 			AA_CONSTEXPR variant_iterator operator++(const int) { return {ptr++}; }
@@ -56,7 +62,7 @@ namespace aa {
 			friend AA_CONSTEXPR std::strong_ordering operator<=>(const variant_iterator &l, const variant_iterator &r) { return l.ptr <=> r.ptr; }
 
 			AA_CONSTEXPR difference_type operator-(const variant_iterator &r) const { return ptr - r.ptr; }
-			AA_CONSTEXPR reference operator[](const difference_type n) const { return std::get_if<elem_index>(ptr + n); }
+			AA_CONSTEXPR reference operator[](const difference_type n) const { return get_elem(ptr + n); }
 			AA_CONSTEXPR variant_iterator operator+(const difference_type n) const { return {ptr + n}; }
 			AA_CONSTEXPR variant_iterator operator-(const difference_type n) const { return {ptr - n}; }
 			AA_CONSTEXPR variant_iterator &operator+=(const difference_type n) { ptr += n; return *this; }
@@ -82,23 +88,31 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR pointer operator[](const size_type pos) { return std::get_if<elem_index>(elements.data(pos)); }
-		AA_CONSTEXPR const_pointer operator[](const size_type pos) const { return std::get_if<elem_index>(elements.data(pos)); }
+	protected:
+		[[gnu::always_inline]] static AA_CONSTEXPR union_type &unwrap(node_type *const n) { return n->v; }
+		[[gnu::always_inline]] static AA_CONSTEXPR const union_type &unwrap(const node_type *const n) { return n->v; }
 
-		AA_CONSTEXPR pointer elem(const size_type pos) { return std::get_if<elem_index>(elements.data(pos)); }
-		AA_CONSTEXPR const_pointer elem(const size_type pos) const { return std::get_if<elem_index>(elements.data(pos)); }
+		[[gnu::always_inline]] static AA_CONSTEXPR pointer get_elem(node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
+		[[gnu::always_inline]] static AA_CONSTEXPR const_pointer get_elem(const node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
+
+	public:
+		AA_CONSTEXPR pointer operator[](const size_type pos) { return get_elem(elements.data(pos)); }
+		AA_CONSTEXPR const_pointer operator[](const size_type pos) const { return get_elem(elements.data(pos)); }
+
+		AA_CONSTEXPR pointer elem(const size_type pos) { return get_elem(elements.data(pos)); }
+		AA_CONSTEXPR const_pointer elem(const size_type pos) const { return get_elem(elements.data(pos)); }
 		AA_CONSTEXPR const_pointer celem(const size_type pos) const { return elem(pos); }
 
-		AA_CONSTEXPR pointer relem(const size_type pos) { return std::get_if<elem_index>(elements.rdata(pos)); }
-		AA_CONSTEXPR const_pointer relem(const size_type pos) const { return std::get_if<elem_index>(elements.rdata(pos)); }
+		AA_CONSTEXPR pointer relem(const size_type pos) { return get_elem(elements.rdata(pos)); }
+		AA_CONSTEXPR const_pointer relem(const size_type pos) const { return get_elem(elements.rdata(pos)); }
 		AA_CONSTEXPR const_pointer crelem(const size_type pos) const { return relem(pos); }
 
-		AA_CONSTEXPR pointer front() { return std::get_if<elem_index>(elements.data()); }
-		AA_CONSTEXPR const_pointer front() const { return std::get_if<elem_index>(elements.data()); }
+		AA_CONSTEXPR pointer front() { return get_elem(elements.data()); }
+		AA_CONSTEXPR const_pointer front() const { return get_elem(elements.data()); }
 		AA_CONSTEXPR const_pointer cfront() const { return front(); }
 
-		AA_CONSTEXPR pointer back() { return std::get_if<elem_index>(elements.rdata()); }
-		AA_CONSTEXPR const_pointer back() const { return std::get_if<elem_index>(elements.rdata()); }
+		AA_CONSTEXPR pointer back() { return get_elem(elements.rdata()); }
+		AA_CONSTEXPR const_pointer back() const { return get_elem(elements.rdata()); }
 		AA_CONSTEXPR const_pointer cback() const { return back(); }
 
 
@@ -159,25 +173,25 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		AA_CONSTEXPR reference emplace(A&&... args) {
 			if (first_hole) {
-				node_type *const hole = first_hole;
-				first_hole = std::bit_cast<node_type *>(std::get<hole_index>(*hole));
-				return hole->template emplace<elem_index>(std::forward<A>(args)...);
+				union_type &hole = unwrap(first_hole);
+				first_hole = std::get<hole_index>(hole);
+				return hole.template emplace<elem_index>(std::forward<A>(args)...);
 			} else {
-				return elements.push_back()->template emplace<elem_index>(std::forward<A>(args)...);
+				return unwrap(elements.push_back()).template emplace<elem_index>(std::forward<A>(args)...);
 			}
 		}
 
 		AA_CONSTEXPR void erase(const size_type pos) {
 			node_type *const element = elements.data(pos);
-			if (element->index() == elem_index) {
-				element->template emplace<hole_index>(first_hole);
+			if (unwrap(element).index() == elem_index) {
+				unwrap(element).template emplace<hole_index>(first_hole);
 				first_hole = element;
 			}
 		}
 
 		AA_CONSTEXPR void erase(const pointer pos) {
 			node_type *const element = std::bit_cast<node_type *>(pos);
-			element->template emplace<hole_index>(first_hole);
+			unwrap(element).template emplace<hole_index>(first_hole);
 			first_hole = element;
 		}
 
