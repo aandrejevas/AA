@@ -46,7 +46,7 @@ namespace aa {
 		AA_CONSTEXPR unsafe_subrange(T1 &&t1, T2 &&t2) : b{std::forward<T1>(t1), std::forward<T2>(t2)} {}
 	};
 
-	template<std::input_or_output_iterator I, std::sentinel_for<I> S>
+	template<class I, class S>
 	unsafe_subrange(I &&, S &&)->unsafe_subrange<I, S>;
 
 }
