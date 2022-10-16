@@ -15,7 +15,7 @@ namespace aa {
 	concept unusual_range = std::ranges::range<R>
 		&& requires(R & r) { { std::ranges::rbegin(r) } -> std::same_as<std::ranges::sentinel_t<R>>; };
 
-	// Darome daug prielaidų čia, nes atrodo, kad c++ standartas jas daro taip pat.
+	// Darome daug prielaidų čia, nes atrodo, kad C++ standartas jas daro taip pat.
 	//
 	// Nėra atitinkamos funkcijos rend iteratoriui, nes jis nėra svarbus.
 	template<std::ranges::range R>

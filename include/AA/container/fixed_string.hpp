@@ -121,11 +121,11 @@ namespace aa {
 	template<size_t N>
 	using fixed_string = semibasic_fixed_string<char, N>;
 
-	// Neuždedame suvaržymų and dedction guide, kurie yra ant klasės, nes šie suvaržymai tiesiog pašalintų
+	// Neuždedame suvaržymų and deduction guide, kurie yra ant klasės, nes šie suvaržymai tiesiog pašalintų
 	// iš svarstymų guide, o tai bus tiesiog automatiškai padaryta todėl nėra reikalo kartotis.
 	//
 	// Nekopijuojame į fixed_string null character, nes tik užimtų bereikalingai vietą simbolis.
-	// Netikriname ar N==0, nes c++ standartas draudžia deklaruoti tokius masyvus.
+	// Netikriname ar (N != 0), nes C++ standartas draudžia deklaruoti tokius masyvus.
 	template<class T, size_t N>
 	basic_fixed_string(const T(&)[N])->basic_fixed_string<T, std::char_traits<T>, N - 1>;
 

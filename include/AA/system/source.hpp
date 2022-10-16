@@ -63,7 +63,7 @@ namespace aa {
 		abort<D>(std::cerr, args...);
 	}
 
-	// TODO: Su c++23 čia galima bus naudoti static operator().
+	// TODO: Su C++23 čia galima bus naudoti static operator().
 	template<source_data D, bool T = true, nttp_accepting_functor<D> F>
 	[[gnu::always_inline]] AA_CONSTEXPR void trace(const bool condition, F &&f) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {

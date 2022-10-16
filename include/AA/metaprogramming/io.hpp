@@ -32,7 +32,7 @@ namespace aa {
 		/**/ { { t >> std::forward<U>(u) } -> std::same_as<apply_traits_t<std::basic_istream, T> &>; };
 
 	// Nors šitie concepts tikrina kažkokį T tipą, funkcijų parametrai visados turėtų būti basic_ostream ar basic_istream tipo.
-	// Taip daryti, nes remiamės polimorfizmu ir c++ standarto funkcijos (pvz. endl) taip pat realizuotos.
+	// Taip daryti, nes remiamės polimorfizmu ir C++ standarto funkcijos (pvz. endl) taip pat realizuotos.
 	template<class T, class... A>
 	concept output_stream = remove_ref_derived_from<T, apply_traits_t<std::basic_ostream, T>> && (... && insertable_into<A, T>);
 
