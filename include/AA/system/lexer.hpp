@@ -14,6 +14,7 @@
 #include <utility> // unreachable, forward
 #include <bit> // bit_cast
 #include <type_traits> // remove_reference_t
+#include <istream> // basic_istream
 
 
 
@@ -180,13 +181,10 @@ namespace aa {
 	public:
 		// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 		// Patariama pačiam naudoti naudotojui pathed_stream klasę, kuri automatiškai taip pat patikrina failed state.
-		template<input_stream T, class... U>
-		AA_CONSTEXPR lexer(T &&file, U&&... args) {
-			// Negalime naudoti decltype(file), nes decltype šiuo atveju visados nustatytų reference tipą.
-			using stream_type = std::remove_reference_t<T>;
-
+		template<class C, char_traits_for<C> T, class... U>
+		AA_CONSTEXPR lexer(std::basic_istream<C, T> &file, U&&... args) {
 			// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
-			if (file.peek() == stream_type::traits_type::eof())
+			if (file.peek() == T::eof())
 				return;
 
 			// Lexing parameters
@@ -202,7 +200,7 @@ namespace aa {
 			} state = lexing_state::NONE;
 
 			do {
-				const typename stream_type::int_type character = file.get();
+				const typename T::int_type character = file.get();
 
 				switch (state) {
 					case lexing_state::NONE:
@@ -264,7 +262,7 @@ namespace aa {
 					default:
 						std::unreachable();
 				}
-			} while (file.peek() != stream_type::traits_type::eof());
+			} while (file.peek() != T::eof());
 		}
 
 
@@ -291,7 +289,7 @@ namespace aa {
 		params_map params = {};
 	};
 
-	template<input_stream T, class... A>
+	template<class T, class... A>
 	lexer(T &&, A&&...)->lexer<A...>;
 
 }

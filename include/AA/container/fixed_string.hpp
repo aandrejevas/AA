@@ -3,7 +3,6 @@
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t, ptrdiff_t
 #include <iterator> // reverse_iterator
-#include <algorithm> // copy_n
 #include <string_view> // basic_string_view
 #include <ostream> // basic_ostream
 #include <string> // char_traits
@@ -105,7 +104,7 @@ namespace aa {
 
 		// Special member functions
 		AA_CONSTEXPR basic_fixed_string(const value_type *const cstring) {
-			std::ranges::copy_n(cstring, N, elements.data());
+			traits_type::copy(elements.data(), cstring, N);
 		}
 
 

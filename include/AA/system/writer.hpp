@@ -2,17 +2,49 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
+#include "print.hpp"
 #include <ranges> // input_range, range_value_t
 #include <functional> // invoke
 #include <concepts> // invocable
 #include <ostream> // basic_ostream
 #include <algorithm> // for_each
-#include <utility> // forward, as_const, tuple_element_t
+#include <utility> // as_const
 #include <iomanip> // setw
 
 
 
 namespace aa {
+
+	struct identity_inserter {
+		template<class C, char_traits_for<C> T, class U>
+		AA_CONSTEXPR void operator()(std::basic_ostream<C, T> &s, const U &u) const { print(s, u); }
+	};
+
+	template<auto D = ' '>
+	struct delim_inserter {
+		template<class C, char_traits_for<C> T, class U>
+		AA_CONSTEXPR void operator()(std::basic_ostream<C, T> &s, const U &u) const { print(s, u, D); }
+	};
+
+	delim_inserter()->delim_inserter<>;
+
+	template<int N>
+	struct width_inserter {
+		template<class C, char_traits_for<C> T, class U>
+		AA_CONSTEXPR void operator()(std::basic_ostream<C, T> &s, const U &u) const { print(s, std::setw(N), u); }
+	};
+
+	template<auto D1 = ':', auto D2 = ' '>
+	struct pair_inserter {
+		template<class C, char_traits_for<C> T, tuple2_like U>
+		AA_CONSTEXPR void operator()(std::basic_ostream<C, T> &s, const U &u) const {
+			print(s, get_0(u), D1, get_1(u), D2);
+		}
+	};
+
+	pair_inserter()->pair_inserter<>;
+
+
 
 	// Anksčiau turėjau klasę, kurią padavinėdavau naudotojui, ji savyje turėjo stream reference ir rodyklę į esamą elementą,
 	// naudotojas galėjo kviesti tos klasės operator() su norimais spausdinti argumentais. Problema, kad visiškai vieną dieną
@@ -25,15 +57,15 @@ namespace aa {
 	//
 	// Nors į for_each galime paduoti dar projection, nelaikome papildomo kintamojo struktūroje ir jo nepaduodame į for_each, nes
 	// tą patį efektą galima pasiekti padavus tinkamą range, tą galima padaryti pavyzdžiui pasinaudojus std::views::transform.
-	template<std::ranges::input_range R, class F>
+	template<std::ranges::input_range R, class F = delim_inserter<>>
 	struct range_writer {
 		[[no_unique_address]] R range;
-		[[no_unique_address]] F fun;
+		[[no_unique_address]] F fun = {};
 
 		// Čia writeris galėtų ateiti ir ne const, bet tada reiktų arba kelių užklojimų funkcijos arba pridėti dar vieną
 		// template argumentą, abu sprendimai labai nepatogūs. Na iš principo tai yra keista į spausdinimo funkciją
 		// paduoti ne const kintamąjį. Išlieka galimybė pvz. turėti mutable lambdas ir keisti range elementus.
-		template<class C, class T>
+		template<class C, char_traits_for<C> T>
 			requires (std::invocable<F &, std::basic_ostream<C, T> &, const std::ranges::range_value_t<R> &>)
 		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const range_writer<R, F> &w) {
 			std::ranges::for_each(w.range, [&s, &w](const std::ranges::range_value_t<R> &element) -> void {
@@ -43,12 +75,17 @@ namespace aa {
 		}
 	};
 
-	template<class E, class F>
+	template<class R, class F = delim_inserter<>>
+	range_writer(R &&, F && = {})->range_writer<R, F>;
+
+
+
+	template<class E, class F = delim_inserter<>>
 	struct writer {
 		[[no_unique_address]] E element;
-		[[no_unique_address]] F fun;
+		[[no_unique_address]] F fun = {};
 
-		template<class C, class T>
+		template<class C, char_traits_for<C> T>
 			requires (std::invocable<F &, std::basic_ostream<C, T> &, const E &>)
 		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const writer<E, F> &w) {
 			std::invoke(w.fun, s, std::as_const(w.element));
@@ -56,51 +93,7 @@ namespace aa {
 		}
 	};
 
-
-
-	struct identity_inserter {
-		template<class S, class T>
-			requires (output_stream<S, T>)
-		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << t; }
-	};
-
-	template<char D = ' '>
-	struct delim_inserter {
-		template<class S, class T>
-			requires (output_stream<S, T>)
-		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << t << D; }
-	};
-
-	delim_inserter()->delim_inserter<>;
-
-	template<int N>
-	struct width_inserter {
-		template<class S, class T>
-			requires (output_stream<S, T>)
-		AA_CONSTEXPR void operator()(S &s, const T &t) const { s << std::setw(N) << t; }
-	};
-
-	template<char D1 = ':', char D2 = ' '>
-	struct pair_inserter {
-		template<class S, tuple2_like T>
-			requires (output_stream<S, std::tuple_element_t<0, T>, std::tuple_element_t<1, T>>)
-		AA_CONSTEXPR void operator()(S &s, const T &t) const {
-			s << get_0(t) << D1 << get_1(t) << D2;
-		}
-	};
-
-	pair_inserter()->pair_inserter<>;
-
-
-
-	template<class R, class F = delim_inserter<>>
-	AA_CONSTEXPR range_writer<R, F> make_range_writer(R &&r, F &&f = {}) {
-		return {std::forward<R>(r), std::forward<F>(f)};
-	}
-
 	template<class E, class F = delim_inserter<>>
-	AA_CONSTEXPR writer<E, F> make_writer(E &&e, F &&f = {}) {
-		return {std::forward<E>(e), std::forward<F>(f)};
-	}
+	writer(E &&, F && = {})->writer<E, F>;
 
 }

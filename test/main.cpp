@@ -79,7 +79,7 @@ int main() {
 			const size_t d = initial_g.dist(copy_g);
 			AA_TRACE_ASSERT(copy_g.curr() == g.curr() && i == d, i, ' ', d);
 		});
-		printl(make_range_writer(m, pair_inserter{}));
+		printl(range_writer{m, pair_inserter{}});
 
 		repeat(5000, [&]() {
 			g.prev();
@@ -117,7 +117,6 @@ int main() {
 		repeat(100, [&]() {
 			partial_shuffle_counting_sort(a, a.data() + 4, g, s.data());
 			AA_TRACE_ASSERT(std::ranges::is_sorted(a.data(), a.data() + 5));
-			//printl(make_range_writer(a));
 		});
 
 		counting_sort(a, s.data());
@@ -240,7 +239,7 @@ int main() {
 		}
 	}
 	tttt.stop();
-	printl(tttt.elapsed());
+	print(tttt.elapsed(), endl);
 
 	return EXIT_SUCCESS;
 }

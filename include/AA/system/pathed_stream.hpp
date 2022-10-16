@@ -13,7 +13,7 @@
 namespace aa {
 
 	template<class P, stream_constructible_from<propagate_const_t<P> &> S>
-		requires (output_stream<std::ostream, propagate_const_t<P> &>)
+		requires (insertable_into<propagate_const_t<P> &, std::ostream>)
 	struct pathed_stream {
 		// Member types
 		using path_type = propagate_const_t<P>;
