@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/io.hpp"
 #include "print.hpp"
 #include <ranges> // input_range, range_value_t
 #include <functional> // invoke

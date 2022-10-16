@@ -3,7 +3,6 @@
 #include "../preprocessor/assert.hpp"
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
-#include "../metaprogramming/io.hpp"
 #include <cstddef> // size_t
 #include <string> // string, hash
 #include <variant> // variant, monostate, get_if
@@ -13,7 +12,6 @@
 #include <string_view> // string_view, hash
 #include <utility> // unreachable, forward
 #include <bit> // bit_cast
-#include <type_traits> // remove_reference_t
 #include <istream> // basic_istream
 
 
@@ -289,7 +287,7 @@ namespace aa {
 		params_map params = {};
 	};
 
-	template<class T, class... A>
-	lexer(T &&, A&&...)->lexer<A...>;
+	template<class C, class T, class... A>
+	lexer(std::basic_istream<C, T> &, A&&...)->lexer<A...>;
 
 }
