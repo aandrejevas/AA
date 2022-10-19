@@ -6,14 +6,13 @@
 #include <concepts> // constructible_from
 #include <utility> // forward
 #include <fstream> // ofstream, ifstream
-#include <ostream> // ostream
+#include <ostream> // basic_ostream, ostream
 
 
 
 namespace aa {
 
 	template<class P, stream_like S>
-		requires (insertable_into<propagate_const_t<P> &, std::ostream>)
 	struct pathed_stream {
 		// Member types
 		using path_type = propagate_const_t<P>;
@@ -41,17 +40,33 @@ namespace aa {
 
 
 
+		// Input/output
+		template<insertable_into<stream_type> U>
+		AA_CONSTEXPR apply_traits_t<std::basic_ostream, stream_type> &operator<<(const U &u) {
+			return stream << u;
+		}
+
+
+
 		// Special member functions
 		// Kad sukonstruoti path, nesuteikiame galimybės paduoti parameter pack, nes įmanoma tiesiog paduoti path_type
 		// argumentą, kuris bus nukopijuotas. To negalime padaryti su stream. Tokia realizacija kai kuriais atvejais gal lėta.
 		template<constructible_to<path_type> T, class... U>
 			requires (std::constructible_from<stream_type, path_type &, U...>)
 		AA_CONSTEXPR pathed_stream(T &&t, U&&... args) : path{std::forward<T>(t)}, stream{path, std::forward<U>(args)...} {
-			AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " (", path, ") in fail state after construction.");
+			if constexpr (insertable_into<path_type &, std::ostream>) {
+				AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " (", path, ") in fail state after construction.");
+			} else {
+				AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " in fail state after construction.");
+			}
 		}
 
 		AA_CONSTEXPR ~pathed_stream() {
-			AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " (", path, ") in fail state before destruction.");
+			if constexpr (insertable_into<path_type &, std::ostream>) {
+				AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " (", path, ") in fail state before destruction.");
+			} else {
+				AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " in fail state before destruction.");
+			}
 		}
 
 
