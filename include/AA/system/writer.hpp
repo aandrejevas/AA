@@ -15,28 +15,28 @@
 namespace aa {
 
 	struct identity_inserter {
-		template<class C, char_traits_for<C> T, class U>
-		AA_CONSTEXPR void operator()(std::basic_ostream<C, T> &s, const U &u) const { print(s, u); }
+		template<class S, class U>
+		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, u); }
 	};
 
 	template<auto D = ' '>
 	struct delim_inserter {
-		template<class C, char_traits_for<C> T, class U>
-		AA_CONSTEXPR void operator()(std::basic_ostream<C, T> &s, const U &u) const { print(s, u, D); }
+		template<class S, class U>
+		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, u, D); }
 	};
 
 	delim_inserter()->delim_inserter<>;
 
 	template<int N>
 	struct width_inserter {
-		template<class C, char_traits_for<C> T, class U>
-		AA_CONSTEXPR void operator()(std::basic_ostream<C, T> &s, const U &u) const { print(s, std::setw(N), u); }
+		template<class S, class U>
+		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, std::setw(N), u); }
 	};
 
 	template<auto D1 = ':', auto D2 = ' '>
 	struct pair_inserter {
-		template<class C, char_traits_for<C> T, tuple2_like U>
-		AA_CONSTEXPR void operator()(std::basic_ostream<C, T> &s, const U &u) const {
+		template<class S, tuple2_like U>
+		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
 			print(s, get_0(u), D1, get_1(u), D2);
 		}
 	};

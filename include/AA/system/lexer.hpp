@@ -3,6 +3,7 @@
 #include "../preprocessor/assert.hpp"
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
+#include "../metaprogramming/io.hpp"
 #include <cstddef> // size_t
 #include <string> // string, hash
 #include <variant> // variant, monostate, get_if
@@ -12,7 +13,7 @@
 #include <string_view> // string_view, hash
 #include <utility> // unreachable, forward
 #include <bit> // bit_cast
-#include <istream> // basic_istream
+#include <type_traits> // remove_reference_t
 
 
 
@@ -179,10 +180,12 @@ namespace aa {
 	public:
 		// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 		// Patariama pačiam naudoti naudotojui pathed_stream klasę, kuri automatiškai taip pat patikrina failed state.
-		template<class C, char_traits_for<C> T, class... U>
-		AA_CONSTEXPR lexer(std::basic_istream<C, T> &file, U&&... args) {
+		template<input_stream T, class... U>
+		AA_CONSTEXPR lexer(T &&file, U&&... args) {
+			using traits_type = typename std::remove_reference_t<T>::traits_type;
+
 			// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
-			if (file.peek() == T::eof())
+			if (file.peek() == traits_type::eof())
 				return;
 
 			// Lexing parameters
@@ -198,7 +201,7 @@ namespace aa {
 			} state = lexing_state::NONE;
 
 			do {
-				const typename T::int_type character = file.get();
+				const typename traits_type::int_type character = file.get();
 
 				switch (state) {
 					case lexing_state::NONE:
@@ -260,7 +263,7 @@ namespace aa {
 					default:
 						std::unreachable();
 				}
-			} while (file.peek() != T::eof());
+			} while (file.peek() != traits_type::eof());
 		}
 
 
@@ -287,7 +290,7 @@ namespace aa {
 		params_map params = {};
 	};
 
-	template<class C, class T, class... A>
-	lexer(std::basic_istream<C, T> &, A&&...)->lexer<A...>;
+	template<class T, class... A>
+	lexer(T &&, A&&...)->lexer<A...>;
 
 }

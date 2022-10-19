@@ -13,23 +13,23 @@ namespace aa {
 
 	// Dėl atributo neturėtų nukentėti greitaveika, nes taip tai standartiniai srautai yra visiems pasiekiami
 	// ir atrodo nereiktų jų padavinėti per parametrus, bet template argumentai irgi ne alternatyva.
-	template<class C, char_traits_for<C> T, class A1, class... A>
-		requires (output_stream<std::basic_ostream<C, T>, A1, A...>)
-	[[gnu::always_inline]] AA_CONSTEXPR std::basic_ostream<C, T> &print(std::basic_ostream<C, T> &s, const A1 &a1, const A&... args) {
+	template<class T, class A1, class... A>
+		requires (output_stream<T, A1, A...>)
+	[[gnu::always_inline]] AA_CONSTEXPR apply_traits_t<std::basic_ostream, T> &print(T &&s, const A1 &a1, const A&... args) {
 		return ((s << a1) << ... << args);
 	}
 
 	// Tikriname ar į output_stream galima insert'inti visus paduotus tipus, nes tarp jų
 	// gali būti tipų, su kuriais negali susidoroti klasė, kuri paveldi iš basic_ostream.
-	template<auto L = '\n', class C, char_traits_for<C> T, class... A>
-		requires (output_stream<std::basic_ostream<C, T>, A..., decltype(L)>)
-	[[gnu::always_inline]] AA_CONSTEXPR std::basic_ostream<C, T> &printl(std::basic_ostream<C, T> &s, const A&... args) {
+	template<auto L = '\n', class T, class... A>
+		requires (output_stream<T, A..., decltype(L)>)
+	[[gnu::always_inline]] AA_CONSTEXPR apply_traits_t<std::basic_ostream, T> &printl(T &&s, const A&... args) {
 		return (s << ... << args) << L;
 	}
 
-	template<class C, char_traits_for<C> T, class A1, class... A>
-		requires (input_stream<std::basic_istream<C, T>, A1, A...>)
-	[[gnu::always_inline]] AA_CONSTEXPR std::basic_istream<C, T> &read(std::basic_istream<C, T> &s, A1 &&a1, A&&... args) {
+	template<class T, class A1, class... A>
+		requires (input_stream<T, A1, A...>)
+	[[gnu::always_inline]] AA_CONSTEXPR apply_traits_t<std::basic_istream, T> &read(T &&s, A1 &&a1, A&&... args) {
 		return ((s >> std::forward<A1>(a1)) >> ... >> std::forward<A>(args));
 	}
 

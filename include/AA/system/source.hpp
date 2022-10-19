@@ -38,8 +38,8 @@ namespace aa {
 
 
 
-	template<source_data D, class... A>
-	[[gnu::always_inline]] AA_CONSTEXPR void log(typename decltype(D)::ostream_type &s, const A&... args) {
+	template<source_data D, remove_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
+	[[gnu::always_inline]] AA_CONSTEXPR void log(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		printl(s, D, ": ", args...);
 		else							log<D>(s, "Info logged.");
 	}
@@ -50,8 +50,8 @@ namespace aa {
 		log<D>(std::clog, args...);
 	}
 
-	template<source_data D, class... A>
-	[[gnu::always_inline, noreturn]] AA_CONSTEXPR void abort(typename decltype(D)::ostream_type &s, const A&... args) {
+	template<source_data D, remove_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
+	[[gnu::always_inline, noreturn]] AA_CONSTEXPR void abort(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		log<D>(s, args...);
 		else							log<D>(s, "Program aborted.");
 		std::abort();
@@ -74,8 +74,8 @@ namespace aa {
 	}
 
 	// Dėl atributo, naudoti šią funkciją turėtų būti tas pats kaip naudoti macro greitaveikos atžvilgiu.
-	template<source_data D, bool T = true, class... A>
-	[[gnu::always_inline]] AA_CONSTEXPR void assert(const bool condition, typename decltype(D)::ostream_type &s, const A&... args) {
+	template<source_data D, bool T = true, remove_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
+	[[gnu::always_inline]] AA_CONSTEXPR void assert(const bool condition, S &&s, const A&... args) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {
 				if constexpr (sizeof...(A))		abort<D>(s, args...);

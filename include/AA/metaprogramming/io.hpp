@@ -31,8 +31,9 @@ namespace aa {
 		&& requires(apply_traits_t<std::basic_istream, T> &t, U && u)
 		/**/ { { t >> std::forward<U>(u) } -> std::same_as<apply_traits_t<std::basic_istream, T> &>; };
 
-	// Nors šitie concepts tikrina kažkokį T tipą, funkcijų parametrai visados turėtų būti basic_ostream ar basic_istream tipo.
-	// Taip daryti, nes remiamės polimorfizmu ir C++ standarto funkcijos (pvz. endl) taip pat realizuotos.
+	// Fuck dynamic polymorphism. Nors C++ standarto funkcijos (pvz. endl) remiasi juo, yra minusų tokios realizacijos.
+	// Pirma reiktų divejų užklojimų funkcijos, kad palaikyti & ir && argumentus. Templates nepadeda išspręsti šios problemos.
+	// Antra dinaminis polimorfizmas yra lėtas ir jis neturėtų būti skatinamas.
 	template<class T, class... A>
 	concept output_stream = remove_ref_derived_from<T, apply_traits_t<std::basic_ostream, T>> && (... && insertable_into<A, T>);
 
