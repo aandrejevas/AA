@@ -3,8 +3,7 @@
 #include "general.hpp"
 #include <ostream> // basic_ostream
 #include <istream> // basic_istream
-#include <type_traits> // remove_reference_t, type_identity
-#include <concepts> // same_as, derived_from, constructible_from
+#include <concepts> // same_as
 #include <utility> // forward
 #include <ios> // basic_ios
 
@@ -13,10 +12,7 @@
 namespace aa {
 
 	template<class T>
-	concept stream_like = std::derived_from<T, apply_traits_t<std::basic_ios, T>>;
-
-	template<class T, class... A>
-	concept stream_constructible_from = stream_like<T> && std::constructible_from<T, A...>;
+	concept stream_like = remove_ref_derived_from<T, apply_traits_t<std::basic_ios, T>>;
 
 
 
@@ -39,17 +35,5 @@ namespace aa {
 
 	template<class T, class... A>
 	concept input_stream = remove_ref_derived_from<T, apply_traits_t<std::basic_istream, T>> && (... && extractable_from<A, T>);
-
-
-
-	template<class T>
-	concept uses_stream_type = (requires { typename std::remove_reference_t<T>::stream_type; })
-		&& stream_like<typename std::remove_reference_t<T>::stream_type>;
-
-	template<uses_stream_type T>
-	struct stream_type_in_use : std::type_identity<typename std::remove_reference_t<T>::stream_type> {};
-
-	template<uses_stream_type T>
-	using stream_type_in_use_t = typename stream_type_in_use<T>::type;
 
 }

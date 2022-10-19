@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../metaprogramming/io.hpp"
 #include "print.hpp"
 #include <ranges> // input_range, range_value_t
 #include <functional> // invoke
@@ -14,14 +15,15 @@
 
 namespace aa {
 
+	// Nors čia ant S tipo galėtų nebūti constraint uždėtas, jis ten padėtas tam, kad pažymėti, kad S tipas nėra bet koks.
 	struct identity_inserter {
-		template<class S, class U>
+		template<output_stream S, class U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, u); }
 	};
 
 	template<auto D = ' '>
 	struct delim_inserter {
-		template<class S, class U>
+		template<output_stream S, class U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, u, D); }
 	};
 
@@ -29,13 +31,13 @@ namespace aa {
 
 	template<int N>
 	struct width_inserter {
-		template<class S, class U>
+		template<output_stream S, class U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, std::setw(N), u); }
 	};
 
 	template<auto D1 = ':', auto D2 = ' '>
 	struct pair_inserter {
-		template<class S, tuple2_like U>
+		template<output_stream S, tuple2_like U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
 			print(s, get_0(u), D1, get_1(u), D2);
 		}

@@ -12,7 +12,7 @@
 
 namespace aa {
 
-	template<class P, stream_constructible_from<propagate_const_t<P> &> S>
+	template<class P, stream_like S>
 		requires (insertable_into<propagate_const_t<P> &, std::ostream>)
 	struct pathed_stream {
 		// Member types
