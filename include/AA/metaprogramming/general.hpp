@@ -14,7 +14,7 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t, is_invocable_r
+#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t, is_invocable_r_v
 #include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <string_view> // string_view
@@ -154,13 +154,7 @@ namespace aa {
 	concept remove_ref_derived_from = std::derived_from<std::remove_reference_t<L>, R>;
 
 	template<class L, class R>
-	concept remove_cvref_same_as = std::same_as<std::remove_cvref_t<L>, R>;
-
-	template<class L, class R>
 	concept remove_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
-
-	template<class L, template<class...> class R, template<class> class... A>
-	concept same_as_template = remove_ref_same_as<L, R<typename A<std::remove_reference_t<L>>::type...>>;
 
 	template<class T>
 	concept regular_unsigned_integral = std::unsigned_integral<T> && std::has_single_bit(unsign(std::numeric_limits<T>::digits));
@@ -177,14 +171,14 @@ namespace aa {
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
 	template<class T, size_t I>
 	concept member_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(std::remove_cvref_t<T> &t) {
-		{ t.template get<I>() } -> std::same_as<std::tuple_element_t<I, std::remove_cvref_t<T>> &>;
-		{ std::as_const(t).template get<I>() } -> std::same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>> &>;
+		{ t.template get<I>() } -> remove_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
+		{ std::as_const(t).template get<I>() } -> remove_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
 	};
 
 	template<class T, size_t I>
 	concept adl_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(std::remove_cvref_t<T> &t) {
-		{ get<I>(t) } -> std::same_as<std::tuple_element_t<I, std::remove_cvref_t<T>> &>;
-		{ get<I>(std::as_const(t)) } -> std::same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>> &>;
+		{ get<I>(t) } -> remove_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
+		{ get<I>(std::as_const(t)) } -> remove_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
 	};
 
 	template<class T, size_t I>
@@ -193,7 +187,7 @@ namespace aa {
 	template<size_t I>
 	struct getter {
 		template<gettable<I> T>
-		[[gnu::always_inline]] AA_CONSTEXPR std::tuple_element_t<I, std::remove_reference_t<T>> &operator()(T &&t) const {
+		[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) operator()(T &&t) const {
 			if constexpr (member_get<T, I>)		return t.template get<I>();
 			else								return get<I>(t);
 		}
@@ -260,7 +254,7 @@ namespace aa {
 	concept invocable_ref = std::invocable<F &, A...>;
 
 	template<class F, class R, class... A>
-	concept invocable_r = std::is_invocable_r<R, F, A...>;
+	concept invocable_r = std::is_invocable_r_v<R, F, A...>;
 
 	template<class F, class T>
 	concept constructible_to = std::constructible_from<T, F>;
@@ -304,7 +298,7 @@ namespace aa {
 	concept storable_relation_for = in_relation_with<U, V, T> && storable<T>;
 
 	template<class U, class T>
-	concept hashable_by = std::invocable<const T &, const U &> && std::same_as<std::invoke_result_t<const T &, const U &>, size_t>;
+	concept hashable_by = invocable_r<const T &, size_t, const U &>;
 
 	template<class T, class U>
 	concept storable_hasher_for = hashable_by<U, T> && storable<T>;
