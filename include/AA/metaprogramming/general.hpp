@@ -184,10 +184,23 @@ namespace aa {
 	template<class T, size_t I>
 	concept gettable = member_get<T, I> || adl_get<T, I>;
 
+	// declval viduje reference, nes getter taip veikia, o getter taip veikia, nes iš standarto imiau pavyzdį.
+	template<size_t, class>
+	struct get_result;
+
+	template<size_t I, member_get<I> T>
+	struct get_result<I, T> : std::type_identity<decltype(std::declval<T &>().template get<I>())> {};
+
+	template<size_t I, adl_get<I> T>
+	struct get_result<I, T> : std::type_identity<decltype(get<I>(std::declval<T &>()))> {};
+
+	template<size_t I, class T>
+	using get_result_t = typename get_result<I, T>::type;
+
 	template<size_t I>
 	struct getter {
 		template<gettable<I> T>
-		[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) operator()(T &&t) const {
+		[[gnu::always_inline]] AA_CONSTEXPR get_result_t<I, T> operator()(T &&t) const {
 			if constexpr (member_get<T, I>)		return t.template get<I>();
 			else								return get<I>(t);
 		}
@@ -196,8 +209,13 @@ namespace aa {
 	AA_CONSTEXPR const getter<0> get_0, get_x, get_w;
 	AA_CONSTEXPR const getter<1> get_1, get_y, get_h;
 
+
+
+	template<class...>
+	struct is_tuple;
+
 	template<class T>
-	struct is_tuple {
+	struct is_tuple<T> {
 		template<size_t... I>
 		struct valid : std::bool_constant<(... && gettable<T, I>)> {};
 
@@ -205,18 +223,29 @@ namespace aa {
 		static AA_CONSTEXPR const bool valid_v = valid<I...>::value;
 
 		template<size_t... I>
+			requires (valid_v<I...>)
 		struct uniform : are_same<std::tuple_element_t<I, std::remove_reference_t<T>>...> {};
 
 		template<size_t... I>
 		static AA_CONSTEXPR const bool uniform_v = uniform<I...>::value;
 	};
 
+	template<class T, class F>
+	struct is_tuple<T, F> {
+		template<size_t... I>
+			requires (is_tuple<T>::template valid_v<I...>)
+		struct visitable : std::bool_constant<(... && std::invocable<F, get_result_t<I, T>>)> {};
+
+		template<size_t... I>
+		static AA_CONSTEXPR const bool visitable_v = visitable<I...>::value;
+	};
+
 	template<class T>
 	concept tuple_like = apply_indices_t_v<is_tuple<T>::template valid, std::tuple_size_v<std::remove_reference_t<T>>>;
 
 	template<class T>
-	concept array_like = tuple_like<T> && !!std::tuple_size_v<std::remove_reference_t<T>>
-		&& apply_indices_t_v<is_tuple<T>::template uniform, std::tuple_size_v<std::remove_reference_t<T>>>;
+	concept array_like = apply_indices_t_v<is_tuple<T>::template uniform, std::tuple_size_v<std::remove_reference_t<T>>>
+		&& !!std::tuple_size_v<std::remove_reference_t<T>>;
 
 	template<array_like T>
 	struct array_element : std::tuple_element<0, std::remove_reference_t<T>> {};
@@ -244,6 +273,23 @@ namespace aa {
 
 	template<class T>
 	concept vector2_like = vectorN_like<2, T>;
+
+	template<class T, class F>
+	concept visitable_tuple = apply_indices_t_v<is_tuple<T, F>::template visitable, std::tuple_size_v<std::remove_reference_t<T>>>;;
+
+
+
+	template<class F, visitable_tuple<F> T>
+	AA_CONSTEXPR const auto getter_table = ([]<size_t... I>(const std::index_sequence<I...> &&) ->
+			std::array<void (*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
+	{
+		return {([](F &&f, T &&t) -> void { std::forward<F>(f)(getter<I>{}(t)); })...};
+	})(std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<T>>>{});
+
+	template<class F, visitable_tuple<F> T>
+	[[gnu::always_inline]] AA_CONSTEXPR void visit(const size_t i, F &&f, T &&t) {
+		getter_table<F, T &>[i](std::forward<F>(f), t);
+	}
 
 
 
@@ -646,6 +692,12 @@ namespace aa {
 
 		template<class U>
 		[[gnu::always_inline]] AA_CONSTEXPR const value_type<index<U>> &get() const { return get<index<U>>(); }
+
+		template<class F>
+		[[gnu::always_inline]] AA_CONSTEXPR void get(const size_t i, F &&f) { visit(i, std::forward<F>(f), *this); }
+
+		template<class F>
+		[[gnu::always_inline]] AA_CONSTEXPR void get(const size_t i, F &&f) const { visit(i, std::forward<F>(f), *this); }
 	};
 
 	template<class... T>
