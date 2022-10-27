@@ -14,7 +14,7 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t
+#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t, is_invocable_r
 #include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <string_view> // string_view
@@ -258,6 +258,9 @@ namespace aa {
 
 	template<class F, class... A>
 	concept invocable_ref = std::invocable<F &, A...>;
+
+	template<class F, class R, class... A>
+	concept invocable_r = std::is_invocable_r<R, F, A...>;
 
 	template<class F, class T>
 	concept constructible_to = std::constructible_from<T, F>;
