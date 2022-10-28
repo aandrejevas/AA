@@ -66,25 +66,6 @@ namespace aa {
 
 
 
-	template<template<class...> class F, class... A1>
-	struct bind_types {
-		template<class... A2>
-		struct front : std::type_identity<F<A1..., A2...>> {};
-
-		template<class... A2>
-		using front_t = typename front<A2...>::type;
-	};
-
-	template<template<size_t...> class F, size_t N>
-	struct apply_indices : decltype(([]<size_t... I>(const std::index_sequence<I...> &&) ->
-		std::type_identity<F<I...>> { return {}; })(std::declval<std::make_index_sequence<N>>())) {};
-
-	template<template<size_t...> class F, size_t N>
-	using apply_indices_t = typename apply_indices<F, N>::type;
-
-	template<template<size_t...> class F, size_t N>
-	AA_CONSTEXPR const auto apply_indices_t_v = apply_indices_t<F, N>::value;
-
 	template<template<class...> class F, uses_traits_type T>
 	struct apply_traits : std::type_identity<F<typename traits_type_in_use_t<T>::char_type, traits_type_in_use_t<T>>> {};
 
@@ -105,7 +86,7 @@ namespace aa {
 
 	// Klasė galėtų būti pakeista į concept, bet nėra logiška, kad concept'as galėtų būti naudojamas su 0 template parametrų.
 	template<class T = void, class... A>
-	struct are_same : std::bool_constant<!sizeof...(A) || (... && std::same_as<T, A>)> {};
+	struct are_same : std::bool_constant<(... && std::same_as<T, A>)> {};
 
 	template<class... A>
 	AA_CONSTEXPR const bool are_same_v = are_same<A...>::value;
@@ -194,7 +175,7 @@ namespace aa {
 	template<size_t I, adl_get<I> T>
 	struct get_result<I, T> : std::type_identity<decltype(get<I>(std::declval<T &>()))> {};
 
-	template<size_t I, class T>
+	template<size_t I, gettable<I> T>
 	using get_result_t = typename get_result<I, T>::type;
 
 	template<size_t I>
@@ -211,41 +192,16 @@ namespace aa {
 
 
 
-	template<class...>
-	struct is_tuple;
+	template<class T>
+	using tuple_index_sequence = std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<T>>>;
 
 	template<class T>
-	struct is_tuple<T> {
-		template<size_t... I>
-		struct valid : std::bool_constant<(... && gettable<T, I>)> {};
-
-		template<size_t... I>
-		static AA_CONSTEXPR const bool valid_v = valid<I...>::value;
-
-		template<size_t... I>
-			requires (valid_v<I...>)
-		struct uniform : are_same<std::tuple_element_t<I, std::remove_reference_t<T>>...> {};
-
-		template<size_t... I>
-		static AA_CONSTEXPR const bool uniform_v = uniform<I...>::value;
-	};
-
-	template<class T, class F>
-	struct is_tuple<T, F> {
-		template<size_t... I>
-			requires (is_tuple<T>::template valid_v<I...>)
-		struct visitable : std::bool_constant<(... && std::invocable<F, get_result_t<I, T>>)> {};
-
-		template<size_t... I>
-		static AA_CONSTEXPR const bool visitable_v = visitable<I...>::value;
-	};
+	concept tuple_like = ([]<size_t... I>(const std::index_sequence<I...> &&) ->
+		bool { return (... && gettable<T, I>); })(tuple_index_sequence<T>{});
 
 	template<class T>
-	concept tuple_like = apply_indices_t_v<is_tuple<T>::template valid, std::tuple_size_v<std::remove_reference_t<T>>>;
-
-	template<class T>
-	concept array_like = apply_indices_t_v<is_tuple<T>::template uniform, std::tuple_size_v<std::remove_reference_t<T>>>
-		&& !!std::tuple_size_v<std::remove_reference_t<T>>;
+	concept array_like = tuple_like<T> && !!std::tuple_size_v<std::remove_reference_t<T>> && ([]<size_t... I>
+		(const std::index_sequence<I...> &&) -> bool { return are_same_v<get_result_t<I, T>...>; })(tuple_index_sequence<T>{});
 
 	template<array_like T>
 	struct array_element : std::tuple_element<0, std::remove_reference_t<T>> {};
@@ -275,7 +231,8 @@ namespace aa {
 	concept vector2_like = vectorN_like<2, T>;
 
 	template<class T, class F>
-	concept visitable_tuple = apply_indices_t_v<is_tuple<T, F>::template visitable, std::tuple_size_v<std::remove_reference_t<T>>>;;
+	concept visitable_tuple = tuple_like<T> && ([]<size_t... I>(const std::index_sequence<I...> &&) ->
+		bool { return (... && std::invocable<F, get_result_t<I, T>>); })(tuple_index_sequence<T>{});
 
 
 
@@ -284,7 +241,7 @@ namespace aa {
 			std::array<void (*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
 	{
 		return {([](F &&f, T &&t) -> void { std::forward<F>(f)(getter<I>{}(t)); })...};
-	})(std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<T>>>{});
+	})(tuple_index_sequence<T>{});
 
 	template<class F, visitable_tuple<F> T>
 	[[gnu::always_inline]] AA_CONSTEXPR void visit(const size_t i, F &&f, T &&t) {
