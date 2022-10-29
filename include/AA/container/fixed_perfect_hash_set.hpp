@@ -1,12 +1,13 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../metaprogramming/func.hpp"
 #include "../algorithm/arithmetic.hpp"
 #include "../algorithm/find.hpp"
 #include "fixed_vector.hpp"
 #include <cstddef> // size_t, ptrdiff_t
 #include <limits> // numeric_limits
-#include <functional> // hash, invoke
+#include <functional> // invoke
 #include <utility> // forward
 #include <iterator> // bidirectional_iterator_tag
 #include <bit> // countr_zero, countl_zero, popcount, bit_cast
@@ -18,7 +19,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Perfect_hash_function
 	// https://en.wikipedia.org/wiki/Hash_table
 	// Konteineris laiko savyje maišos kodus.
-	template<regular_unsigned_integral T, size_t N, size_t M = N, storable H = std::hash<size_t>>
+	template<regular_unsigned_integral T, size_t N, size_t M = N, storable H = aa::hash<>>
 		requires (N >= M)
 	struct fixed_perfect_hash_set {
 		// Member types

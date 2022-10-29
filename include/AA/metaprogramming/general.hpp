@@ -314,11 +314,8 @@ namespace aa {
 	template<class U, template<class> class T>
 	concept hashable_by_template = hashable_by<U, T<U>>;
 
-	template<class T, class U>
-	concept storable_hasher_for = hashable_by<U, T> && storable<T>;
-
-	template<class T, auto... A>
-	concept storable_hasher_for_pack = (... && hashable_by<decltype(A), T>) && storable<T>;
+	template<class T, class... U>
+	concept storable_hasher_for = (... && hashable_by<U, T>) && storable<T>;
 
 	template<class T, class U>
 	concept char_traits_for = char_traits_like<T> && std::same_as<typename T::char_type, U>;
