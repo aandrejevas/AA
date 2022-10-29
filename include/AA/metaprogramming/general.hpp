@@ -192,8 +192,14 @@ namespace aa {
 
 
 
+	template<size_t N>
+	using make_reverse_index_sequence = decltype(([]<size_t... I>(const std::index_sequence<I...> &&) ->
+		std::index_sequence<(N - 1uz - I)...> { return {}; })(std::make_index_sequence<N>{}));
+
 	template<class T>
 	using tuple_index_sequence = std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<T>>>;
+
+
 
 	template<class T>
 	concept tuple_like = ([]<size_t... I>(const std::index_sequence<I...> &&) ->
@@ -303,8 +309,14 @@ namespace aa {
 	template<class U, class T>
 	concept hashable_by = invocable_r<const T &, size_t, const U &>;
 
+	template<class U, template<class> class T>
+	concept hashable_by_template = hashable_by<U, T<U>>;
+
 	template<class T, class U>
 	concept storable_hasher_for = hashable_by<U, T> && storable<T>;
+
+	template<class T, auto... A>
+	concept storable_hasher_for_pack = (... && hashable_by<decltype(A), T>) && storable<T>;
 
 	template<class T, class U>
 	concept char_traits_for = char_traits_like<T> && std::same_as<typename T::char_type, U>;

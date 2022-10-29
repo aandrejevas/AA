@@ -49,15 +49,15 @@ namespace aa {
 		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
 		AA_CONSTEXPR const_pointer cdata() const { return data(); }
 
-		AA_CONSTEXPR reference front() { return *data(); }
-		AA_CONSTEXPR const_reference front() const { return *data(); }
+		AA_CONSTEXPR reference front() { return elements.front(); }
+		AA_CONSTEXPR const_reference front() const { return elements.front(); }
 		AA_CONSTEXPR const_reference cfront() const { return front(); }
 
-		AA_CONSTEXPR reference back() { return elem(max_index()); }
-		AA_CONSTEXPR const_reference back() const { return elem(max_index()); }
+		AA_CONSTEXPR reference back() { return elements.back(); }
+		AA_CONSTEXPR const_reference back() const { return elements.back(); }
 		AA_CONSTEXPR const_reference cback() const { return back(); }
 
-		AA_CONSTEXPR operator view_type() const { return view_type{data(), size()}; }
+		AA_CONSTEXPR operator view_type() const { return view_type{data(), N}; }
 
 
 
@@ -66,12 +66,12 @@ namespace aa {
 		AA_CONSTEXPR const_iterator begin() const { return elements.begin(); }
 		AA_CONSTEXPR const_iterator cbegin() const { return begin(); }
 
-		AA_CONSTEXPR iterator end() { return elements.begin() + size(); }
-		AA_CONSTEXPR const_iterator end() const { return elements.begin() + size(); }
+		AA_CONSTEXPR iterator end() { return elements.end(); }
+		AA_CONSTEXPR const_iterator end() const { return elements.end(); }
 		AA_CONSTEXPR const_iterator cend() const { return end(); }
 
-		AA_CONSTEXPR reverse_iterator rbegin() { return reverse_iterator{end()}; }
-		AA_CONSTEXPR const_reverse_iterator rbegin() const { return const_reverse_iterator{end()}; }
+		AA_CONSTEXPR reverse_iterator rbegin() { return elements.rbegin(); }
+		AA_CONSTEXPR const_reverse_iterator rbegin() const { return elements.rbegin(); }
 		AA_CONSTEXPR const_reverse_iterator crbegin() const { return rbegin(); }
 
 		AA_CONSTEXPR reverse_iterator rend() { return elements.rend(); }
@@ -81,8 +81,8 @@ namespace aa {
 
 
 		// Capacity
-		static AA_CONSTEVAL bool empty() { return !size(); }
-		static AA_CONSTEVAL difference_type ssize() { return size(); }
+		static AA_CONSTEVAL bool empty() { return !N; }
+		static AA_CONSTEVAL difference_type ssize() { return N; }
 		static AA_CONSTEVAL size_type size() { return N; }
 		static AA_CONSTEVAL size_type max_size() { return N; }
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }
@@ -97,7 +97,7 @@ namespace aa {
 
 		// Input/output
 		friend AA_CONSTEXPR ostream_type &operator<<(ostream_type &os, const basic_fixed_string &str) {
-			return os.write(str.data(), size());
+			return os.write(str.data(), N);
 		}
 
 

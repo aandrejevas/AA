@@ -30,7 +30,7 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elements[pos]; }
+		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elements.elem(pos); }
 		AA_CONSTEXPR const_reference elem(const size_type pos) const { return elements.elem(pos); }
 		AA_CONSTEXPR const_reference relem(const size_type pos) const { return elements.relem(pos); }
 		AA_CONSTEXPR const_pointer data(const size_type pos) const { return elements.data(pos); }
