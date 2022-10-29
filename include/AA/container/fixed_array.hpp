@@ -42,8 +42,8 @@ namespace aa {
 		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
 		AA_CONSTEXPR const_pointer cdata(const size_type pos) const { return data(pos); }
 
-		AA_CONSTEXPR pointer rdata(const size_type pos) { return r_begin - pos; }
-		AA_CONSTEXPR const_pointer rdata(const size_type pos) const { return r_begin - pos; }
+		AA_CONSTEXPR pointer rdata(const size_type pos) { return rdata() - pos; }
+		AA_CONSTEXPR const_pointer rdata(const size_type pos) const { return rdata() - pos; }
 		AA_CONSTEXPR const_pointer crdata(const size_type pos) const { return rdata(pos); }
 
 		AA_CONSTEXPR pointer data() { return elements.data(); }
@@ -58,8 +58,8 @@ namespace aa {
 		AA_CONSTEXPR const_reference front() const { return *data(); }
 		AA_CONSTEXPR const_reference cfront() const { return front(); }
 
-		AA_CONSTEXPR reference back() { return *r_begin; }
-		AA_CONSTEXPR const_reference back() const { return *r_begin; }
+		AA_CONSTEXPR reference back() { return *rdata(); }
+		AA_CONSTEXPR const_reference back() const { return *rdata(); }
 		AA_CONSTEXPR const_reference cback() const { return back(); }
 
 
@@ -69,12 +69,12 @@ namespace aa {
 		AA_CONSTEXPR const_iterator begin() const { return data(); }
 		AA_CONSTEXPR const_iterator cbegin() const { return begin(); }
 
-		AA_CONSTEXPR iterator end() { return r_begin + 1; }
-		AA_CONSTEXPR const_iterator end() const { return r_begin + 1; }
+		AA_CONSTEXPR iterator end() { return rdata() + 1; }
+		AA_CONSTEXPR const_iterator end() const { return rdata() + 1; }
 		AA_CONSTEXPR const_iterator cend() const { return end(); }
 
-		AA_CONSTEXPR iterator rbegin() { return r_begin; }
-		AA_CONSTEXPR const_iterator rbegin() const { return r_begin; }
+		AA_CONSTEXPR iterator rbegin() { return rdata(); }
+		AA_CONSTEXPR const_iterator rbegin() const { return rdata(); }
 		AA_CONSTEXPR const_iterator crbegin() const { return rbegin(); }
 
 		AA_CONSTEXPR iterator rend() { return data() - 1; }

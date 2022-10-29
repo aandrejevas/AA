@@ -242,6 +242,8 @@ namespace aa {
 
 
 
+	// Nenaudojame invoke, nes mes žinome, kad F bus klasė, nes tik templated operator() gali
+	// būti sėkmingai iškviestas su visais skirtingais tipais, kuriuos tuple gali turėti.
 	template<class F, visitable_tuple<F> T>
 	AA_CONSTEXPR const auto getter_table = ([]<size_t... I>(const std::index_sequence<I...> &&) ->
 			std::array<void (*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
