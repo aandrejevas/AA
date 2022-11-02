@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/func.hpp"
 #include "../algorithm/arithmetic.hpp"
+#include "../algorithm/hash.hpp"
 #include "../algorithm/find.hpp"
 #include "fixed_vector.hpp"
 #include <cstddef> // size_t, ptrdiff_t

@@ -9,6 +9,7 @@
 // • <utility> (<compare>, <initializer_list>), failas įterptas, kad išeitų lengvai protauti apie išraiškas.
 // • <limits>, failas įterptas, kad išeitų lengvai nautotis pamatinių tipų savybėmis.
 // • <bit>, failas įterptas, kad išeitų lengvai manipuliuoti pamatinių tipų bitus.
+// • <functional>, failas įterptas, kad išeitų lengvai protauti apie funkcijų objektus.
 // Failai paminėti skliausteliose prie įterpiamo failo nurodo kokie failai yra įterpiami pačio įterpiamo failo.
 
 #include "../preprocessor/general.hpp"
@@ -21,6 +22,7 @@
 #include <array> // array
 #include <bit> // has_single_bit, bit_cast
 #include <utility> // declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence, index_sequence_for
+#include <functional> // invoke
 
 
 
@@ -106,6 +108,9 @@ namespace aa {
 
 	template<class T, template<class...> class U>
 	concept instantiation_of = is_instantiation_of_v<std::remove_cvref_t<T>, U>;
+
+	template<class T, template<class...> class U>
+	concept not_instantiation_of = !instantiation_of<T, U>;
 
 	template<class T>
 	concept pointer = std::is_pointer_v<T>;
@@ -221,20 +226,11 @@ namespace aa {
 	template<size_t N, class T>
 	concept tupleN_like = tuple_like<T> && (std::tuple_size_v<T> == N);
 
-	template<class T>
-	concept tuple2_like = tupleN_like<2, T>;
-
 	template<size_t N, class T>
 	concept arrayN_like = array_like<T> && (std::tuple_size_v<T> == N);
 
-	template<class T>
-	concept array2_like = arrayN_like<2, T>;
-
 	template<size_t N, class T>
 	concept vectorN_like = vector_like<T> && (std::tuple_size_v<T> == N);
-
-	template<class T>
-	concept vector2_like = vectorN_like<2, T>;
 
 	template<class T, class F>
 	concept visitable_tuple = tuple_like<T> && ([]<size_t... I>(const std::index_sequence<I...> &&) ->
@@ -242,13 +238,11 @@ namespace aa {
 
 
 
-	// Nenaudojame invoke, nes mes žinome, kad F bus klasė, nes tik templated operator() gali
-	// būti sėkmingai iškviestas su visais skirtingais tipais, kuriuos tuple gali turėti.
 	template<class F, visitable_tuple<F> T>
 	AA_CONSTEXPR const auto getter_table = ([]<size_t... I>(const std::index_sequence<I...> &&) ->
 			std::array<void (*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
 	{
-		return {([](F &&f, T &&t) -> void { std::forward<F>(f)(getter<I>{}(t)); })...};
+		return {([](F &&f, T &&t) -> void { std::invoke(std::forward<F>(f), getter<I>{}(t)); })...};
 	})(tuple_index_sequence<T>{});
 
 	template<class F, visitable_tuple<F> T>
@@ -334,7 +328,7 @@ namespace aa {
 
 	template<class T, class U>
 	concept storable_vector2_getter = storable<T>
-		&& std::invocable<const T &, const U &> && vector2_like<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>>;
+		&& std::invocable<const T &, const U &> && vectorN_like<2, std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>>;
 
 	template<class U, storable_vector2_getter<U> T>
 	struct vector2_getter_result : std::remove_cvref<std::invoke_result_t<const T &, const U &>> {};
@@ -343,7 +337,7 @@ namespace aa {
 	using vector2_getter_result_t = typename vector2_getter_result<U, T>::type;
 
 	template<class T, class U>
-	concept vector2_similar_to = vector2_like<T> && std::same_as<array_element_t<T>, array_element_t<U>>;
+	concept vector2_similar_to = vectorN_like<2, T> && std::same_as<array_element_t<T>, array_element_t<U>>;
 
 
 
@@ -673,6 +667,18 @@ namespace aa {
 
 	template<class T1, class T2 = T1>
 	using pair = tuple<T1, T2>;
+
+	template<class T1, class T2 = T1, class T3 = T2>
+	using triplet = tuple<T1, T2, T3>;
+
+	template<class T1, class T2 = T1, class T3 = T2, class T4 = T3>
+	using quartet = tuple<T1, T2, T3, T4>;
+
+	template<class T1, class T2 = T1, class T3 = T2, class T4 = T3, class T5 = T4>
+	using quintet = tuple<T1, T2, T3, T4, T5>;
+
+	template<class T1, class T2 = T1, class T3 = T2, class T4 = T3, class T5 = T4, class T6 = T5>
+	using sextet = tuple<T1, T2, T3, T4, T5, T6>;
 
 }
 

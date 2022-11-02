@@ -3,12 +3,13 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
 #include "print.hpp"
+#include <cstddef> // size_t
 #include <ranges> // input_range, range_value_t
 #include <functional> // invoke
 #include <concepts> // invocable
 #include <ostream> // basic_ostream
 #include <algorithm> // for_each
-#include <utility> // as_const
+#include <utility> // as_const, tuple_size_v, index_sequence, make_index_sequence
 #include <iomanip> // setw
 
 
@@ -35,15 +36,18 @@ namespace aa {
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, std::setw(N), u); }
 	};
 
-	template<auto D1 = ':', auto D2 = ' '>
-	struct pair_inserter {
-		template<output_stream S, tuple2_like U>
+	struct tuple_inserter {
+		template<output_stream S, tuple_like U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
-			print(s, get_0(u), D1, get_1(u), D2);
+			if constexpr (std::tuple_size_v<U>) {
+				([&]<size_t... I>(const std::index_sequence<I...> &&) -> void {
+					print('{');
+					(print(s, getter<I>{}(u), ", "), ...);
+					print(s, getter<sizeof...(I)>{}(u), '}');
+				})(std::make_index_sequence<(std::tuple_size_v<U>) - 1>{});
+			}
 		}
 	};
-
-	pair_inserter()->pair_inserter<>;
 
 
 
@@ -58,8 +62,11 @@ namespace aa {
 	//
 	// Nors į for_each galime paduoti dar projection, nelaikome papildomo kintamojo struktūroje ir jo nepaduodame į for_each, nes
 	// tą patį efektą galima pasiekti padavus tinkamą range, tą galima padaryti pavyzdžiui pasinaudojus std::views::transform.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpadded"
 	template<std::ranges::input_range R, class F = delim_inserter<>>
 	struct range_writer {
+#pragma GCC diagnostic pop
 		[[no_unique_address]] R range;
 		[[no_unique_address]] F fun = {};
 
@@ -68,7 +75,7 @@ namespace aa {
 		// paduoti ne const kintamąjį. Išlieka galimybė pvz. turėti mutable lambdas ir keisti range elementus.
 		template<class C, char_traits_for<C> T>
 			requires (std::invocable<F &, std::basic_ostream<C, T> &, const std::ranges::range_value_t<R> &>)
-		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const range_writer<R, F> &w) {
+		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const range_writer &w) {
 			std::ranges::for_each(w.range, [&s, &w](const std::ranges::range_value_t<R> &element) -> void {
 				std::invoke(w.fun, s, element);
 			});
@@ -81,20 +88,27 @@ namespace aa {
 
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpadded"
 	template<class E, class F = delim_inserter<>>
 	struct writer {
+#pragma GCC diagnostic pop
 		[[no_unique_address]] E element;
 		[[no_unique_address]] F fun = {};
 
 		template<class C, char_traits_for<C> T>
 			requires (std::invocable<F &, std::basic_ostream<C, T> &, const E &>)
-		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const writer<E, F> &w) {
+		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const writer &w) {
 			std::invoke(w.fun, s, std::as_const(w.element));
 			return s;
 		}
 	};
 
-	template<class E, class F = delim_inserter<>>
+	// Reikia šito guide, nes kitaip copy elision suvalgys konstruktorius. range_writer nereikia, nes negali jis savyje būti.
+	template<class IE, class IF, class F = delim_inserter<>>
+	writer(const writer<IE, IF> &, F && = {})->writer<writer<IE, IF>, F>;
+
+	template<not_instantiation_of<writer> E, class F = delim_inserter<>>
 	writer(E &&, F && = {})->writer<E, F>;
 
 }

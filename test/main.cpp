@@ -79,7 +79,7 @@ int main() {
 			const size_t d = initial_g.dist(copy_g);
 			AA_TRACE_ASSERT(copy_g.curr() == g.curr() && i == d, i, ' ', d);
 		});
-		printl(range_writer{m, pair_inserter{}});
+		printl(range_writer{m, tuple_inserter{}});
 
 		repeat(5000, [&]() {
 			g.prev();

@@ -5,7 +5,6 @@
 #include <cstddef> // size_t
 #include <chrono> // system_clock
 #include <concepts> // unsigned_integral
-#include <limits> // numeric_limits
 #include <numeric> // gcd
 
 
@@ -42,8 +41,8 @@ namespace aa {
 
 
 		// Characteristics
-		static AA_CONSTEVAL result_type min() { return std::numeric_limits<result_type>::min(); }
-		static AA_CONSTEVAL result_type max() { return std::numeric_limits<result_type>::max(); }
+		static AA_CONSTEVAL result_type min() { return numeric_min; }
+		static AA_CONSTEVAL result_type max() { return numeric_max; }
 
 
 
