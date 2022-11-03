@@ -33,6 +33,9 @@ namespace aa {
 		using type = typename constant_identity::value_type;
 	};
 
+	template<size_t V>
+	using size_t_identity = size_t_identity<V>;
+
 	template<bool V>
 	using bool_identity = constant_identity<bool, V>;
 
@@ -531,7 +534,7 @@ namespace aa {
 	// Vietoje byte negalime naudoti uint8_t, nes jei sistemoje baitas būtų ne 8 bitų, tas tipas nebus apibrėžtas.
 	template<uniquely_representable T>
 	struct representable_values
-		: constant_identity<size_t, AA_SHL(1uz, sizeof(T[std::numeric_limits<std::underlying_type_t<std::byte>>::digits]))> {};
+		: size_t_identity<AA_SHL(1uz, sizeof(T[std::numeric_limits<std::underlying_type_t<std::byte>>::digits]))> {};
 
 	template<class T>
 	AA_CONSTEXPR const size_t representable_values_v = representable_values<T>::value;
@@ -652,7 +655,7 @@ namespace aa {
 
 	template<class U, class... T>
 	struct type_pack_index : decltype(([]<size_t I>(const tuple_unit<I, U> &&) ->
-		constant_identity<size_t, I> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
+		size_t_identity<I> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
 
 	template<class U, class... T>
 	AA_CONSTEXPR const size_t type_pack_index_v = type_pack_index<U, T...>::value;
@@ -743,7 +746,7 @@ namespace aa {
 
 	template<auto A, auto... V>
 	struct pack_index : decltype(([]<size_t I>(const pack_unit<I, A> &&) ->
-		constant_identity<size_t, I> { return {}; })(pack_base<index_sequence_for_pack<V...>, V...>{})) {};
+		size_t_identity<I> { return {}; })(pack_base<index_sequence_for_pack<V...>, V...>{})) {};
 
 	template<auto A, auto... V>
 	AA_CONSTEXPR const size_t pack_index_v = pack_index<A, V...>::value;
@@ -778,7 +781,7 @@ namespace aa {
 namespace std {
 
 	template<class... T>
-	struct tuple_size<aa::tuple<T...>> : aa::constant_identity<size_t, sizeof...(T)> {};
+	struct tuple_size<aa::tuple<T...>> : aa::size_t_identity<sizeof...(T)> {};
 
 	template<size_t I, class... T>
 	struct tuple_element<I, aa::tuple<T...>> : aa::type_pack_element<I, T...> {};
@@ -786,7 +789,7 @@ namespace std {
 
 
 	template<auto... V>
-	struct tuple_size<aa::pack<V...>> : aa::constant_identity<size_t, sizeof...(V)> {};
+	struct tuple_size<aa::pack<V...>> : aa::size_t_identity<sizeof...(V)> {};
 
 	template<size_t I, auto... V>
 	struct tuple_element<I, aa::pack<V...>> : aa::pack_element<I, V...> {};
