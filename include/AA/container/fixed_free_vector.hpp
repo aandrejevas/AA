@@ -40,6 +40,7 @@ namespace aa {
 
 		using union_type = typename node_type::union_type;
 
+		// Member constants
 		static AA_CONSTEXPR const size_type hole_index = 0, elem_index = 1;
 
 		template<class P1, class P2>

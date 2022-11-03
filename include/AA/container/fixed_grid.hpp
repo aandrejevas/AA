@@ -31,6 +31,7 @@ namespace aa {
 		using position_type = vector2_getter_result_t<value_type, locator_type>;
 		using pair_type = pair<array_element_t<position_type>>;
 
+		// Member constants
 		static AA_CONSTEXPR const array_element_t<position_type> min_loc = 0;
 		static AA_CONSTEXPR const size_type first_pass = 1;
 

@@ -9,7 +9,7 @@
 #include <concepts> // invocable
 #include <ostream> // basic_ostream
 #include <algorithm> // for_each
-#include <utility> // as_const, tuple_size_v, index_sequence, make_index_sequence
+#include <utility> // as_const, tuple_size_v
 #include <iomanip> // setw
 
 
@@ -40,11 +40,11 @@ namespace aa {
 		template<output_stream S, tuple_like U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
 			if constexpr (std::tuple_size_v<U>) {
-				([&]<size_t... I>(const std::index_sequence<I...> &&) -> void {
+				apply<(std::tuple_size_v<U>) - 1>([&]<size_t... I>() -> void {
 					print('{');
 					(print(s, getter<I>{}(u), ", "), ...);
 					print(s, getter<sizeof...(I)>{}(u), '}');
-				})(std::make_index_sequence<(std::tuple_size_v<U>) - 1>{});
+				});
 			}
 		}
 	};

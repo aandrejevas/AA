@@ -197,22 +197,38 @@ namespace aa {
 
 
 
+	template<class F, size_t... I>
+		requires (nttp_accepting_functor<F, I...>)
+	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) apply(F &&f, const std::index_sequence<I...> &&) {
+		return std::forward<F>(f).template AA_CALL_OPERATOR<I...>();
+	}
+
+	template<size_t N, class F>
+	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) apply(F &&f) {
+		return aa::apply(std::forward<F>(f), std::make_index_sequence<N>{});
+	}
+
+	template<class T, class F>
+	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) apply(F &&f) {
+		return aa::apply<std::tuple_size_v<std::remove_reference_t<T>>>(std::forward<F>(f));
+	}
+
+
+
 	template<size_t N>
-	using make_reverse_index_sequence = decltype(([]<size_t... I>(const std::index_sequence<I...> &&) ->
-		std::index_sequence<(N - 1uz - I)...> { return {}; })(std::make_index_sequence<N>{}));
+	using make_reverse_index_sequence = decltype(apply<N>([]<size_t... I>() -> std::index_sequence<(N - 1uz - I)...> { return {}; }));
 
 	template<class T>
-	using tuple_index_sequence = std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<T>>>;
+	using make_tuple_index_sequence = std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<T>>>;
 
 
 
 	template<class T>
-	concept tuple_like = ([]<size_t... I>(const std::index_sequence<I...> &&) ->
-		bool { return (... && gettable<T, I>); })(tuple_index_sequence<T>{});
+	concept tuple_like = apply<T>([]<size_t... I>() -> bool { return (... && gettable<T, I>); });
 
 	template<class T>
-	concept array_like = tuple_like<T> && !!std::tuple_size_v<std::remove_reference_t<T>> && ([]<size_t... I>
-		(const std::index_sequence<I...> &&) -> bool { return are_same_v<get_result_t<I, T>...>; })(tuple_index_sequence<T>{});
+	concept array_like = tuple_like<T> && !!std::tuple_size_v<std::remove_reference_t<T>>
+		&& apply<T>([]<size_t... I>() -> bool { return are_same_v<get_result_t<I, T>...>; });
 
 	template<array_like T>
 	struct array_element : std::tuple_element<0, std::remove_reference_t<T>> {};
@@ -233,17 +249,15 @@ namespace aa {
 	concept vectorN_like = vector_like<T> && (std::tuple_size_v<T> == N);
 
 	template<class T, class F>
-	concept visitable_tuple = tuple_like<T> && ([]<size_t... I>(const std::index_sequence<I...> &&) ->
-		bool { return (... && std::invocable<F, get_result_t<I, T>>); })(tuple_index_sequence<T>{});
+	concept visitable_tuple = tuple_like<T>
+		&& apply<T>([]<size_t... I>() -> bool { return (... && std::invocable<F, get_result_t<I, T>>); });
 
 
 
 	template<class F, visitable_tuple<F> T>
-	AA_CONSTEXPR const auto getter_table = ([]<size_t... I>(const std::index_sequence<I...> &&) ->
+	AA_CONSTEXPR const auto getter_table = apply<T>([]<size_t... I>() ->
 			std::array<void (*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
-	{
-		return {([](F &&f, T &&t) -> void { std::invoke(std::forward<F>(f), getter<I>{}(t)); })...};
-	})(tuple_index_sequence<T>{});
+	{ return {([](F &&f, T &&t) -> void { std::invoke(std::forward<F>(f), getter<I>{}(t)); })...}; });
 
 	template<class F, visitable_tuple<F> T>
 	[[gnu::always_inline]] AA_CONSTEXPR void visit(const size_t i, F &&f, T &&t) {
@@ -410,6 +424,9 @@ namespace aa {
 	// Taip pat funkcijos geriau atspindi kas vyksta, tai yra tą faktą, kad reikšmės gaunamos ne iš kažkokios klasės (pvz. integral_constant).
 	template<class T, T C>
 	AA_CONSTEVAL T constant() { return C; }
+
+	template<std::default_initializable T>
+	AA_CONSTEVAL T constant() { return T{}; }
 
 	template<auto C>
 	AA_CONSTEVAL decltype(C) constant() { return C; }
@@ -637,6 +654,7 @@ namespace aa {
 		template<size_t I>
 		using unit_type = tuple_unit<I, value_type<I>>;
 
+		// Member constants
 		template<class U>
 		static AA_CONSTEXPR const size_t index = pack_index_v<U, T...>;
 

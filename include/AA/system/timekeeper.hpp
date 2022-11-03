@@ -31,7 +31,7 @@ namespace aa {
 
 		// Member functions
 		[[gnu::always_inline]] static AA_CONSTEXPR rep now() {
-			return C::now().time_since_epoch().count();
+			return clock_type::now().time_since_epoch().count();
 		}
 
 		AA_CONSTEXPR void reset() {
