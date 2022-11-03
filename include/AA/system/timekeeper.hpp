@@ -13,11 +13,24 @@ namespace aa {
 
 	template<clock C = std::chrono::steady_clock>
 	struct timekeeper {
+		// Member types
+		using clock_type = C;
+		using rep = typename clock_type::rep;
+		using period = typename clock_type::period;
+		using duration = typename clock_type::duration;
+		using time_point = typename clock_type::time_point;
+
+
+
+		// Member objects
 		// Turi būti inicializuoti šitie kintamieji su ta pačia reikšme, nes kitaip neteisingai
 		// veiktų resume funkcija jei sukūrus timekeeper objektą iškarto ji būtų iškviesta.
-		typename C::rep begin = 0, end = 0;
+		rep begin = 0, end = 0;
 
-		static AA_CONSTEXPR typename C::rep now() {
+
+
+		// Member functions
+		[[gnu::always_inline]] static AA_CONSTEXPR rep now() {
 			return C::now().time_since_epoch().count();
 		}
 
@@ -26,15 +39,15 @@ namespace aa {
 			end = 0;
 		}
 
-		AA_CONSTEXPR void start() {
+		[[gnu::always_inline]] AA_CONSTEXPR void start() {
 			begin = now();
 		}
 
-		AA_CONSTEXPR void resume() {
+		[[gnu::always_inline]] AA_CONSTEXPR void resume() {
 			begin += (now() - end);
 		}
 
-		AA_CONSTEXPR void stop() {
+		[[gnu::always_inline]] AA_CONSTEXPR void stop() {
 			end = now();
 		}
 
@@ -57,7 +70,7 @@ namespace aa {
 		// Pagal nutylėjimą, laikas pateikiamas sekundėmis.
 		template<class D = std::chrono::duration<double>>
 		AA_CONSTEXPR typename D::rep elapsed() const {
-			return std::chrono::duration_cast<D>(typename C::duration{end - begin}).count();
+			return std::chrono::duration_cast<D>(duration{end - begin}).count();
 		}
 	};
 

@@ -2,7 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t
-#include <iterator> // input_or_output_iterator, sentinel_for, next, prev, bidirectional_iterator, contiguous_iterator, sized_sentinel_for, iter_difference_t, iter_reference_t
+#include <iterator> // input_or_output_iterator, sentinel_for, next, prev, bidirectional_iterator, random_access_iterator, contiguous_iterator, sized_sentinel_for, iter_difference_t, iter_reference_t
 #include <ranges> // view_interface
 #include <type_traits> // make_unsigned_t, add_pointer_t, integral_constant, type_identity
 #include <utility> // forward, tuple_size, tuple_element
@@ -37,9 +37,16 @@ namespace aa {
 		AA_CONSTEXPR std::iter_reference_t<S> back() const requires (std::input_or_output_iterator<S>) { return *rbegin(); }
 		AA_CONSTEXPR std::add_pointer_t<std::iter_reference_t<S>> rdata() const requires (std::contiguous_iterator<S>) { return std::to_address(rbegin()); }
 
+		AA_CONSTEXPR I begin(const std::iter_difference_t<I> n) const requires (std::random_access_iterator<I>) { return begin() + n; }
+		AA_CONSTEXPR S rbegin(const std::iter_difference_t<S> n) const requires (std::random_access_iterator<S>) { return rbegin() - n; }
+
+		AA_CONSTEXPR std::iter_reference_t<I> elem(const std::iter_difference_t<I> n) const requires (std::random_access_iterator<I>) { return *begin(n); }
+		AA_CONSTEXPR std::iter_reference_t<S> relem(const std::iter_difference_t<S> n) const requires (std::random_access_iterator<S>) { return *rbegin(n); }
+
 
 
 		// Special member functions
+		// Reikia konstruktorių, nes kitaip metami warnings -Wmissing-field-initializers.
 		AA_CONSTEXPR unsafe_subrange() = default;
 
 		template<class T1 = I, class T2 = S>

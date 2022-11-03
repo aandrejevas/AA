@@ -223,13 +223,13 @@ namespace aa {
 	template<class T>
 	concept vector_like = array_like<T> && arithmetic<array_element_t<T>>;
 
-	template<size_t N, class T>
+	template<class T, size_t N>
 	concept tupleN_like = tuple_like<T> && (std::tuple_size_v<T> == N);
 
-	template<size_t N, class T>
+	template<class T, size_t N>
 	concept arrayN_like = array_like<T> && (std::tuple_size_v<T> == N);
 
-	template<size_t N, class T>
+	template<class T, size_t N>
 	concept vectorN_like = vector_like<T> && (std::tuple_size_v<T> == N);
 
 	template<class T, class F>
@@ -328,7 +328,7 @@ namespace aa {
 
 	template<class T, class U>
 	concept storable_vector2_getter = storable<T>
-		&& std::invocable<const T &, const U &> && vectorN_like<2, std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>>;
+		&& std::invocable<const T &, const U &> && vectorN_like<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>, 2>;
 
 	template<class U, storable_vector2_getter<U> T>
 	struct vector2_getter_result : std::remove_cvref<std::invoke_result_t<const T &, const U &>> {};
@@ -337,7 +337,7 @@ namespace aa {
 	using vector2_getter_result_t = typename vector2_getter_result<U, T>::type;
 
 	template<class T, class U>
-	concept vector2_similar_to = vectorN_like<2, T> && std::same_as<array_element_t<T>, array_element_t<U>>;
+	concept vector2_similar_to = vectorN_like<T, 2> && std::same_as<array_element_t<T>, array_element_t<U>>;
 
 
 

@@ -104,9 +104,15 @@ namespace aa {
 		}
 	};
 
-	// Reikia šito guide, nes kitaip copy elision suvalgys konstruktorius. range_writer nereikia, nes negali jis savyje būti.
+	// Reikia šitų guides, nes kitaip copy elision suvalgo konstruktorius. range_writer jų nereikia, nes negali jis savyje būti.
 	template<class IE, class IF, class F = delim_inserter<>>
-	writer(const writer<IE, IF> &, F && = {})->writer<writer<IE, IF>, F>;
+	writer(const writer<IE, IF> &, F && = {})->writer<const writer<IE, IF> &, F>;
+
+	template<class IE, class IF, class F = delim_inserter<>>
+	writer(writer<IE, IF> &, F && = {})->writer<writer<IE, IF> &, F>;
+
+	template<class IE, class IF, class F = delim_inserter<>>
+	writer(const writer<IE, IF> &&, F && = {})->writer<writer<IE, IF>, F>;
 
 	template<not_instantiation_of<writer> E, class F = delim_inserter<>>
 	writer(E &&, F && = {})->writer<E, F>;
