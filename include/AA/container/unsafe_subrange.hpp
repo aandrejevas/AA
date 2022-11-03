@@ -62,7 +62,7 @@ namespace aa {
 namespace std {
 
 	template<class I, class S>
-	struct tuple_size<aa::unsafe_subrange<I, S>> : aa::size_t_identity<2> {};
+	struct tuple_size<aa::unsafe_subrange<I, S>> : aa::uz2_identity {};
 
 	template<class I, class S>
 	struct tuple_element<0, aa::unsafe_subrange<I, S>> : std::type_identity<I> {};

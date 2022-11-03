@@ -34,11 +34,11 @@ namespace aa {
 	};
 
 	template<size_t V>
-	using size_t_identity = size_t_identity<V>;
+	using size_t_identity = constant_identity<size_t, V>;
+	using uz2_identity = size_t_identity<2uz>;
 
 	template<bool V>
 	using bool_identity = constant_identity<bool, V>;
-
 	using true_identity = bool_identity<true>;
 	using false_identity = bool_identity<false>;
 
