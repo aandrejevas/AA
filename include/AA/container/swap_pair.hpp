@@ -58,8 +58,10 @@ namespace std {
 	template<class T>
 	struct tuple_size<aa::swap_pair<T>> : std::integral_constant<size_t, 2> {};
 
-	template<size_t I, class T>
-		requires (I < std::tuple_size_v<aa::swap_pair<T>>)
-	struct tuple_element<I, aa::swap_pair<T>> : std::type_identity<T> {};
+	template<class T>
+	struct tuple_element<0, aa::swap_pair<T>> : std::type_identity<T> {};
+
+	template<class T>
+	struct tuple_element<1, aa::swap_pair<T>> : std::type_identity<T> {};
 
 }

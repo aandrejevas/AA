@@ -45,6 +45,8 @@ namespace aa {
 					(print(s, getter<I>{}(u), ", "), ...);
 					print(s, getter<sizeof...(I)>{}(u), '}');
 				});
+			} else {
+				print("{}");
 			}
 		}
 	};

@@ -150,7 +150,7 @@ namespace aa {
 	concept functor = requires { &T::operator(); };
 
 	template<class F, auto... A>
-	concept nttp_accepting_functor = std::invocable<decltype(&(std::remove_reference_t<F>::template AA_CALL_OPERATOR<A...>)), F>;
+	concept nttp_accepting_functor = requires(F && f) { std::forward<F>(f).template AA_CALL_OPERATOR<A...>(); };
 
 
 
@@ -219,7 +219,10 @@ namespace aa {
 	using make_reverse_index_sequence = decltype(apply<N>([]<size_t... I>() -> std::index_sequence<(N - 1uz - I)...> { return {}; }));
 
 	template<class T>
-	using make_tuple_index_sequence = std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<T>>>;
+	using index_sequence_for_tuple = std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<T>>>;
+
+	template<auto... A>
+	using index_sequence_for_pack = std::make_index_sequence<sizeof...(A)>;
 
 
 
@@ -616,8 +619,6 @@ namespace aa {
 		// Member types
 		using value_type = T;
 
-
-
 		// Member objects
 		[[no_unique_address]] value_type value;
 	};
@@ -630,33 +631,32 @@ namespace aa {
 
 	// https://ldionne.com/2015/11/29/efficient-parameter-pack-indexing/
 	template<size_t I, class... T>
-		requires (I < sizeof...(T))
-	struct pack_element : decltype(([]<class U>(const tuple_unit<I, U> &&) ->
+	struct type_pack_element : decltype(([]<class U>(const tuple_unit<I, U> &&) ->
 		std::type_identity<U> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
 
 	template<size_t I, class... T>
-	using pack_element_t = typename pack_element<I, T...>::type;
+	using type_pack_element_t = typename type_pack_element<I, T...>::type;
 
 	template<class U, class... T>
-	struct pack_index : decltype(([]<size_t I>(const tuple_unit<I, U> &&) ->
+	struct type_pack_index : decltype(([]<size_t I>(const tuple_unit<I, U> &&) ->
 		std::integral_constant<size_t, I> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
 
 	template<class U, class... T>
-	AA_CONSTEXPR const size_t pack_index_v = pack_index<U, T...>::value;
+	AA_CONSTEXPR const size_t type_pack_index_v = type_pack_index<U, T...>::value;
 
 	// https://danlark.org/2020/04/13/why-is-stdpair-broken/
 	template<class... T>
 	struct tuple : tuple_base<std::index_sequence_for<T...>, T...> {
 		// Member types
 		template<size_t I>
-		using value_type = pack_element_t<I, T...>;
+		using value_type = type_pack_element_t<I, T...>;
 
 		template<size_t I>
 		using unit_type = tuple_unit<I, value_type<I>>;
 
 		// Member constants
 		template<class U>
-		static AA_CONSTEXPR const size_t index = pack_index_v<U, T...>;
+		static AA_CONSTEXPR const size_t index = type_pack_index_v<U, T...>;
 
 
 
@@ -683,6 +683,9 @@ namespace aa {
 	template<class... T>
 	tuple(T&&...)->tuple<T...>;
 
+	template<class T1>
+	using unit = tuple<T1>;
+
 	template<class T1, class T2 = T1>
 	using pair = tuple<T1, T2>;
 
@@ -698,6 +701,60 @@ namespace aa {
 	template<class T1, class T2 = T1, class T3 = T2, class T4 = T3, class T5 = T4, class T6 = T5>
 	using sextet = tuple<T1, T2, T3, T4, T5, T6>;
 
+
+
+	template<size_t, auto V>
+	struct pack_unit {
+		// Member types
+		using value_type = decltype(V);
+
+		// Member constants
+		static AA_CONSTEXPR const value_type value = V;
+	};
+
+	template<class, auto...>
+	struct pack_base;
+
+	template<size_t... I, auto... V>
+	struct pack_base<std::index_sequence<I...>, V...> : pack_unit<I, V>... {};
+
+	template<size_t I, auto... V>
+	struct pack_element : decltype(([]<auto A>(const pack_unit<I, A> &&) ->
+		std::integral_constant<decltype(A), A> { return {}; })(std::declval<pack_base<index_sequence_for_pack<V...>, V...>>())) {};
+
+	template<size_t I, auto... V>
+	AA_CONSTEXPR const auto pack_element_v = pack_element<I, V...>::value;
+
+	template<auto A, auto... V>
+	struct pack_index : decltype(([]<size_t I>(const pack_unit<I, A> &&) ->
+		std::integral_constant<size_t, I> { return {}; })(std::declval<pack_base<index_sequence_for_pack<V...>, V...>>())) {};
+
+	template<auto A, auto... V>
+	AA_CONSTEXPR const size_t pack_index_v = pack_index<A, V...>::value;
+
+	template<auto... V>
+	struct pack : pack_base<index_sequence_for_pack<V...>, V...> {
+		// Member types
+		template<size_t I>
+		using value_type = typename pack_element<I, V...>::value_type;
+
+		template<size_t I>
+		using unit_type = pack_unit<I, pack_element_v<I, V...>>;
+
+		// Member constants
+		template<auto A>
+		static AA_CONSTEXPR const size_t index = pack_index_v<A, V...>;
+
+
+
+		// Element access
+		template<size_t I>
+		static AA_CONSTEVAL value_type<I> get() { return unit_type<I>::value; }
+
+		template<class F>
+		[[gnu::always_inline]] AA_CONSTEXPR void get(const size_t i, F &&f) const { visit(i, std::forward<F>(f), *this); }
+	};
+
 }
 
 
@@ -708,7 +765,17 @@ namespace std {
 	struct tuple_size<aa::tuple<T...>> : std::integral_constant<size_t, sizeof...(T)> {};
 
 	template<size_t I, class... T>
-		requires (I < std::tuple_size_v<aa::tuple<T...>>)
-	struct tuple_element<I, aa::tuple<T...>> : aa::pack_element<I, T...> {};
+	struct tuple_element<I, aa::tuple<T...>> : aa::type_pack_element<I, T...> {};
+
+
+
+	template<auto... V>
+	struct tuple_size<aa::pack<V...>> : std::integral_constant<size_t, sizeof...(V)> {};
+
+	template<size_t I, auto... V>
+	struct tuple_element<I, aa::pack<V...>> : std::type_identity<typename aa::pack_element<I, V...>::value_type> {};
+
+	template<size_t I, auto... V>
+	struct tuple_element<I, const aa::pack<V...>> : std::tuple_element<I, aa::pack<V...>> {};
 
 }
