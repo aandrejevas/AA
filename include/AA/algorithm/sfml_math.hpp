@@ -6,15 +6,15 @@
 #include <SFML/System/Vector2.hpp>
 #include <cstddef> // size_t
 #include <cmath> // hypot
-#include <utility> // tuple_size, tuple_size_v, tuple_element, tuple_element_t
-#include <type_traits> // integral_constant, type_identity, remove_reference_t
+#include <utility> // tuple_size, tuple_element, tuple_element_t
+#include <type_traits> // type_identity, remove_reference_t
 
 
 
 namespace std {
 
 	template<aa::arithmetic T>
-	struct tuple_size<sf::Vector2<T>> : std::integral_constant<size_t, 2> {};
+	struct tuple_size<sf::Vector2<T>> : aa::constant_identity<size_t, 2> {};
 
 	template<aa::arithmetic T>
 	struct tuple_element<0, sf::Vector2<T>> : std::type_identity<T> {};

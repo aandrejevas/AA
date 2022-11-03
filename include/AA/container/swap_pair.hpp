@@ -3,8 +3,8 @@
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t
 #include <concepts> // swap
-#include <utility> // forward, tuple_size, tuple_size_v, tuple_element
-#include <type_traits> // common_type_t, integral_constant, type_identity
+#include <utility> // forward, tuple_size, tuple_element
+#include <type_traits> // common_type_t, type_identity
 
 
 
@@ -56,7 +56,7 @@ namespace aa {
 namespace std {
 
 	template<class T>
-	struct tuple_size<aa::swap_pair<T>> : std::integral_constant<size_t, 2> {};
+	struct tuple_size<aa::swap_pair<T>> : aa::constant_identity<size_t, 2> {};
 
 	template<class T>
 	struct tuple_element<0, aa::swap_pair<T>> : std::type_identity<T> {};

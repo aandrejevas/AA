@@ -4,7 +4,7 @@
 #include <cstddef> // size_t
 #include <iterator> // input_or_output_iterator, sentinel_for, next, prev, bidirectional_iterator, random_access_iterator, contiguous_iterator, sized_sentinel_for, iter_difference_t, iter_reference_t
 #include <ranges> // view_interface
-#include <type_traits> // make_unsigned_t, add_pointer_t, integral_constant, type_identity
+#include <type_traits> // make_unsigned_t, add_pointer_t, type_identity
 #include <utility> // forward, tuple_size, tuple_element
 #include <memory> // to_address
 
@@ -63,7 +63,7 @@ namespace aa {
 namespace std {
 
 	template<class I, class S>
-	struct tuple_size<aa::unsafe_subrange<I, S>> : std::integral_constant<size_t, 2> {};
+	struct tuple_size<aa::unsafe_subrange<I, S>> : aa::constant_identity<size_t, 2> {};
 
 	template<class I, class S>
 	struct tuple_element<0, aa::unsafe_subrange<I, S>> : std::type_identity<I> {};

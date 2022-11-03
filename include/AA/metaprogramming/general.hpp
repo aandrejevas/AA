@@ -15,7 +15,7 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, bool_constant, true_type, false_type, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t, is_invocable_r_v
+#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t, is_invocable_r_v
 #include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <string_view> // string_view
@@ -27,6 +27,19 @@
 
 
 namespace aa {
+
+	template<class T, T V>
+	struct constant_identity : std::integral_constant<T, V> {
+		using type = typename constant_identity::value_type;
+	};
+
+	template<bool V>
+	using bool_identity = constant_identity<bool, V>;
+
+	using true_identity = bool_identity<true>;
+	using false_identity = bool_identity<false>;
+
+
 
 	template<std::signed_integral X>
 	[[gnu::always_inline]] AA_CONSTEXPR std::make_unsigned_t<X> unsign(const X x) {
@@ -78,17 +91,17 @@ namespace aa {
 
 	// Klasė negali būti pakeista į concept, nes concepts negali būti recursive.
 	template<class T = void, class... A>
-	struct are_unique : std::bool_constant<!(... || std::same_as<T, A>) && are_unique<A...>::value> {};
+	struct are_unique : bool_identity<!(... || std::same_as<T, A>) && are_unique<A...>::value> {};
 
 	template<class T>
-	struct are_unique<T> : std::true_type {};
+	struct are_unique<T> : true_identity {};
 
 	template<class... A>
 	AA_CONSTEXPR const bool are_unique_v = are_unique<A...>::value;
 
 	// Klasė galėtų būti pakeista į concept, bet nėra logiška, kad concept'as galėtų būti naudojamas su 0 template parametrų.
 	template<class T = void, class... A>
-	struct are_same : std::bool_constant<(... && std::same_as<T, A>)> {};
+	struct are_same : bool_identity<(... && std::same_as<T, A>)> {};
 
 	template<class... A>
 	AA_CONSTEXPR const bool are_same_v = are_same<A...>::value;
@@ -96,10 +109,10 @@ namespace aa {
 
 
 	template<class, template<class...> class>
-	struct is_instantiation_of : std::false_type {};
+	struct is_instantiation_of : false_identity {};
 
 	template<template<class...> class T, class... A>
-	struct is_instantiation_of<T<A...>, T> : std::true_type {};
+	struct is_instantiation_of<T<A...>, T> : true_identity {};
 
 	template<class T, template<class...> class U>
 	AA_CONSTEXPR const bool is_instantiation_of_v = is_instantiation_of<T, U>::value;
@@ -437,19 +450,19 @@ namespace aa {
 
 
 	template<convertible_from<size_t> T>
-	struct zero : std::integral_constant<T, static_cast<T>(0uz)> {};
+	struct zero : constant_identity<T, static_cast<T>(0uz)> {};
 
 	template<class T>
 	AA_CONSTEXPR const T zero_v = zero<T>::value;
 
 	template<convertible_from<size_t> T>
-	struct one : std::integral_constant<T, static_cast<T>(1uz)> {};
+	struct one : constant_identity<T, static_cast<T>(1uz)> {};
 
 	template<class T>
 	AA_CONSTEXPR const T one_v = one<T>::value;
 
 	template<convertible_from<size_t> T>
-	struct two : std::integral_constant<T, static_cast<T>(2uz)> {};
+	struct two : constant_identity<T, static_cast<T>(2uz)> {};
 
 	template<class T>
 	AA_CONSTEXPR const T two_v = two<T>::value;
@@ -518,7 +531,7 @@ namespace aa {
 	// Vietoje byte negalime naudoti uint8_t, nes jei sistemoje baitas būtų ne 8 bitų, tas tipas nebus apibrėžtas.
 	template<uniquely_representable T>
 	struct representable_values
-		: std::integral_constant<size_t, AA_SHL(1uz, sizeof(T[std::numeric_limits<std::underlying_type_t<std::byte>>::digits]))> {};
+		: constant_identity<size_t, AA_SHL(1uz, sizeof(T[std::numeric_limits<std::underlying_type_t<std::byte>>::digits]))> {};
 
 	template<class T>
 	AA_CONSTEXPR const size_t representable_values_v = representable_values<T>::value;
@@ -639,7 +652,7 @@ namespace aa {
 
 	template<class U, class... T>
 	struct type_pack_index : decltype(([]<size_t I>(const tuple_unit<I, U> &&) ->
-		std::integral_constant<size_t, I> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
+		constant_identity<size_t, I> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
 
 	template<class U, class... T>
 	AA_CONSTEXPR const size_t type_pack_index_v = type_pack_index<U, T...>::value;
@@ -720,14 +733,17 @@ namespace aa {
 
 	template<size_t I, auto... V>
 	struct pack_element : decltype(([]<auto A>(const pack_unit<I, A> &&) ->
-		std::integral_constant<decltype(A), A> { return {}; })(std::declval<pack_base<index_sequence_for_pack<V...>, V...>>())) {};
+		constant_identity<decltype(A), A> { return {}; })(pack_base<index_sequence_for_pack<V...>, V...>{})) {};
 
 	template<size_t I, auto... V>
-	AA_CONSTEXPR const auto pack_element_v = pack_element<I, V...>::value;
+	using pack_element_t = typename pack_element<I, V...>::type;
+
+	template<size_t I, auto... V>
+	AA_CONSTEXPR const pack_element_t<I, V...> pack_element_v = pack_element<I, V...>::value;
 
 	template<auto A, auto... V>
 	struct pack_index : decltype(([]<size_t I>(const pack_unit<I, A> &&) ->
-		std::integral_constant<size_t, I> { return {}; })(std::declval<pack_base<index_sequence_for_pack<V...>, V...>>())) {};
+		constant_identity<size_t, I> { return {}; })(pack_base<index_sequence_for_pack<V...>, V...>{})) {};
 
 	template<auto A, auto... V>
 	AA_CONSTEXPR const size_t pack_index_v = pack_index<A, V...>::value;
@@ -736,7 +752,7 @@ namespace aa {
 	struct pack : pack_base<index_sequence_for_pack<V...>, V...> {
 		// Member types
 		template<size_t I>
-		using value_type = typename pack_element<I, V...>::value_type;
+		using value_type = pack_element_t<I, V...>;
 
 		template<size_t I>
 		using unit_type = pack_unit<I, pack_element_v<I, V...>>;
@@ -762,7 +778,7 @@ namespace aa {
 namespace std {
 
 	template<class... T>
-	struct tuple_size<aa::tuple<T...>> : std::integral_constant<size_t, sizeof...(T)> {};
+	struct tuple_size<aa::tuple<T...>> : aa::constant_identity<size_t, sizeof...(T)> {};
 
 	template<size_t I, class... T>
 	struct tuple_element<I, aa::tuple<T...>> : aa::type_pack_element<I, T...> {};
@@ -770,10 +786,10 @@ namespace std {
 
 
 	template<auto... V>
-	struct tuple_size<aa::pack<V...>> : std::integral_constant<size_t, sizeof...(V)> {};
+	struct tuple_size<aa::pack<V...>> : aa::constant_identity<size_t, sizeof...(V)> {};
 
 	template<size_t I, auto... V>
-	struct tuple_element<I, aa::pack<V...>> : std::type_identity<typename aa::pack_element<I, V...>::value_type> {};
+	struct tuple_element<I, aa::pack<V...>> : aa::pack_element<I, V...> {};
 
 	template<size_t I, auto... V>
 	struct tuple_element<I, const aa::pack<V...>> : std::tuple_element<I, aa::pack<V...>> {};
