@@ -5,6 +5,6 @@
 	multi line
 */
 
-std::__cxx11::basic_string<char>	-	TEST_1					=text
-double								-	TEST_2					=22.5
-unsigned int						-	TEST_3					=45
+	TEST_1					=text
+	TEST_2					=22.5
+	TEST_3					=45

@@ -3,9 +3,10 @@
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t, ptrdiff_t
 #include <iterator> // reverse_iterator
-#include <string_view> // basic_string_view
+#include <string_view> // basic_string_view, string_view, hash
 #include <ostream> // basic_ostream
 #include <string> // char_traits
+#include <functional> // hash
 
 
 
@@ -93,6 +94,19 @@ namespace aa {
 		AA_CONSTEXPR bool starts_with(const value_type &c) const { return traits_type::eq(front(), c); }
 		AA_CONSTEXPR bool ends_with(const value_type &c) const { return traits_type::eq(back(), c); }
 
+		friend AA_CONSTEXPR bool operator==(const basic_fixed_string &l, const basic_fixed_string &r) {
+			return !traits_type::compare(l.data(), r.data(), N);
+		}
+
+		template<size_type N2>
+		friend AA_CONSTEVAL bool operator==(const basic_fixed_string &, const basic_fixed_string<value_type, traits_type, N2> &) {
+			return false;
+		}
+
+		friend AA_CONSTEXPR bool operator==(const basic_fixed_string &l, const view_type &r) {
+			return (N == r.size()) && !traits_type::compare(l.data(), r.data(), N);
+		}
+
 
 
 		// Input/output
@@ -128,5 +142,26 @@ namespace aa {
 	// Netikriname ar (N != 0), nes C++ standartas draudžia deklaruoti tokius masyvus.
 	template<class T, size_t N>
 	basic_fixed_string(const T(&)[N])->basic_fixed_string<T, std::char_traits<T>, N - 1>;
+
+
+
+	// https://stackoverflow.com/questions/62853609/understanding-user-defined-string-literals-addition-for-c20
+	inline namespace literals {
+		template<basic_fixed_string S>
+		AA_CONSTEVAL decltype(S) operator""_fs() { return S; }
+	}
+
+}
+
+
+
+namespace std {
+
+	template<size_t N>
+	struct hash<aa::fixed_string<N>> {
+		AA_CONSTEXPR size_t operator()(const aa::fixed_string<N> &string) const {
+			return std::hash<std::string_view>{}(string);
+		}
+	};
 
 }

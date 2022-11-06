@@ -1,141 +1,93 @@
 #pragma once
 
-#include "../preprocessor/assert.hpp"
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/range.hpp"
 #include "../metaprogramming/io.hpp"
+#include "../algorithm/init.hpp"
+#include "../container/fixed_immutable_set.hpp"
 #include <cstddef> // size_t
-#include <string> // string, hash
-#include <variant> // variant, monostate, get_if
-#include <unordered_map> // unordered_map
-#include <initializer_list> // initializer_list
-#include <functional> // invoke, hash
-#include <string_view> // string_view, hash
+#include <string> // string
+#include <functional> // invoke, equal_to
 #include <utility> // unreachable, forward
-#include <bit> // bit_cast
 #include <type_traits> // remove_reference_t
 
 
 
 namespace aa {
 
-	// Būvo idėja realizuoti escape sequences, bet faile galima	tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
+	// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
 	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
 	// https://en.wikipedia.org/wiki/Lexical_analysis
-	template<storable_evaluator... A>
-		requires (are_unique_v<std::monostate, evaluator_result_t<A>...>)
+	template<fixed_immutable_set S, class E = std::ranges::equal_to, size_t R = 50>
+		requires (S.valid())
 	struct lexer {
 		// Member types
-		using params_map = std::unordered_map<std::string, std::variant<std::monostate, evaluator_result_t<A>...>,
-			overload<std::hash<std::string>, std::hash<std::string_view>>, char_equal_to>;
+		using container_type = array_t<std::string, S.size()>;
+		using comparer_type = E;
 
-	protected:
-		struct params_lexer {
-			params_map &params;
-
-			template<class T>
-			AA_CONSTEXPR void evaluate() const {
-				params_iter->second.template emplace<evaluator_result_t<T>>(
-					std::invoke(evaluators.template get<T>(), token.operator std::string_view()));
+		struct lexer_type {
+			// Special member functions
+			template<class U = comparer_type>
+			AA_CONSTEXPR lexer_type(container_type &c, U &&e) : values{c}, comparer{std::forward<U>(e)} {
+				if constexpr (R) {
+					token.reserve(R);
+					whitespace.reserve(R);
+				}
 			}
 
-			using types_map = std::unordered_map<std::string_view, void(params_lexer:: *)() const,
-				typename params_map::hasher, typename params_map::key_equal>;
 
-			[[no_unique_address]] const tuple<A...> evaluators;
-			const types_map types = {std::initializer_list<typename types_map::value_type>{
-				typename types_map::value_type{type_name<evaluator_result_t<A>>(), &params_lexer::evaluate<A>}...
-			}};
+
+		protected:
+			// Member objects
+			container_type &values;
+			[[no_unique_address]] const comparer_type comparer;
 
 			enum struct lexing_state : size_t {
-				BEFORE_TYPE, TYPE, TYPE_SPACE,
 				BEFORE_KEY, KEY, KEY_SPACE,
-				VALUE
-			} state = lexing_state::BEFORE_TYPE;
-			// Jeigu deklaruotume savo konstruktorius, galėtume inicializuoti iteratorius su default
-			// initialization, bet to nedarome, nes niekas nepasikeistų, nes naudojamų stl konteinerių
-			// default konstruktoriai nėra trivial. Todėl params_lexer tipas gali likti aggregate.
-			typename types_map::const_iterator types_iter = {};
-			typename params_map::iterator params_iter = {};
-			std::string token = {}, whitespace = {};
+				VALUE, SKIP_VALUE
+			} state = lexing_state::BEFORE_KEY;
+			size_t index;
+			std::string token, whitespace;
 
 
 
-			AA_CONSTEXPR void init_type() {
-				state = lexing_state::BEFORE_KEY;
-				types_iter = types.template find<std::string>(token);
-				token.clear();
-			}
-
+			// Member functions
 			AA_CONSTEXPR void init_key() {
-				state = lexing_state::VALUE;
-				params_iter = params.try_emplace(token).first;
-				token.clear();
+				index = S.index(token);
+				S.get(index, [&]<in_relation_with<std::string, comparer_type> T>(const T & s) -> void {
+					if (std::invoke(comparer, s, token)) {
+						state = lexing_state::VALUE;
+					} else {
+						state = lexing_state::SKIP_VALUE;
+					}
+				});
 			}
 
+		public:
 			AA_CONSTEXPR void operator()(const int character) {
 				switch (state) {
-					case lexing_state::BEFORE_TYPE:
-						switch (character) {
-							case '-': abort<AA_SOURCE_DATA>();
-							case ' ': case '\t': case '\n': case '\r': return;
-							default:
-								state = lexing_state::TYPE;
-								token.push_back(*std::bit_cast<const char *>(&character));
-								return;
-						}
-
-					case lexing_state::TYPE:
-						switch (character) {
-							default:
-								token.push_back(*std::bit_cast<const char *>(&character));
-								return;
-							case ' ': case '\t':
-								state = lexing_state::TYPE_SPACE;
-								whitespace.push_back(*std::bit_cast<const char *>(&character));
-								return;
-							case '-':
-								init_type();
-								return;
-						}
-
-					case lexing_state::TYPE_SPACE:
-						switch (character) {
-							default:
-								state = lexing_state::TYPE;
-								token.append(whitespace).push_back(*std::bit_cast<const char *>(&character));
-								whitespace.clear();
-								return;
-							case ' ': case '\t':
-								whitespace.push_back(*std::bit_cast<const char *>(&character));
-								return;
-							case '-':
-								init_type();
-								whitespace.clear();
-								return;
-						}
-
 					case lexing_state::BEFORE_KEY:
 						switch (character) {
-							case '=': abort<AA_SOURCE_DATA>();
+							case '=': init_key();
 							case ' ': case '\t': case '\n': case '\r': return;
 							default:
 								state = lexing_state::KEY;
-								token.push_back(*std::bit_cast<const char *>(&character));
+								// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
+								token.push_back(static_cast<char>(character));
 								return;
 						}
 
 					case lexing_state::KEY:
 						switch (character) {
 							default:
-								token.push_back(*std::bit_cast<const char *>(&character));
+								token.push_back(static_cast<char>(character));
 								return;
 							case ' ': case '\t':
 								state = lexing_state::KEY_SPACE;
-								whitespace.push_back(*std::bit_cast<const char *>(&character));
+								whitespace.push_back(static_cast<char>(character));
 								return;
 							case '=':
 								init_key();
+								token.clear();
 								return;
 						}
 
@@ -143,14 +95,15 @@ namespace aa {
 						switch (character) {
 							default:
 								state = lexing_state::KEY;
-								token.append(whitespace).push_back(*std::bit_cast<const char *>(&character));
+								token.append(whitespace).push_back(static_cast<char>(character));
 								whitespace.clear();
 								return;
 							case ' ': case '\t':
-								whitespace.push_back(*std::bit_cast<const char *>(&character));
+								whitespace.push_back(static_cast<char>(character));
 								return;
 							case '=':
 								init_key();
+								token.clear();
 								whitespace.clear();
 								return;
 						}
@@ -158,13 +111,22 @@ namespace aa {
 					case lexing_state::VALUE:
 						switch (character) {
 							default:
-								token.push_back(*std::bit_cast<const char *>(&character));
+								token.push_back(static_cast<char>(character));
 								return;
 							case '\n':
-								state = lexing_state::BEFORE_TYPE;
-								if (types_iter != types.cend())
-									(this->*types_iter->second)();
+								state = lexing_state::BEFORE_KEY;
+								// Nedarome move, nes tada reiktų vėl išskirti atmintį token kintamajam.
+								values[index] = token;
 								token.clear();
+								return;
+						}
+
+					case lexing_state::SKIP_VALUE:
+						switch (character) {
+							default:
+								return;
+							case '\n':
+								state = lexing_state::BEFORE_KEY;
 								return;
 						}
 
@@ -177,11 +139,12 @@ namespace aa {
 
 
 		// Special member functions
-	public:
 		// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
-		// Patariama pačiam naudoti naudotojui pathed_stream klasę, kuri automatiškai taip pat patikrina failed state.
-		template<input_stream T, class... U>
-		AA_CONSTEXPR lexer(T &&file, U&&... args) {
+		// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
+		template<input_stream T, class U = comparer_type>
+		AA_CONSTEXPR lexer(T &&file, U &&e = {}) : values{
+				create_with_invocable<container_type>([&](container_type &c) -> void
+		{
 			using traits_type = typename std::remove_reference_t<T>::traits_type;
 
 			// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
@@ -189,7 +152,7 @@ namespace aa {
 				return;
 
 			// Lexing parameters
-			params_lexer p_lexer = {params, {std::forward<U>(args)...}};
+			lexer_type p_lexer = {c, std::forward<U>(e)};
 
 			// Lexing comments
 			enum struct lexing_state : size_t {
@@ -264,33 +227,12 @@ namespace aa {
 						std::unreachable();
 				}
 			} while (file.peek() != traits_type::eof());
-		}
-
-
-
-		// Observers
-		AA_CONSTEXPR const params_map &get_params() const {
-			return params;
-		}
-
-		template<class T>
-		AA_CONSTEXPR const T &get_param(const std::string_view &name) const {
-			const typename params_map::const_iterator iter = params.template find<std::string_view>(name);
-			AA_TRACE_ASSERT(iter != params.cend(), "Parameter `", type_name<T>(), " - ", name, "` not found.");
-
-			const T *const param = std::get_if<T>(&iter->second);
-			AA_TRACE_ASSERT(param, "Parameter `", type_name<T>(), " - ", name, "` not found.");
-			return *param;
-		}
+		})} {}
 
 
 
 		// Member objects
-	protected:
-		params_map params = {};
+		const container_type values;
 	};
-
-	template<class T, class... A>
-	lexer(T &&, A&&...)->lexer<A...>;
 
 }

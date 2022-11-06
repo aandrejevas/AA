@@ -36,6 +36,8 @@ namespace aa {
 		}
 	};
 
+	source_data(allow_ctad)->source_data<0, 0, "", "">;
+
 
 
 	template<source_data D, remove_ref_same_as<typename decltype(D)::ostream_type> S, class... A>

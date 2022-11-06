@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "../metaprogramming/general.hpp"
@@ -106,6 +105,7 @@ namespace aa {
 		{
 			c.fill(numeric_max);
 			// Neišeina čia jokio assert daryti at compile time tai joks ir nedaromas.
+			// https://stackoverflow.com/questions/62185058/why-isnt-this-known-at-compile-time-in-a-consteval-constructor
 			apply<sizeof...(A)>([&]<size_type... I>() -> void { ((c[hash(A)] = I), ...); });
 		})} {}
 
@@ -117,6 +117,8 @@ namespace aa {
 		// Galėtų konteineris būti static, bet tada panaikintume galimybę hashinti template parametrus su runtime hasher.
 		const container_type indices;
 	};
+
+	fixed_immutable_set(allow_ctad)->fixed_immutable_set<mod_hash<0>>;
 
 
 

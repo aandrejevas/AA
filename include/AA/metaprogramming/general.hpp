@@ -28,6 +28,10 @@
 
 namespace aa {
 
+	struct allow_ctad;
+
+
+
 	template<class T, T V>
 	struct constant_identity : std::integral_constant<T, V> {
 		using type = typename constant_identity::value_type;
