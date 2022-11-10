@@ -1,3 +1,5 @@
+#include <AA/container/fixed_immutable_set.hpp>
+#include <AA/container/fixed_string.hpp>
 #include <AA/container/fixed_grid.hpp>
 #include <AA/container/fixed_free_vector.hpp>
 #include <AA/container/fixed_perfect_hash_set.hpp>
@@ -13,13 +15,11 @@
 #include <AA/preprocessor/assert.hpp>
 #include <AA/metaprogramming/general.hpp>
 #include <AA/system/timekeeper.hpp>
-#include <AA/system/evaluator.hpp>
-#include <AA/system/lexer.hpp>
+#include <AA/system/parser.hpp>
 #include <AA/system/writer.hpp>
 #include <AA/system/print.hpp>
 #include <AA/system/pathed_stream.hpp>
 #include <cstddef> // size_t
-#include <cstdint> // uint32_t
 #include <cstdlib> // EXIT_SUCCESS
 #include <ios> // sync_with_stdio
 #include <map> // map
@@ -93,15 +93,27 @@ int main() {
 		//}
 	}
 	{
-		printl(type_name<std::string>());
-		printl(type_name<uint32_t>());
-		printl(type_name<double>());
-		const lexer<evaluator<std::string>, evaluator<uint32_t>, evaluator<double>> l = {pathed_ifstream{"params.txt"}.get()};
+		tuple<std::string, double, size_t> a;
 
-		AA_TRACE_ASSERT(l.get_param<std::string>("TEST_1") == "text");
-		AA_TRACE_ASSERT(std::bit_cast<size_t>(l.get_param<double>("TEST_2")) == std::bit_cast<size_t>(22.5));
-		AA_TRACE_ASSERT(l.get_param<uint32_t>("TEST_3") == 45);
-		AA_TRACE_ASSERT(l.get_params().size() == 3);
+		using hasher_type = decltype([](const auto &v) -> size_t {
+			switch (v.size()) {
+				case 6:
+					switch (v.back()) {
+						case '1': return 0;
+						case '2': return 1;
+						case '3': return 2;
+						default: return numeric_max;
+					}
+				default: return numeric_max;
+			}
+		});
+
+		parse<constant<fixed_immutable_set<hasher_type, "TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs>>()>
+			(a, pathed_ifstream{"params.txt"}.get());
+
+		AA_TRACE_ASSERT(a.get<0>() == "text");
+		AA_TRACE_ASSERT(std::bit_cast<size_t>(a.get<1>()) == std::bit_cast<size_t>(22.5));
+		AA_TRACE_ASSERT(a.get<2>() == 45);
 	}
 	{
 		array_t<int, 10> a = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, b = a;

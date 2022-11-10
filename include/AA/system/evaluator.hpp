@@ -38,7 +38,7 @@ namespace aa {
 	struct generic_evaluator {
 		template<evaluable_by_template<E> T>
 		[[gnu::always_inline]] AA_CONSTEXPR void operator()(T &t, const size_t i, const std::string_view &token) const {
-			return E<T>{}(t, i, token);
+			E<T>{}(t, i, token);
 		}
 
 		using is_transparent = void;

@@ -7,6 +7,7 @@
 #include <functional> // invoke
 #include <utility> // forward
 #include <iterator> // reverse_iterator
+#include <concepts> // invocable
 
 
 
@@ -93,6 +94,19 @@ namespace aa {
 				});
 			} else {
 				std::invoke(std::forward<F>(f));
+			}
+		}
+
+		template<class T, class EQ = aa::equal_to, hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR void find(const K &key, T &&t = {}, EQ &&eq = {}) const {
+			const size_type hash = this->hash(key);
+			if (valid(hash)) {
+				const size_type index = indices[hash];
+				pack<A...>::get(index, [&]<auto V>() -> void {
+					if (invoke<V>(std::forward<EQ>(eq), key)) {
+						invoke<V>(std::forward<T>(t), index);
+					}
+				});
 			}
 		}
 
