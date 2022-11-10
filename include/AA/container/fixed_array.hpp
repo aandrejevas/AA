@@ -2,9 +2,6 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t, ptrdiff_t
-#include <concepts> // invocable
-#include <functional> // invoke
-#include <utility> // forward
 
 
 
@@ -23,6 +20,7 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using iterator = pointer;
 		using const_iterator = const_pointer;
+		using container_type = array_t<value_type, N>;
 
 
 
@@ -94,14 +92,12 @@ namespace aa {
 
 		// Special member functions
 		AA_CONSTEXPR fixed_array() {}
-
-		template<std::invocable<fixed_array &> F>
-		AA_CONSTEXPR fixed_array(F &&f) { std::invoke(std::forward<F>(f), *this); }
+		AA_CONSTEXPR fixed_array(const container_type &e) : elements{e} {}
 
 
 
 		// Member objects
-		array_t<value_type, N> elements;
+		container_type elements;
 
 	protected:
 		// Šitas kintamasis turi būti paslėptas, nes kitaip jis suteiktų galimybę naudotojui keisti const elementus.

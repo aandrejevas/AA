@@ -66,11 +66,11 @@ namespace aa {
 	}
 
 	// TODO: Su C++23 čia galima bus naudoti static operator().
-	template<source_data D, bool T = true, nttp_accepting_functor<D> F>
+	template<source_data D, bool T = true, class F>
 	[[gnu::always_inline]] AA_CONSTEXPR void trace(const bool condition, F &&f) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {
-				std::forward<F>(f).template AA_CALL_OPERATOR<D>();
+				invoke<D>(std::forward<F>(f));
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include <cstddef> // size_t
 #include <string_view> // string_view
 #include <charconv> // from_chars
 #include <string> // string
@@ -16,20 +17,33 @@ namespace aa {
 	// nes daroma prielaida, kad naudotojas nenori, kad būtų sustabdyta programa jei buvo tokios klados aptiktos.
 	template<arithmetic T>
 	struct evaluator<T> {
-		AA_CONSTEXPR T operator()(const std::string_view &token) const {
+		AA_CONSTEXPR void operator()(T &t, const size_t, const std::string_view &token) const {
 			// Reikia inicializuoti kintamąjį, nes from_chars nebūtinai jį modifikuos.
-			T param = 0;
-			std::from_chars(token.data(), token.data() + token.length(), param);
-			return param;
+			t = numeric_max;
+			std::from_chars(token.data(), token.data() + token.length(), t);
 		}
 	};
 
 	// Negalime turėti evaluator<std::string_view>, nes atmintis į kurią rodo token pasikeis.
 	template<>
 	struct evaluator<std::string> {
-		AA_CONSTEXPR std::string operator()(const std::string_view &token) const {
-			return std::string{token};
+		AA_CONSTEXPR void operator()(std::string &t, const size_t, const std::string_view &token) const {
+			t = token;
 		}
 	};
+
+
+
+	template<template<class> class E = evaluator>
+	struct generic_evaluator {
+		template<evaluable_by_template<E> T>
+		[[gnu::always_inline]] AA_CONSTEXPR void operator()(T &t, const size_t i, const std::string_view &token) const {
+			return E<T>{}(t, i, token);
+		}
+
+		using is_transparent = void;
+	};
+
+	generic_evaluator()->generic_evaluator<>;
 
 }

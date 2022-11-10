@@ -4,7 +4,7 @@
 #include "../algorithm/hash.hpp"
 #include "../algorithm/init.hpp"
 #include <cstddef> // size_t, ptrdiff_t
-#include <functional> // invoke, equal_to
+#include <functional> // invoke
 #include <utility> // forward
 #include <iterator> // reverse_iterator
 
@@ -65,34 +65,43 @@ namespace aa {
 
 
 		// Observers
-		template<hashable_by<hasher_type> K>
+		template<hashable_by<const hasher_type &> K>
 		[[gnu::always_inline]] AA_CONSTEXPR size_type hash(const K &key) const {
 			return std::invoke(hasher, key);
 		}
 
+		static AA_CONSTEXPR bool valid(const size_type h) { return !is_numeric_max(h); }
+
 		AA_CONSTEXPR bool valid() const {
-			return apply<sizeof...(A)>([&]<size_type... I>() -> bool { return (... && !is_numeric_max(indices[I])); });
+			return apply<sizeof...(A)>([&]<size_type... I>() -> bool { return (... && valid(indices[I])); });
 		}
 
 
 
 		// Lookup
-		template<hashable_by<hasher_type> K>
-		AA_CONSTEXPR size_type index(const K &key) const {
-			return indices[hash(key)];
+		template<class T, std::invocable F, class EQ = aa::equal_to, hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR void find(const K &key, T &&t = {}, F &&f = {}, EQ &&eq = {}) const {
+			const size_type hash = this->hash(key);
+			if (valid(hash)) {
+				const size_type index = indices[hash];
+				pack<A...>::get(index, [&]<auto V>() -> void {
+					if (invoke<V>(std::forward<EQ>(eq), key)) {
+						invoke<V>(std::forward<T>(t), index);
+					} else {
+						std::invoke(std::forward<F>(f));
+					}
+				});
+			} else {
+				std::invoke(std::forward<F>(f));
+			}
 		}
 
-		template<class F, hashable_by<hasher_type> K>
-		AA_CONSTEXPR void context(const K &key, F &&f = {}) const {
-			this->get(index(key), std::forward<F>(f));
-		}
-
-		template<class E = std::ranges::equal_to, hashable_by<hasher_type> K>
-		AA_CONSTEXPR bool contains(const K &key, const E &e = {}) const {
+		template<class EQ = aa::equal_to, hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR bool contains(const K &key, EQ &&eq = {}) const {
 			bool r;
-			context(key, [&]<in_relation_with<K, E> T>(const T & a) -> void {
-				r = std::invoke(e, a, key);
-			});
+			find(key,
+				[&]<auto>(const size_type) ->	void { r = true; },
+				[&]() ->						void { r = false; }, eq);
 			return r;
 		}
 
@@ -118,14 +127,14 @@ namespace aa {
 		const container_type indices;
 	};
 
-	fixed_immutable_set(allow_ctad)->fixed_immutable_set<mod_hash<0>>;
+	fixed_immutable_set(allow_ctad)->fixed_immutable_set<mod_generic_hash<0>>;
 
 
 
 	template<auto... A>
-	using h_fixed_immutable_set = fixed_immutable_set<hash<>, A...>;
+	using h_fixed_immutable_set = fixed_immutable_set<generic_hash<>, A...>;
 
 	template<auto... A>
-	using mh_fixed_immutable_set = fixed_immutable_set<mod_hash<sizeof...(A)>, A...>;
+	using mh_fixed_immutable_set = fixed_immutable_set<mod_generic_hash<sizeof...(A)>, A...>;
 
 }

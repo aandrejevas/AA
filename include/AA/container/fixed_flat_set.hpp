@@ -65,7 +65,7 @@ namespace aa {
 
 
 		// Observers
-		template<class K1, in_relation_with<K1, comparer_type> K2>
+		template<class K1, in_relation_with<K1, const comparer_type &> K2>
 		[[gnu::always_inline]] AA_CONSTEXPR bool compare(const K1 &key1, const K2 &key2) const {
 			return std::invoke(comparer, key1, key2);
 		}
@@ -73,17 +73,17 @@ namespace aa {
 
 
 		// Lookup
-		template<in_relation_with<value_type, comparer_type> K>
+		template<in_relation_with<value_type, const comparer_type &> K>
 		AA_CONSTEXPR const_iterator unsafe_lower_bound(const K &key) const {
 			return aa::unsafe_lower_bound(elements, key, comparer);
 		}
 
-		template<in_relation_with<value_type, comparer_type> K>
+		template<in_relation_with<value_type, const comparer_type &> K>
 		AA_CONSTEXPR const_iterator unsafe_upper_bound(const K &key) const {
 			return aa::unsafe_upper_bound(elements, key, comparer);
 		}
 
-		template<in_relation_with<value_type, comparer_type> K>
+		template<in_relation_with<value_type, const comparer_type &> K>
 		AA_CONSTEXPR const_iterator find(const K &key) const {
 			if (empty() || compare(back(), key)) {
 				return nullptr;
@@ -93,7 +93,7 @@ namespace aa {
 			}
 		}
 
-		template<in_relation_with<value_type, comparer_type> K>
+		template<in_relation_with<value_type, const comparer_type &> K>
 		AA_CONSTEXPR bool contains(const K &key) const {
 			return (empty() || compare(back(), key))
 				? false : !compare(key, *unsafe_lower_bound(key));
@@ -137,7 +137,7 @@ namespace aa {
 			}
 		}
 
-		template<in_relation_with<value_type, comparer_type> K>
+		template<in_relation_with<value_type, const comparer_type &> K>
 		AA_CONSTEXPR void erase(const K &key) {
 			if (empty() || compare(back(), key)) {
 				return;
@@ -172,6 +172,8 @@ namespace aa {
 		fixed_vector<value_type, N> elements;
 
 	public:
+		// Konteinerių invocables turi būti const, nes nėra logiška, kad juos galėtume pakeisti.
+		// Į funkcijas paduodami invocables negali būti pakeisti todėl jie neturi būti const.
 		[[no_unique_address]] const comparer_type comparer;
 	};
 

@@ -169,9 +169,6 @@ namespace aa {
 	template<class T>
 	concept functor = requires { &T::operator(); };
 
-	template<class F, auto... A>
-	concept nttp_accepting_functor = requires(F && f) { std::forward<F>(f).template AA_CALL_OPERATOR<A...>(); };
-
 
 
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
@@ -217,10 +214,16 @@ namespace aa {
 
 
 
+	// Neįmanoma requires į concept paversti.
+	template<auto... A, class F, class... T>
+		requires (requires(F &&f, T&&... t) { std::forward<F>(f).template AA_CALL_OPERATOR<A...>(std::forward<T>(t)...); })
+	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) invoke(F &&f, T&&... t) {
+		return std::forward<F>(f).template AA_CALL_OPERATOR<A...>(std::forward<T>(t)...);
+	}
+
 	template<class F, size_t... I>
-		requires (nttp_accepting_functor<F, I...>)
 	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) apply(F &&f, const std::index_sequence<I...> &&) {
-		return std::forward<F>(f).template AA_CALL_OPERATOR<I...>();
+		return invoke<I...>(std::forward<F>(f));
 	}
 
 	template<size_t N, class F>
@@ -278,13 +281,23 @@ namespace aa {
 
 
 	template<class F, visitable_tuple<F> T>
-	AA_CONSTEXPR const auto getter_table = apply<T>([]<size_t... I>() ->
+	AA_CONSTEXPR const auto tuple_getter_table = apply<T>([]<size_t... I>() ->
 			std::array<void (*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
 	{ return {([](F &&f, T &&t) -> void { std::invoke(std::forward<F>(f), getter<I>{}(t)); })...}; });
 
 	template<class F, visitable_tuple<F> T>
 	[[gnu::always_inline]] AA_CONSTEXPR void visit(const size_t i, F &&f, T &&t) {
-		getter_table<F, T &>[i](std::forward<F>(f), t);
+		tuple_getter_table<F, T &>[i](std::forward<F>(f), t);
+	}
+
+	template<class T, class F>
+	AA_CONSTEXPR const auto pack_getter_table = apply<T>([]<size_t... I>() ->
+			std::array<void (*)(F &&), std::tuple_size_v<T>>
+	{ return {([](F &&f) -> void { invoke<T::template get<I>()>(std::forward<F>(f)); })...}; });
+
+	template<class T, class F>
+	[[gnu::always_inline]] AA_CONSTEXPR void visit(const size_t i, F &&f) {
+		pack_getter_table<T, F>[i](std::forward<F>(f));
 	}
 
 
@@ -334,34 +347,28 @@ namespace aa {
 	concept storable = std::default_initializable<std::remove_reference_t<T>> && std::copy_constructible<T>;
 
 	template<class U, class V, class T>
-	concept in_relation_with = std::relation<const T &, const U &, const V &>;
+	concept in_relation_with = std::relation<T, const U &, const V &>;
 
 	template<class T, class U, class V = U>
-	concept storable_relation_for = in_relation_with<U, V, T> && storable<T>;
+	concept storable_relation_for = in_relation_with<U, V, const T &> && storable<T>;
 
 	template<class U, class T>
-	concept hashable_by = invocable_r<const T &, size_t, const U &>;
+	concept hashable_by = invocable_r<T, size_t, const U &>;
 
 	template<class U, template<class> class T>
 	concept hashable_by_template = hashable_by<U, T<U>>;
 
 	template<class T, class... U>
-	concept storable_hasher_for = (... && hashable_by<U, T>) && storable<T>;
+	concept storable_hasher_for = (... && hashable_by<U, const T &>) && storable<T>;
 
 	template<class T, class U>
 	concept char_traits_for = char_traits_like<T> && std::same_as<typename T::char_type, U>;
 
-	// evaluator'ius gali nebūtinai gražinti be kvalifikatorių tipą, bet copy_constructible turėtų užtikrinti,
-	// kad kad ir ką gražintų evaluator'ius, kad tai būtų paverčiama į tipą be kvalifikatorių.
-	template<class T>
-	concept storable_evaluator = std::invocable<const T &, const std::string_view &> && storable<T>
-		&& std::copy_constructible<std::remove_cvref_t<std::invoke_result_t<const T &, const std::string_view &>>>;
+	template<class U, class T>
+	concept evaluable_by = !std::is_const_v<U> && std::invocable<T, U &, size_t, std::string_view>;
 
-	template<storable_evaluator T>
-	struct evaluator_result : std::remove_cvref<std::invoke_result_t<const T &, const std::string_view &>> {};
-
-	template<class T>
-	using evaluator_result_t = typename evaluator_result<T>::type;
+	template<class U, template<class> class T>
+	concept evaluable_by_template = evaluable_by<U, T<U>>;
 
 	template<class T, class U>
 	concept storable_vector2_getter = storable<T>
@@ -583,39 +590,33 @@ namespace aa {
 
 
 
-	template<auto R>
 	struct less {
-		template<std::totally_ordered_with<decltype(R)> L>
+		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l < R; }
 	};
 
-	template<auto R>
 	struct less_equal {
-		template<std::totally_ordered_with<decltype(R)> L>
+		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l <= R; }
 	};
 
-	template<auto R>
 	struct greater {
-		template<std::totally_ordered_with<decltype(R)> L>
+		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l > R; }
 	};
 
-	template<auto R>
 	struct greater_equal {
-		template<std::totally_ordered_with<decltype(R)> L>
+		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l >= R; }
 	};
 
-	template<auto R>
 	struct equal_to {
-		template<std::equality_comparable_with<decltype(R)> L>
+		template<auto R, std::equality_comparable_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l == R; }
 	};
 
-	template<auto R>
 	struct not_equal_to {
-		template<std::equality_comparable_with<decltype(R)> L>
+		template<auto R, std::equality_comparable_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l != R; }
 	};
 
@@ -775,7 +776,7 @@ namespace aa {
 		static AA_CONSTEVAL value_type<I> get() { return unit_type<I>::value; }
 
 		template<class F>
-		[[gnu::always_inline]] AA_CONSTEXPR void get(const size_t i, F &&f) const { visit(i, std::forward<F>(f), *this); }
+		[[gnu::always_inline]] static AA_CONSTEXPR void get(const size_t i, F &&f) { visit<pack>(i, std::forward<F>(f)); }
 	};
 
 }

@@ -19,7 +19,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Perfect_hash_function
 	// https://en.wikipedia.org/wiki/Hash_table
 	// Konteineris laiko savyje maišos kodus.
-	template<regular_unsigned_integral T, size_t N, size_t M = N, storable H = aa::hash<>>
+	template<regular_unsigned_integral T, size_t N, size_t M = N, storable H = generic_hash<>>
 		requires (N >= M)
 	struct fixed_perfect_hash_set {
 		// Member types
@@ -222,7 +222,7 @@ namespace aa {
 
 
 		// Observers
-		template<hashable_by<hasher_type> K>
+		template<hashable_by<const hasher_type &> K>
 		[[gnu::always_inline]] AA_CONSTEXPR size_type hash(const K &key) const {
 			return std::invoke(hasher, key);
 		}
@@ -236,7 +236,7 @@ namespace aa {
 
 
 		// Lookup
-		template<hashable_by<hasher_type> K>
+		template<hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR bool contains(const K &key) const {
 			const size_type hash = this->hash(key);
 			return bins[index(hash)] & mask(hash);
@@ -259,7 +259,7 @@ namespace aa {
 			} while (!used_bins.empty());
 		}
 
-		template<hashable_by<hasher_type> K>
+		template<hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR void insert(const K &key) {
 			const size_type hash = this->hash(key);
 			bucket_type &bin = bins[index(hash)];
@@ -267,7 +267,7 @@ namespace aa {
 			bin |= mask(hash);
 		}
 
-		template<hashable_by<hasher_type> K>
+		template<hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR void erase(const K &key) {
 			const size_type hash = this->hash(key);
 			bucket_type &bin = bins[index(hash)];
@@ -278,7 +278,7 @@ namespace aa {
 			}
 		}
 
-		template<hashable_by<hasher_type> K>
+		template<hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR void insert_or_erase(const K &key) {
 			const size_type hash = this->hash(key);
 			bucket_type &bin = bins[index(hash)];

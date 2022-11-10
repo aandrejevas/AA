@@ -3,17 +3,17 @@
 #include "../metaprogramming/general.hpp"
 #include "arithmetic.hpp"
 #include <cstddef> // size_t
-#include <functional> // invoke, hash
+#include <functional> // hash
 
 
 
 namespace aa {
 
 	template<template<class> class H = std::hash>
-	struct hash {
+	struct generic_hash {
 		template<hashable_by_template<H> T>
 		[[gnu::always_inline]] AA_CONSTEXPR size_t operator()(const T &t) const {
-			return std::invoke(H<T>{}, t);
+			return H<T>{}(t);
 		}
 
 		static AA_CONSTEVAL size_t min() { return numeric_min; }
@@ -22,15 +22,15 @@ namespace aa {
 		using is_transparent = void;
 	};
 
-	hash()->hash<>;
+	generic_hash()->generic_hash<>;
 
 
 
 	template<size_t N, template<class> class H = std::hash>
-	struct mod_hash : hash<H> {
+	struct mod_generic_hash : generic_hash<H> {
 		template<hashable_by_template<H> T>
 		[[gnu::always_inline]] AA_CONSTEXPR size_t operator()(const T &t) const {
-			return remainder<N>(hash<H>::operator()(t));
+			return remainder<N>(generic_hash<H>::operator()(t));
 		}
 
 		static AA_CONSTEVAL size_t max() { return N - 1; }

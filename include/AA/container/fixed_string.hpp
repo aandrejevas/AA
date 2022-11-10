@@ -5,8 +5,9 @@
 #include <iterator> // reverse_iterator
 #include <string_view> // basic_string_view, string_view, hash
 #include <ostream> // basic_ostream
-#include <string> // char_traits
+#include <string> // basic_string, char_traits
 #include <functional> // hash
+#include <type_traits> // type_identity, basic_common_reference
 
 
 
@@ -98,27 +99,33 @@ namespace aa {
 			return !traits_type::compare(l.data(), r.data(), N);
 		}
 
+		friend AA_CONSTEVAL bool operator==(const basic_fixed_string &, const basic_fixed_string &) requires (!N) {
+			return true;
+		}
+
 		template<size_type N2>
 		friend AA_CONSTEVAL bool operator==(const basic_fixed_string &, const basic_fixed_string<value_type, traits_type, N2> &) {
 			return false;
 		}
 
 		friend AA_CONSTEXPR bool operator==(const basic_fixed_string &l, const view_type &r) {
-			return (N == r.size()) && !traits_type::compare(l.data(), r.data(), N);
+			if constexpr (N)	return (N == r.size()) && !traits_type::compare(l.data(), r.data(), N);
+			else				return (N == r.size());
 		}
 
 
 
 		// Input/output
 		friend AA_CONSTEXPR ostream_type &operator<<(ostream_type &os, const basic_fixed_string &str) {
-			return os.write(str.data(), N);
+			if constexpr (N)	return os.write(str.data(), N);
+			else				return os;
 		}
 
 
 
 		// Special member functions
 		AA_CONSTEXPR basic_fixed_string(const value_type *const cstring) {
-			traits_type::copy(elements.data(), cstring, N);
+			if constexpr (N)	traits_type::copy(elements.data(), cstring, N);
 		}
 
 
@@ -163,5 +170,15 @@ namespace std {
 			return std::hash<std::string_view>{}(string);
 		}
 	};
+
+
+
+	template<class C, class T, class A, size_t N, template<class> class TQUAL, template<class> class QQUAL>
+	struct basic_common_reference<aa::basic_fixed_string<C, T, N>, std::basic_string<C, T, A>, TQUAL, QQUAL>
+		: std::type_identity<std::basic_string_view<C, T>> {};
+
+	template<class C, class T, class A, size_t N, template<class> class TQUAL, template<class> class QQUAL>
+	struct basic_common_reference<std::basic_string<C, T, A>, aa::basic_fixed_string<C, T, N>, TQUAL, QQUAL>
+		: std::type_identity<std::basic_string_view<C, T>> {};
 
 }
