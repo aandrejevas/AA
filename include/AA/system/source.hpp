@@ -11,11 +11,26 @@
 #include <ostream> // ostream
 #include <iostream> // cerr, clog
 #include <concepts> // same_as
+#include <type_traits> // remove_reference_t, extent_v
 #undef assert
 
 
 
 namespace aa {
+
+	// Galima būtų naudoti source_location, bet ta klasė surenka daugiau duomenų negu reikia.
+	// clang kompiliatoriui reikia, kad template parametras būtų pavadintas.
+	template<class A>
+	AA_CONSTEVAL auto type_name() {
+		return fixed_string<(std::extent_v<std::remove_reference_t<decltype(__PRETTY_FUNCTION__)>>) - 43>{__PRETTY_FUNCTION__ + 41};
+	}
+
+	template<auto A>
+	AA_CONSTEVAL auto literal_name() {
+		return fixed_string<(std::extent_v<std::remove_reference_t<decltype(__PRETTY_FUNCTION__)>>) - 51>{__PRETTY_FUNCTION__ + 49};
+	}
+
+
 
 	// Klasės reikia, nes source_location klasės negalima naudoti kaip non type template parameter
 	// ir taip pat yra truputį keista man, kad minėtos klasės duomenys pasiekiami tik per metodus.

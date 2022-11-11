@@ -15,7 +15,7 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, extent_v, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t, is_invocable_r_v
+#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t, is_invocable_r_v
 #include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <string_view> // string_view
@@ -359,7 +359,7 @@ namespace aa {
 	concept hashable_by = invocable_r<T, size_t, const U &>;
 
 	template<class U, template<class> class T>
-	concept hashable_by_template = hashable_by<U, T<U>>;
+	concept hashable_by_template = hashable_by<U, T<U>> && trivially_default_constructible<T<U>>;
 
 	template<class T, class... U>
 	concept storable_hasher_for = (... && hashable_by<U, const T &>) && storable<T>;
@@ -371,7 +371,7 @@ namespace aa {
 	concept evaluable_by = !std::is_const_v<U> && std::invocable<T, U &, size_t, std::string_view>;
 
 	template<class U, template<class> class T>
-	concept evaluable_by_template = evaluable_by<U, T<U>>;
+	concept evaluable_by_template = evaluable_by<U, T<U>> && trivially_default_constructible<T<U>>;
 
 	template<class T, class U>
 	concept storable_vector2_getter = storable<T>
@@ -575,20 +575,6 @@ namespace aa {
 	template<std::equality_comparable T>
 	[[gnu::always_inline]] AA_CONSTEXPR bool is_numeric_min(const T &x) {
 		return x == std::numeric_limits<T>::min();
-	}
-
-
-
-	// Galima būtų naudoti source_location, bet ta klasė surenka daugiau duomenų negu reikia.
-	// Negalime gražinti pavyzdžiui fixed_string, nes ta klasė duomenis perkopijuoja.
-	// clang kompiliatoriui reikia, kad template parametras būtų pavadintas.
-	template<class A>
-	AA_CONSTEVAL std::string_view type_name() {
-#ifdef __clang__
-		return std::string_view{__PRETTY_FUNCTION__ + 37, (std::extent_v<decltype(__PRETTY_FUNCTION__)>) - 39};
-#else
-		return std::string_view{__PRETTY_FUNCTION__ + 53, (std::extent_v<std::remove_reference_t<decltype(__PRETTY_FUNCTION__)>>) - 104};
-#endif
 	}
 
 

@@ -3,6 +3,7 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
 #include "../preprocessor/assert.hpp"
+#include "../system/source.hpp"
 #include <concepts> // constructible_from
 #include <utility> // forward
 #include <fstream> // ofstream, ifstream
