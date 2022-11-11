@@ -16,9 +16,9 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Lexical_analysis
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<fixed_immutable_set S, size_t R = 50, invocable_ref<size_t, const std::string &> C, class E = equal_to, input_stream FILE>
+	template<fixed_immutable_set S, size_t R = 50, invocable_ref<size_t, const std::string &> C, input_stream FILE>
 		requires (S.valid())
-	AA_CONSTEXPR void lex(FILE &&file, C &&c = {}, E &&e = {}) {
+	AA_CONSTEXPR void lex(FILE &&file, C &&consumer = {}) {
 		using traits_type = typename std::remove_reference_t<FILE>::traits_type;
 
 		// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
@@ -30,7 +30,7 @@ namespace aa {
 		// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
 		struct lexer {
 			// Special member functions
-			AA_CONSTEXPR lexer(C &c, E &e) : consumer{c}, comparer{e} {
+			AA_CONSTEXPR lexer(C &c) : consumer{c} {
 				if constexpr (R) {
 					token.reserve(R);
 					whitespace.reserve(R);
@@ -42,8 +42,6 @@ namespace aa {
 		protected:
 			// Member objects
 			C &consumer;
-			E &comparer;
-
 			enum struct lexing_state : size_t {
 				BEFORE_KEY, KEY, KEY_SPACE,
 				VALUE, SKIP_VALUE
@@ -55,13 +53,13 @@ namespace aa {
 
 			// Member functions
 			AA_CONSTEXPR void init_key() {
-				S.find(token,
+				S.find_index(token,
 				[&]<auto>(const size_t idx) -> void {
 					index = idx;
 					state = lexing_state::VALUE;
 				}, [&]() -> void {
 					state = lexing_state::SKIP_VALUE;
-				}, comparer);
+				});
 			}
 
 		public:
@@ -135,7 +133,7 @@ namespace aa {
 						std::unreachable();
 				}
 			}
-		} p_lexer = {c, e};
+		} p_lexer = {consumer};
 
 		// Lexing comments
 		enum struct lexing_state : size_t {

@@ -108,7 +108,7 @@ int main() {
 			}
 		});
 
-		parse<constant<fixed_immutable_set<hasher_type, "TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs>>()>
+		parse<constant<et_fixed_immutable_set<hasher_type, "TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs>>()>
 			(a, pathed_ifstream{"params.txt"}.get());
 
 		AA_TRACE_ASSERT(a.get<0>() == "text");

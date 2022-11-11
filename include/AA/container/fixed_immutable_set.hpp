@@ -17,7 +17,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Perfect_hash_function#Minimal_perfect_hash_function
 	// Naudotojo atsakomybė pateikti minimal perfect hash function. Lengviausia kažkokį switch parašyti atskiram atvejui.
 	// Nepatogu, kad A argumentai turi būti gale, bet šią problemą pilnai išsprendžiame su aliases.
-	template<class H, auto... A>
+	template<class H, class EQ, auto... A>
 		requires (storable_hasher_for<H, decltype(A)...>)
 	struct fixed_immutable_set : pack<A...> {
 		// Member types
@@ -25,6 +25,7 @@ namespace aa {
 		using difference_type = ptrdiff_t;
 		using value_type = size_type;
 		using hasher_type = H;
+		using comparer_type = EQ;
 		using reference = value_type &;
 		using const_reference = const value_type &;
 		using pointer = value_type *;
@@ -71,6 +72,11 @@ namespace aa {
 			return std::invoke(hasher, key);
 		}
 
+		template<auto V, class K>
+		[[gnu::always_inline]] AA_CONSTEXPR bool compare(const K &key) const {
+			return aa::invoke<V>(comparer, key);
+		}
+
 		static AA_CONSTEXPR bool valid(const size_type h) { return !is_numeric_max(h); }
 
 		AA_CONSTEXPR bool valid() const {
@@ -80,51 +86,65 @@ namespace aa {
 
 
 		// Lookup
-		template<class T, std::invocable F, class EQ = aa::equal_to, hashable_by<const hasher_type &> K>
-		AA_CONSTEXPR void find(const K &key, T &&t = {}, F &&f = {}, EQ &&eq = {}) const {
+		template<class T, std::invocable F, hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR void find_index(const K &key, T &&t = {}, F &&f = {}) const {
 			const size_type hash = this->hash(key);
 			if (valid(hash)) {
 				const size_type index = indices[hash];
 				pack<A...>::get(index, [&]<auto V>() -> void {
-					if (invoke<V>(std::forward<EQ>(eq), key)) {
-						invoke<V>(std::forward<T>(t), index);
-					} else {
-						std::invoke(std::forward<F>(f));
-					}
+					if (compare<V>(key))	invoke<V>(std::forward<T>(t), index);
+					else					std::invoke(std::forward<F>(f));
 				});
-			} else {
-				std::invoke(std::forward<F>(f));
-			}
+			} else							std::invoke(std::forward<F>(f));
 		}
 
-		template<class T, class EQ = aa::equal_to, hashable_by<const hasher_type &> K>
-		AA_CONSTEXPR void find(const K &key, T &&t = {}, EQ &&eq = {}) const {
+		template<class T, std::invocable F, hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR void find(const K &key, T &&t = {}, F &&f = {}) const {
+			const size_type hash = this->hash(key);
+			if (valid(hash)) {
+				pack<A...>::get(indices[hash], [&]<auto V>() -> void {
+					if (compare<V>(key))	invoke<V>(std::forward<T>(t));
+					else					std::invoke(std::forward<F>(f));
+				});
+			} else							std::invoke(std::forward<F>(f));
+		}
+
+		template<class T, hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR void find_index(const K &key, T &&t = {}) const {
 			const size_type hash = this->hash(key);
 			if (valid(hash)) {
 				const size_type index = indices[hash];
 				pack<A...>::get(index, [&]<auto V>() -> void {
-					if (invoke<V>(std::forward<EQ>(eq), key)) {
-						invoke<V>(std::forward<T>(t), index);
-					}
+					if (compare<V>(key))	invoke<V>(std::forward<T>(t), index);
 				});
 			}
 		}
 
-		template<class EQ = aa::equal_to, hashable_by<const hasher_type &> K>
-		AA_CONSTEXPR bool contains(const K &key, EQ &&eq = {}) const {
+		template<class T, hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR void find(const K &key, T &&t = {}) const {
+			const size_type hash = this->hash(key);
+			if (valid(hash)) {
+				pack<A...>::get(indices[hash], [&]<auto V>() -> void {
+					if (compare<V>(key))	invoke<V>(std::forward<T>(t));
+				});
+			}
+		}
+
+		template<hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR bool contains(const K &key) const {
 			bool r;
 			find(key,
-				[&]<auto>(const size_type) ->	void { r = true; },
-				[&]() ->						void { r = false; }, eq);
+				[&]<auto>() ->	void { r = true; },
+				[&]() ->		void { r = false; });
 			return r;
 		}
 
 
 
 		// Special member functions
-		template<class U = hasher_type>
-		AA_CONSTEXPR fixed_immutable_set(U &&h = {}) : hasher{std::forward<U>(h)}, indices{
-				create_with_invocable<container_type>([&](container_type &c) -> void
+		template<class U1 = hasher_type, class U2 = comparer_type>
+		AA_CONSTEXPR fixed_immutable_set(U1 &&h = {}, U2 &&e = {}) : hasher{std::forward<U1>(h)}, comparer{std::forward<U2>(e)},
+			indices{create_with_invocable<container_type>([&](container_type &c) -> void
 		{
 			c.fill(numeric_max);
 			// Neišeina čia jokio assert daryti at compile time tai joks ir nedaromas.
@@ -136,19 +156,23 @@ namespace aa {
 
 		// Member objects
 		[[no_unique_address]] const hasher_type hasher;
+		[[no_unique_address]] const comparer_type comparer;
 
 		// Galėtų konteineris būti static, bet tada panaikintume galimybę hashinti template parametrus su runtime hasher.
 		const container_type indices;
 	};
 
-	fixed_immutable_set(allow_ctad)->fixed_immutable_set<mod_generic_hash<0>>;
+	fixed_immutable_set(allow_ctad)->fixed_immutable_set<mod_generic_hash<0>, aa::equal_to>;
 
 
+
+	template<class H, auto... A>
+	using et_fixed_immutable_set = fixed_immutable_set<H, aa::equal_to, A...>;
 
 	template<auto... A>
-	using h_fixed_immutable_set = fixed_immutable_set<generic_hash<>, A...>;
+	using h_fixed_immutable_set = et_fixed_immutable_set<generic_hash<>, A...>;
 
 	template<auto... A>
-	using mh_fixed_immutable_set = fixed_immutable_set<mod_generic_hash<sizeof...(A)>, A...>;
+	using mh_fixed_immutable_set = et_fixed_immutable_set<mod_generic_hash<sizeof...(A)>, A...>;
 
 }
