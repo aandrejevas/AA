@@ -156,11 +156,14 @@ namespace aa {
 	template<class T>
 	concept trivially_default_constructible = std::is_trivially_default_constructible_v<T>;
 
-	template<class L, class R>
-	concept remove_ref_derived_from = std::derived_from<std::remove_reference_t<L>, R>;
+	template<class T>
+	concept not_const_default_initializable = std::default_initializable<std::remove_const_t<T>>;
 
 	template<class L, class R>
-	concept remove_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
+	concept not_ref_derived_from = std::derived_from<std::remove_reference_t<L>, R>;
+
+	template<class L, class R>
+	concept not_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
 
 	template<class T>
 	concept regular_unsigned_integral = std::unsigned_integral<T> && std::has_single_bit(unsign(std::numeric_limits<T>::digits));
@@ -174,14 +177,14 @@ namespace aa {
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
 	template<class T, size_t I>
 	concept member_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(std::remove_cvref_t<T> &t) {
-		{ t.template get<I>() } -> remove_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
-		{ std::as_const(t).template get<I>() } -> remove_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
+		{ t.template get<I>() } -> not_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
+		{ std::as_const(t).template get<I>() } -> not_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
 	};
 
 	template<class T, size_t I>
 	concept adl_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(std::remove_cvref_t<T> &t) {
-		{ get<I>(t) } -> remove_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
-		{ get<I>(std::as_const(t)) } -> remove_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
+		{ get<I>(t) } -> not_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
+		{ get<I>(std::as_const(t)) } -> not_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
 	};
 
 	template<class T, size_t I>

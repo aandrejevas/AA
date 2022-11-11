@@ -4,7 +4,7 @@
 #include <cstddef> // size_t
 #include <cstring> // memcpy, memset
 #include <type_traits> // remove_const_t
-#include <concepts> // invocable, default_initializable
+#include <concepts> // invocable
 #include <functional> // invoke
 #include <utility> // forward
 #include <memory> // addressof
@@ -29,7 +29,7 @@ namespace aa {
 		return d;
 	}
 
-	template<std::default_initializable D, std::invocable<std::remove_const_t<D> &> F>
+	template<not_const_default_initializable D, std::invocable<std::remove_const_t<D> &> F>
 	[[gnu::always_inline]] AA_CONSTEXPR std::remove_const_t<D> create_with_invocable(F &&f) {
 		std::remove_const_t<D> d;
 		std::invoke(std::forward<F>(f), d);
