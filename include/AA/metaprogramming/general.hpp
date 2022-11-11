@@ -650,8 +650,11 @@ namespace aa {
 	template<class, class...>
 	struct tuple_base;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpadded"
 	template<size_t... I, class... T>
 	struct tuple_base<std::index_sequence<I...>, T...> : tuple_unit<I, T>... {};
+#pragma GCC diagnostic pop
 
 	// https://ldionne.com/2015/11/29/efficient-parameter-pack-indexing/
 	template<size_t I, class... T>
@@ -669,8 +672,11 @@ namespace aa {
 	AA_CONSTEXPR const size_t type_pack_index_v = type_pack_index<U, T...>::value;
 
 	// https://danlark.org/2020/04/13/why-is-stdpair-broken/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpadded"
 	template<class... T>
 	struct tuple : tuple_base<std::index_sequence_for<T...>, T...> {
+#pragma GCC diagnostic pop
 		// Member types
 		template<size_t I>
 		using value_type = type_pack_element_t<I, T...>;

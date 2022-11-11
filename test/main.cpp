@@ -93,7 +93,7 @@ int main() {
 		//}
 	}
 	{
-		tuple<std::string, double, size_t> a;
+		tuple<std::string, double, prev_unsigned_t<size_t>> a;
 
 		using hasher_type = decltype([](const auto &v) -> size_t {
 			switch (v.size()) {
