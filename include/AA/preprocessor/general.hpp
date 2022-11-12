@@ -27,7 +27,7 @@
 #
 #
 #define AA_DISCARD(...) AA_OVERLOAD(AA_DISCARD_, __VA_ARGS__)(__VA_ARGS__)
-#define AA_DISCARD_0() (static_cast<void>(0))
+#define AA_DISCARD_0() (static_cast<void>(false))
 #define AA_DISCARD_1(x) (static_cast<void>(x))
 #
 #

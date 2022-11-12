@@ -48,6 +48,11 @@ namespace aa {
 
 
 
+	template<class T, std::convertible_to<T> X>
+	[[gnu::always_inline]] AA_CONSTEXPR T cast(X &&x) {
+		return static_cast<T>(std::forward<X>(x));
+	}
+
 	template<std::signed_integral X>
 	[[gnu::always_inline]] AA_CONSTEXPR std::make_unsigned_t<X> unsign(const X x) {
 		return std::bit_cast<std::make_unsigned_t<X>>(x);
@@ -59,11 +64,11 @@ namespace aa {
 	}
 
 	template<class T, std::convertible_to<T> X>
-	[[gnu::always_inline]] AA_CONSTEXPR T unsign_cast(const X &x) {
+	[[gnu::always_inline]] AA_CONSTEXPR T unsign_cast(X &&x) {
 		if constexpr (std::unsigned_integral<T> && std::signed_integral<X>) {
 			return unsign<T>(x);
 		} else {
-			return static_cast<T>(x);
+			return cast<T>(std::forward<X>(x));
 		}
 	}
 
