@@ -11,7 +11,6 @@
 #include <AA/algorithm/permute.hpp>
 #include <AA/algorithm/generate.hpp>
 #include <AA/algorithm/linear_congruential_generator.hpp>
-#include <AA/algorithm/repeat.hpp>
 #include <AA/preprocessor/assert.hpp>
 #include <AA/metaprogramming/general.hpp>
 #include <AA/system/timekeeper.hpp>

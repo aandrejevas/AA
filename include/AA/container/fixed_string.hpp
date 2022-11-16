@@ -117,8 +117,7 @@ namespace aa {
 
 		// Input/output
 		friend AA_CONSTEXPR ostream_type &operator<<(ostream_type &os, const basic_fixed_string &str) {
-			if constexpr (N)	return os.write(str.data(), N);
-			else				return os;
+			return os << str.operator view_type();
 		}
 
 
