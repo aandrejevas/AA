@@ -35,13 +35,11 @@ namespace aa {
 
 
 	template<template<class> class E = evaluator>
-	struct generic_evaluator {
+	struct generic_evaluator : transparency_tag {
 		template<evaluable_by_template<E> T>
 		[[gnu::always_inline]] AA_CONSTEXPR void operator()(T &t, const size_t i, const std::string_view &token) const {
 			E<T>{}(t, i, token);
 		}
-
-		using is_transparent = void;
 	};
 
 	generic_evaluator()->generic_evaluator<>;

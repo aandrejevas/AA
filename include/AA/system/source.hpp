@@ -51,7 +51,7 @@ namespace aa {
 		}
 	};
 
-	source_data(allow_ctad)->source_data<0, 0, "", "">;
+	source_data(allow_ctad_tag)->source_data<0, 0, "", "">;
 
 
 

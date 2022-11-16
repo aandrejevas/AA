@@ -28,10 +28,14 @@
 
 namespace aa {
 
-	struct allow_ctad;
+	struct transparency_tag { using is_transparent = void; };
+	struct specialization_tag {};
+	AA_CONSTEXPR const specialization_tag specialization_tag_v;
+	struct allow_ctad_tag;
 
 
 
+	// Neturime tiesiog auto parametro, nes tada reiktų kreipti dėmėsį į expression tipą, o tai nepatogu.
 	template<class T, T V>
 	struct constant_identity : std::integral_constant<T, V> {
 		using type = typename constant_identity::value_type;
@@ -584,32 +588,76 @@ namespace aa {
 
 
 
-	struct less {
+	// Mes nurodome dešinės pusės operandą su template parametru, nes realizuojame šią gražią elgseną: sakykime turime
+	// objektą tipo less<3>, šio objekto operator() gražins true tik tada kai paduotas kintamasis bus mažesnis už 3.
+	template<auto R = specialization_tag_v>
+	struct less : transparency_tag {
+		template<std::totally_ordered_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l < R; }
+	};
+
+	template<>
+	struct less<specialization_tag_v> : transparency_tag {
 		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l < R; }
 	};
 
-	struct less_equal {
+	template<auto R = specialization_tag_v>
+	struct less_equal : transparency_tag {
+		template<std::totally_ordered_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l <= R; }
+	};
+
+	template<>
+	struct less_equal<specialization_tag_v> : transparency_tag {
 		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l <= R; }
 	};
 
-	struct greater {
+	template<auto R = specialization_tag_v>
+	struct greater : transparency_tag {
+		template<std::totally_ordered_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l > R; }
+	};
+
+	template<>
+	struct greater<specialization_tag_v> : transparency_tag {
 		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l > R; }
 	};
 
-	struct greater_equal {
+	template<auto R = specialization_tag_v>
+	struct greater_equal : transparency_tag {
+		template<std::totally_ordered_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l >= R; }
+	};
+
+	template<>
+	struct greater_equal<specialization_tag_v> : transparency_tag {
 		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l >= R; }
 	};
 
-	struct equal_to {
+	template<auto R = specialization_tag_v>
+	struct equal_to : transparency_tag {
+		template<std::equality_comparable_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l == R; }
+	};
+
+	template<>
+	struct equal_to<specialization_tag_v> : transparency_tag {
 		template<auto R, std::equality_comparable_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l == R; }
 	};
 
-	struct not_equal_to {
+	template<auto R = specialization_tag_v>
+	struct not_equal_to : transparency_tag {
+		template<std::equality_comparable_with<decltype(R)> L>
+		AA_CONSTEXPR bool operator()(const L &l) const { return l != R; }
+	};
+
+	template<>
+	struct not_equal_to<specialization_tag_v> : transparency_tag {
 		template<auto R, std::equality_comparable_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l != R; }
 	};
@@ -622,9 +670,8 @@ namespace aa {
 	// reikalauja, kad visi paduodami tipai turėtų būtinai tik vieną operatorių (), gal būtų galima realizuoti
 	// taip tipą, kad tokio reikalavimo neliktų, bet tokios realizacijos savybės dabar nereikalingos.
 	template<functor... T>
-	struct overload : T... {
+	struct overload : transparency_tag, T... {
 		using T::operator()...;
-		using is_transparent = void;
 	};
 
 

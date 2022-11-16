@@ -162,12 +162,12 @@ namespace aa {
 		const container_type indices;
 	};
 
-	fixed_immutable_set(allow_ctad)->fixed_immutable_set<mod_generic_hash<0>, aa::equal_to>;
+	fixed_immutable_set(allow_ctad_tag)->fixed_immutable_set<mod_generic_hash<0>, aa::equal_to<>>;
 
 
 
 	template<class H, auto... A>
-	using et_fixed_immutable_set = fixed_immutable_set<H, aa::equal_to, A...>;
+	using et_fixed_immutable_set = fixed_immutable_set<H, aa::equal_to<>, A...>;
 
 	template<auto... A>
 	using h_fixed_immutable_set = et_fixed_immutable_set<generic_hash<>, A...>;
