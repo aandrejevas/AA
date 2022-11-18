@@ -26,19 +26,9 @@
 #
 #
 #
-#define AA_DISCARD(...) AA_OVERLOAD(AA_DISCARD_, __VA_ARGS__)(__VA_ARGS__)
-#define AA_DISCARD_0() (static_cast<void>(false))
-#define AA_DISCARD_1(x) (static_cast<void>(x))
-#
-#
-#
-#define AA_NAMEOF(name) (AA_DISCARD(name), AA_STRINGIFY(name))
-#
-#
-#
 #ifdef NDEBUG
 #define AA_ISDEF_NDEBUG true
-#define AA_IF_DEBUG(...) AA_DISCARD()
+#define AA_IF_DEBUG(...) static_cast<void>(false)
 #else
 #define AA_ISDEF_NDEBUG false
 #define AA_IF_DEBUG(...) AA_EXPAND(__VA_ARGS__)
@@ -62,3 +52,7 @@
 #define AA_CONSTEVAL inline consteval
 # // Kartais kompiliatorius pastebi, kad funkcija negali būti constexpr.
 #define AA_INLINE inline
+#
+# // Reikia stengtis turėti kuo mažiau macros. DISCARD macro nereikia, nes tiesiog galime cast'inti į void. Taip pat
+# // nėra reikalo naudoti std::ignore, kad discard'inti, nes reiktų visur dėti papildomą include, taip pat nėra apibrėžta
+# // gerai kaip veikia std::ignore. NAMEOF macro nereikia, nes mažai panaudojamas toks macro ir neteisingai jis veikia.

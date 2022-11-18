@@ -32,6 +32,7 @@ namespace aa {
 		using bucket_pointer = const bucket_type *;
 		using iterator = const bucket_type *const *;
 		using const_iterator = iterator;
+		using container_type = array_t<bucket_type, N>;
 
 		struct bucket_iterable {
 			// Member types
@@ -154,12 +155,14 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const { return used_bins.empty(); }
-		AA_CONSTEXPR bool full() const { return used_bins.full() && unsafe_all_of(*this, bucket_full); }
+		AA_CONSTEXPR bool full() const {
+			return used_bins.full() && unsafe_all_of(bins, [](const bucket_type bin) -> bool { return !~bin; });
+		}
 
 		AA_CONSTEXPR size_type size() const {
 			if (!empty()) {
 				size_type sum = 0;
-				unsafe_for_each(*this, [&sum](const bucket_pointer bin) -> void {
+				unsafe_for_each(used_bins, [&sum](const bucket_pointer bin) -> void {
 					sum += bucket_size(bin);
 				});
 				return sum;
@@ -229,9 +232,7 @@ namespace aa {
 
 		// Kituose konteineriuose vidinio konteinerio nerodome, nes kituose konteineriuose vidinis
 		// konteineris galima sakyti yra pats konteineris tai nėra tikslo to daryti.
-		//
-		// decltype(bins) kompiliatorius neleidžia naudoti, nes bins kintamasis tik vėliau deklaruojamas.
-		AA_CONSTEXPR const auto &buckets() const { return bins; }
+		AA_CONSTEXPR const container_type &buckets() const { return bins; }
 
 
 
@@ -301,7 +302,7 @@ namespace aa {
 
 		// Member objects
 	protected:
-		array_t<bucket_type, N> bins = {};
+		container_type bins = {};
 		// Yra galimybė nenaudoti šios struktūros, o naudoti du kintamuosius, kurie žymėtų intervalą, kuris yra nešvarus.
 		// Bet tokia realizacija prognuozuoju, kad lėtai dirbtų su labai pasiskirsčiusiais maišos kodais.
 		fixed_vector<bucket_type *, M> used_bins;

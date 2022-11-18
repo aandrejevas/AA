@@ -7,7 +7,6 @@
 #include <functional> // invoke
 #include <utility> // forward
 #include <iterator> // reverse_iterator
-#include <concepts> // invocable
 
 
 
@@ -67,6 +66,8 @@ namespace aa {
 
 
 		// Observers
+		// Netikriname ar hashes gaunami yra valid, nes sumažintume greitaveiką atvejais kai tokio tikrinimo nereikia daryti.
+		// Kitais atvejais patartina turėti dar vieną parametrą universal_sentinel ir jį identifikuoti su netinkamais hashes.
 		template<hashable_by<const hasher_type &> K>
 		[[gnu::always_inline]] AA_CONSTEXPR size_type hash(const K &key) const {
 			return std::invoke(hasher, key);
@@ -77,66 +78,48 @@ namespace aa {
 			return aa::invoke<V>(comparer, key);
 		}
 
-		static AA_CONSTEXPR bool valid(const size_type h) { return !is_numeric_max(h); }
-
 		AA_CONSTEXPR bool valid() const {
-			return apply<sizeof...(A)>([&]<size_type... I>() -> bool { return (... && valid(indices[I])); });
+			return apply<sizeof...(A)>([&]<size_type... I>() -> bool { return (... && !is_numeric_max(indices[I])); });
 		}
 
 
 
 		// Lookup
-		template<class T, std::invocable F, hashable_by<const hasher_type &> K>
-		AA_CONSTEXPR void find_index(const K &key, T &&t = {}, F &&f = {}) const {
-			const size_type hash = this->hash(key);
-			if (valid(hash)) {
-				const size_type index = indices[hash];
-				pack<A...>::get(index, [&]<auto V>() -> void {
-					if (compare<V>(key))	invoke<V>(std::forward<T>(t), index);
-					else					std::invoke(std::forward<F>(f));
-				});
-			} else							std::invoke(std::forward<F>(f));
+		template<hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR size_type index(const K &key) const {
+			return indices[hash(key)];
 		}
 
-		template<class T, std::invocable F, hashable_by<const hasher_type &> K>
-		AA_CONSTEXPR void find(const K &key, T &&t = {}, F &&f = {}) const {
-			const size_type hash = this->hash(key);
-			if (valid(hash)) {
-				pack<A...>::get(indices[hash], [&]<auto V>() -> void {
-					if (compare<V>(key))	invoke<V>(std::forward<T>(t));
-					else					std::invoke(std::forward<F>(f));
-				});
-			} else							std::invoke(std::forward<F>(f));
+		template<class R = void, class T, invocable_r<R> F, class K>
+		AA_CONSTEXPR R find(const size_type index, const K &key, T &&t = {}, F &&f = {}) const {
+			return pack<A...>::template get<R>(index, [&]<auto V>() -> R {
+				if (compare<V>(key))	return invoke<V>(std::forward<T>(t));
+				else					return std::invoke(std::forward<F>(f));
+			});
 		}
 
-		template<class T, hashable_by<const hasher_type &> K>
-		AA_CONSTEXPR void find_index(const K &key, T &&t = {}) const {
-			const size_type hash = this->hash(key);
-			if (valid(hash)) {
-				const size_type index = indices[hash];
-				pack<A...>::get(index, [&]<auto V>() -> void {
-					if (compare<V>(key))	invoke<V>(std::forward<T>(t), index);
-				});
-			}
+		template<class R = void, class T, invocable_r<R> F, hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR R find(const K &key, T &&t = {}, F &&f = {}) const {
+			return find<R>(index(key), key, std::forward<T>(t), std::forward<F>(f));
+		}
+
+		template<class T, class K>
+		AA_CONSTEXPR void find(const size_type index, const K &key, T &&t = {}) const {
+			pack<A...>::get(index, [&]<auto V>() -> void {
+				if (compare<V>(key))	invoke<V>(std::forward<T>(t));
+			});
 		}
 
 		template<class T, hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR void find(const K &key, T &&t = {}) const {
-			const size_type hash = this->hash(key);
-			if (valid(hash)) {
-				pack<A...>::get(indices[hash], [&]<auto V>() -> void {
-					if (compare<V>(key))	invoke<V>(std::forward<T>(t));
-				});
-			}
+			find(index(key), key, std::forward<T>(t));
 		}
 
 		template<hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR bool contains(const K &key) const {
-			bool r;
-			find(key,
-				[&]<auto>() ->	void { r = true; },
-				[&]() ->		void { r = false; });
-			return r;
+			return find<bool>(key,
+				[]<auto>() ->	bool { return true; },
+				[]() ->			bool { return false; });
 		}
 
 
@@ -162,7 +145,7 @@ namespace aa {
 		const container_type indices;
 	};
 
-	fixed_immutable_set(allow_ctad_tag)->fixed_immutable_set<mod_generic_hash<0>, aa::equal_to<>>;
+	fixed_immutable_set(void)->fixed_immutable_set<mod_generic_hash<0>, aa::equal_to<>>;
 
 
 

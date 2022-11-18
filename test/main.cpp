@@ -13,6 +13,7 @@
 #include <AA/algorithm/linear_congruential_generator.hpp>
 #include <AA/preprocessor/assert.hpp>
 #include <AA/metaprogramming/general.hpp>
+#include <AA/metaprogramming/range.hpp>
 #include <AA/system/timekeeper.hpp>
 #include <AA/system/parser.hpp>
 #include <AA/system/writer.hpp>
@@ -25,7 +26,7 @@
 #include <unordered_set> // unordered_set
 #include <ranges> // reverse, iota, contiguous_range, random_access_range, bidirectional_range
 #include <algorithm> // is_sorted, is_permutation
-#include <string> // string
+#include <string> // string, char_traits
 #include <limits> // numeric_limits
 #include <iostream> // cout
 #include <bit> // bit_cast
@@ -94,20 +95,22 @@ int main() {
 	{
 		tuple<std::string, double, prev_unsigned_t<size_t>> a;
 
-		using hasher_type = decltype([](const auto &v) -> size_t {
-			switch (v.size()) {
-				case 6:
-					switch (v.back()) {
-						case '1': return 0;
-						case '2': return 1;
-						case '3': return 2;
-						default: return numeric_max;
-					}
-				default: return numeric_max;
-			}
+		using hasher_type = decltype([]<class T>(const T &v) -> size_t {
+			if constexpr (same_range_char_traits_as<T, std::char_traits<char>>) {
+				switch (v.size()) {
+					case 6:
+						switch (v.back()) {
+							case '1': return 0;
+							case '2': return 1;
+							case '3': return 2;
+							default: return 3;
+						}
+					default: return 3;
+				}
+			} else return 3;
 		});
 
-		parse<constant<et_fixed_immutable_set<hasher_type, "TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs>>()>
+		parse<constant<et_fixed_immutable_set<hasher_type, "TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs, universal_sentinel<false>>>()>
 			(a, pathed_ifstream{"params.txt"}.get());
 
 		AA_TRACE_ASSERT(a.get<0>() == "text");

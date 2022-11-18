@@ -99,6 +99,8 @@ namespace aa {
 			return !traits_type::compare(l.data(), r.data(), N);
 		}
 
+		// Nors argumentai gali būti sukonstruoti programos veikimo metu, kadangi jų tipai yra literal types,
+		// consteval funkciją vis tiek bus galima iškviesti tik žinoma joje jų negalima reikšmingai naudoti.
 		friend AA_CONSTEVAL bool operator==(const basic_fixed_string &, const basic_fixed_string &) requires (!N) {
 			return true;
 		}

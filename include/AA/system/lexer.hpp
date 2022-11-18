@@ -53,13 +53,10 @@ namespace aa {
 
 			// Member functions
 			AA_CONSTEXPR void init_key() {
-				S.find_index(token,
-				[&]<auto>(const size_t idx) -> void {
-					index = idx;
-					state = lexing_state::VALUE;
-				}, [&]() -> void {
-					state = lexing_state::SKIP_VALUE;
-				});
+				index = S.index(token);
+				state = S.template find<lexing_state>(index, token,
+					[]<auto>() ->	lexing_state { return lexing_state::VALUE; },
+					[]() ->			lexing_state { return lexing_state::SKIP_VALUE; });
 			}
 
 		public:

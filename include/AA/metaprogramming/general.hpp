@@ -22,18 +22,11 @@
 #include <array> // array
 #include <bit> // has_single_bit, bit_cast
 #include <utility> // declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence, index_sequence_for
-#include <functional> // invoke
+#include <functional> // invoke, _1
 
 
 
 namespace aa {
-
-	struct transparency_tag { using is_transparent = void; };
-	struct specialization_tag {};
-	AA_CONSTEXPR const specialization_tag specialization_tag_v;
-	struct allow_ctad_tag;
-
-
 
 	// Neturime tiesiog auto parametro, nes tada reiktų kreipti dėmėsį į expression tipą, o tai nepatogu.
 	template<class T, T V>
@@ -181,6 +174,28 @@ namespace aa {
 	template<class T>
 	concept functor = requires { &T::operator(); };
 
+	template<class F, class... A>
+	concept function_pointer = std::invocable<F, A...> && pointer<F> && std::is_function_v<std::remove_pointer_t<F>>;
+
+	template<class F, class... A>
+	concept invocable_ref = std::invocable<F &, A...>;
+
+	template<class F, class R, class... A>
+	concept invocable_r = std::is_invocable_r_v<R, F, A...>;
+
+	template<class F, class T>
+	concept constructible_to = std::constructible_from<T, F>;
+
+	template<class T, class F>
+	concept convertible_from = std::convertible_to<F, T>;
+
+	template<class T, class F>
+	concept void_or_convertible_from = std::is_void_v<T> || std::convertible_to<F, T>;
+
+	template<class T>
+	concept void_or_convertible_from_floating_point = std::is_void_v<T>
+		|| (std::convertible_to<float, T> && std::convertible_to<double, T> && std::convertible_to<long double, T>);
+
 
 
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
@@ -286,55 +301,31 @@ namespace aa {
 	template<class T, size_t N>
 	concept vectorN_like = vector_like<T> && (std::tuple_size_v<T> == N);
 
-	template<class T, class F>
+	template<class T, class F, class R = void>
 	concept visitable_tuple = tuple_like<T>
-		&& apply<T>([]<size_t... I>() -> bool { return (... && std::invocable<F, get_result_t<I, T>>); });
+		&& apply<T>([]<size_t... I>() -> bool { return (... && invocable_r<F, R, get_result_t<I, T>>); });
 
 
 
-	template<class F, visitable_tuple<F> T>
+	template<class R, class F, visitable_tuple<F, R> T>
 	AA_CONSTEXPR const auto tuple_getter_table = apply<T>([]<size_t... I>() ->
-			std::array<void (*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
-	{ return {([](F &&f, T &&t) -> void { std::invoke(std::forward<F>(f), getter<I>{}(t)); })...}; });
+			std::array<R(*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
+	{ return {([](F &&f, T &&t) -> R { return std::invoke(std::forward<F>(f), getter<I>{}(t)); })...}; });
 
-	template<class F, visitable_tuple<F> T>
-	[[gnu::always_inline]] AA_CONSTEXPR void visit(const size_t i, F &&f, T &&t) {
-		tuple_getter_table<F, T &>[i](std::forward<F>(f), t);
+	template<class R = void, class F, class T>
+	[[gnu::always_inline]] AA_CONSTEXPR R visit(const size_t i, F &&f, T &&t) {
+		return tuple_getter_table<R, F, T &>[i](std::forward<F>(f), t);
 	}
 
-	template<class T, class F>
+	template<class T, class R, class F>
 	AA_CONSTEXPR const auto pack_getter_table = apply<T>([]<size_t... I>() ->
-			std::array<void (*)(F &&), std::tuple_size_v<T>>
-	{ return {([](F &&f) -> void { invoke<T::template get<I>()>(std::forward<F>(f)); })...}; });
+			std::array<R(*)(F &&), std::tuple_size_v<T>>
+	{ return {([](F &&f) -> R { return invoke<T::template get<I>()>(std::forward<F>(f)); })...}; });
 
-	template<class T, class F>
-	[[gnu::always_inline]] AA_CONSTEXPR void visit(const size_t i, F &&f) {
-		pack_getter_table<T, F>[i](std::forward<F>(f));
+	template<class T, class R = void, class F>
+	[[gnu::always_inline]] AA_CONSTEXPR R visit(const size_t i, F &&f) {
+		return pack_getter_table<T, R, F>[i](std::forward<F>(f));
 	}
-
-
-
-	template<class F, class... A>
-	concept function_pointer = std::invocable<F, A...> && pointer<F> && std::is_function_v<std::remove_pointer_t<F>>;
-
-	template<class F, class... A>
-	concept invocable_ref = std::invocable<F &, A...>;
-
-	template<class F, class R, class... A>
-	concept invocable_r = std::is_invocable_r_v<R, F, A...>;
-
-	template<class F, class T>
-	concept constructible_to = std::constructible_from<T, F>;
-
-	template<class T, class F>
-	concept convertible_from = std::convertible_to<F, T>;
-
-	template<class T, class F>
-	concept void_or_convertible_from = std::is_void_v<T> || std::convertible_to<F, T>;
-
-	template<class T>
-	concept void_or_convertible_from_floating_point = std::is_void_v<T>
-		|| (std::convertible_to<float, T> && std::convertible_to<double, T> && std::convertible_to<long double, T>);
 
 
 
@@ -564,17 +555,35 @@ namespace aa {
 
 
 
+	// Negalime naudoti std::unreachable_sentinel_t, nes jis veikia tik su std::weakly_incrementable tipais.
+	template<bool C>
+	struct universal_sentinel_t {
+		template<class T>
+		AA_CONSTEXPR universal_sentinel_t(const T &) {}
+		AA_CONSTEXPR universal_sentinel_t() = default;
+
+		template<class T>
+		[[gnu::always_inline]] friend AA_CONSTEXPR bool operator==(const universal_sentinel_t &, const T &) { return C; }
+	};
+
+	template<bool C>
+	AA_CONSTEXPR const universal_sentinel_t<C> universal_sentinel;
+
 	// Galėtų šios klasės turėti get funkciją, bet sakome, kad naudotojas tegul naudoja numeric_limits, nereikia
 	// turėti dviejų kelių, kad padaryti visiškai tą patį. Kad gauti pakeistą konstantą naudoti constant funkciją.
-	AA_CONSTEXPR const struct {
+	struct numeric_max_t {
 		template<class T>
 		AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::max(); }
-	} numeric_max;
+	};
 
-	AA_CONSTEXPR const struct {
+	AA_CONSTEXPR const numeric_max_t numeric_max;
+
+	struct numeric_min_t {
 		template<class T>
 		AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::min(); }
-	} numeric_min;
+	};
+
+	AA_CONSTEXPR const numeric_min_t numeric_min;
 
 	template<std::equality_comparable T>
 	[[gnu::always_inline]] AA_CONSTEXPR bool is_numeric_max(const T &x) {
@@ -588,99 +597,107 @@ namespace aa {
 
 
 
+	// Galėtume vietoje _1 naudoti std::ignore. Bet minėtos konstantos tipas nėra tuščias.
+	// Taip pat jei reiktų negalėtume to pačio parametro su skirtingomis konstantomis specializuoti.
+	//
+	// Comparators do not declare is_transparent, nes jų ir taip neišeitų panaudoti su c++ standarto konteineriais.
+	//
 	// Mes nurodome dešinės pusės operandą su template parametru, nes realizuojame šią gražią elgseną: sakykime turime
 	// objektą tipo less<3>, šio objekto operator() gražins true tik tada kai paduotas kintamasis bus mažesnis už 3.
-	template<auto R = specialization_tag_v>
-	struct less : transparency_tag {
+	template<auto R = std::placeholders::_1>
+	struct less {
 		template<std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l < R; }
 	};
 
 	template<>
-	struct less<specialization_tag_v> : transparency_tag {
+	struct less<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l < R; }
 	};
 
-	template<auto R = specialization_tag_v>
-	struct less_equal : transparency_tag {
+	template<auto R = std::placeholders::_1>
+	struct less_equal {
 		template<std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l <= R; }
 	};
 
 	template<>
-	struct less_equal<specialization_tag_v> : transparency_tag {
+	struct less_equal<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l <= R; }
 	};
 
-	template<auto R = specialization_tag_v>
-	struct greater : transparency_tag {
+	template<auto R = std::placeholders::_1>
+	struct greater {
 		template<std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l > R; }
 	};
 
 	template<>
-	struct greater<specialization_tag_v> : transparency_tag {
+	struct greater<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l > R; }
 	};
 
-	template<auto R = specialization_tag_v>
-	struct greater_equal : transparency_tag {
+	template<auto R = std::placeholders::_1>
+	struct greater_equal {
 		template<std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l >= R; }
 	};
 
 	template<>
-	struct greater_equal<specialization_tag_v> : transparency_tag {
+	struct greater_equal<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l >= R; }
 	};
 
-	template<auto R = specialization_tag_v>
-	struct equal_to : transparency_tag {
+	template<auto R = std::placeholders::_1>
+	struct equal_to {
 		template<std::equality_comparable_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l == R; }
 	};
 
 	template<>
-	struct equal_to<specialization_tag_v> : transparency_tag {
+	struct equal_to<std::placeholders::_1> {
 		template<auto R, std::equality_comparable_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l == R; }
 	};
 
-	template<auto R = specialization_tag_v>
-	struct not_equal_to : transparency_tag {
+	template<auto R = std::placeholders::_1>
+	struct not_equal_to {
 		template<std::equality_comparable_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l != R; }
 	};
 
 	template<>
-	struct not_equal_to<specialization_tag_v> : transparency_tag {
+	struct not_equal_to<std::placeholders::_1> {
 		template<auto R, std::equality_comparable_with<decltype(R)> L>
 		AA_CONSTEXPR bool operator()(const L &l) const { return l != R; }
 	};
 
 
 
-	// e galėtų būti bet kokio integral tipo kintamasis, bet tada funkcijos naudojimas taptų nepatogus.
-	// Taip pat, kad ir koks e tipas būtų, vis tiek kažkokią reikšmę reiktų įkopijuoti į kintamąjį e todėl
-	// geriau jau naudoti size_t tipą, nes jį yra priimta naudoti kaip ciklo indekso kintamajį.
+	// Funkcijos nepilnai generic kaip iota_view, nes neegzistuoja weakly_decrementable concept.
+	// Jei reikia normalių indeksų, tada jau reikia naudoti nebe šias funkcijas, o pavyzdžiui iota_view su for_each.
+	// Galėtume kažkokius argumentus kiekvieną iteraciją paduoti į funkciją, bet niekur taip nėra realizuoti algoritmai.
+	template<invocable_ref F>
+	AA_CONSTEXPR void repeat(size_t e, F &&f) {
+		do { std::invoke(f); if (e != 1) --e; else return; } while (true);
+	}
+
+	template<invocable_ref<size_t> F>
+	AA_CONSTEXPR void repeat(size_t e, F &&f) {
+		do { std::invoke(f, std::as_const(e)); if (e != 1) --e; else return; } while (true);
+	}
+
+	// Parameter pack negali savyje turėti daug elementų todėl šita funkcija skirta tik kai reikia mažai
+	// iteracijų. Tačiau toks iteravimas greitesnis, nes nereikia prižiūrėti papildomo ciklo kintamojo.
 	//
-	// Yra įmanoma naudojantis parameter pack ir fold expression kalbos sąvybėmis padaryti iteravimą, bet
-	// parameter pack negali savyje turėti daugiau nei 1024 elementus tai ir iteracijų daugiau nei tiek negalėtų
-	// būti, tai nurodo, kad šios kalbos sąvybės nėra skirtos tokioms reikmėms. Išties toks iteravimas greitesnis,
-	// nes nereiktų tikrinti kiekvieną iteraciją ar pasibaigė ciklas, bet tas pagreitėjimas nebūtų reikšmingas.
-	//
-	// Jei reikia indekso, tada jau reikia naudoti nebe šią funkciją, o pavyzdžiui iota_view su for_each.
-	template<class F, class... A>
-		requires (std::invocable<F &, A&...>)
-	AA_CONSTEXPR void repeat(size_t e, F &&f, A&&... args) {
-		do {
-			std::invoke(f, args...);
-			if (e != 1) --e; else return;
-		} while (true);
+	// Greitaveika nenukenčia padavinėjant template parametrus todėl neturime funkcijos užklojimo kito.
+	template<size_t N, class F>
+	AA_CONSTEXPR void repeat(F &&f) {
+		apply<N>([&]<size_t... I>() -> void { (aa::invoke<I>(f), ...); });
 	}
 
 
@@ -691,8 +708,9 @@ namespace aa {
 	// reikalauja, kad visi paduodami tipai turėtų būtinai tik vieną operatorių (), gal būtų galima realizuoti
 	// taip tipą, kad tokio reikalavimo neliktų, bet tokios realizacijos savybės dabar nereikalingos.
 	template<functor... T>
-	struct overload : transparency_tag, T... {
+	struct overload : T... {
 		using T::operator()...;
+		using is_transparent = void;
 	};
 
 
@@ -762,11 +780,11 @@ namespace aa {
 		template<class U>
 		[[gnu::always_inline]] AA_CONSTEXPR const value_type<index<U>> &get() const { return get<index<U>>(); }
 
-		template<class F>
-		[[gnu::always_inline]] AA_CONSTEXPR void get(const size_t i, F &&f) { visit(i, std::forward<F>(f), *this); }
+		template<class R = void, class F>
+		[[gnu::always_inline]] AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<R>(i, std::forward<F>(f), *this); }
 
-		template<class F>
-		[[gnu::always_inline]] AA_CONSTEXPR void get(const size_t i, F &&f) const { visit(i, std::forward<F>(f), *this); }
+		template<class R = void, class F>
+		[[gnu::always_inline]] AA_CONSTEXPR R get(const size_t i, F &&f) const { return visit<R>(i, std::forward<F>(f), *this); }
 	};
 
 	template<class... T>
@@ -793,13 +811,7 @@ namespace aa {
 
 
 	template<size_t, auto V>
-	struct pack_unit {
-		// Member types
-		using value_type = decltype(V);
-
-		// Member constants
-		static AA_CONSTEXPR const value_type value = V;
-	};
+	struct pack_unit : constant_identity<decltype(V), V> {};
 
 	template<class, auto...>
 	struct pack_base;
@@ -843,8 +855,8 @@ namespace aa {
 		template<size_t I>
 		static AA_CONSTEVAL value_type<I> get() { return unit_type<I>::value; }
 
-		template<class F>
-		[[gnu::always_inline]] static AA_CONSTEXPR void get(const size_t i, F &&f) { visit<pack>(i, std::forward<F>(f)); }
+		template<class R = void, class F>
+		[[gnu::always_inline]] static AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<pack, R>(i, std::forward<F>(f)); }
 	};
 
 }
@@ -869,5 +881,13 @@ namespace std {
 
 	template<size_t I, auto... V>
 	struct tuple_element<I, const aa::pack<V...>> : std::tuple_element<I, aa::pack<V...>> {};
+
+
+
+	template<bool C, class T, template<class> class TQUAL, template<class> class QQUAL>
+	struct basic_common_reference<aa::universal_sentinel_t<C>, T, TQUAL, QQUAL> : std::type_identity<aa::universal_sentinel_t<C>> {};
+
+	template<bool C, class T, template<class> class TQUAL, template<class> class QQUAL>
+	struct basic_common_reference<T, aa::universal_sentinel_t<C>, TQUAL, QQUAL> : std::type_identity<aa::universal_sentinel_t<C>> {};
 
 }

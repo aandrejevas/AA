@@ -79,12 +79,17 @@ namespace aa {
 
 
 
-	struct char_equal_to : transparency_tag {
+	// Neturime klasės iš kurios tiesiog galėtume paveldėti is_transparent, nes gcc taip elgiasi. Taip pat, nes
+	// tai nėra neįprasta, konteineriai ir iteratoriai turi tokių pačių aliases ir iš sandarto buvo pašalintas tipas
+	// std::iterator, kuris buvo naudojamas tokiu pačiu principu, tai reiškia nerekomenduojama tokia realizacija.
+	struct char_equal_to {
 		template<sized_contiguous_range L, same_range_char_traits_as<range_char_traits_t<L>> R>
 		AA_CONSTEXPR bool operator()(const L &l, const R &r) const {
 			return std::ranges::size(l) == std::ranges::size(r) &&
 				!range_char_traits_t<L>::compare(std::ranges::data(l), std::ranges::data(r), std::ranges::size(l));
 		}
+
+		using is_transparent = void;
 	};
 
 }
