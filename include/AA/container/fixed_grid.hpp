@@ -17,6 +17,7 @@
 namespace aa {
 
 	// https://stackoverflow.com/questions/41946007/efficient-and-well-explained-implementation-of-a-quadtree-for-2d-collision-det
+	// Klasė neturi iteratorių, nes ji pati savyje nelaiko elementų, reiktų iteruoti struktūrą, kuri juos laiko.
 	template<class T, size_t W, size_t H, size_t N, storable_vector2_getter<T> L = std::identity, bool ERASABLE = false>
 	struct fixed_grid {
 		// Member types
@@ -141,8 +142,8 @@ namespace aa {
 		static AA_CONSTEVAL size_type max_size() { return N; }
 		static AA_CONSTEVAL size_type max_row_size() { return W; }
 		static AA_CONSTEVAL size_type max_col_size() { return H; }
-		static AA_CONSTEVAL size_type max_row_index() { return W - 1; }
-		static AA_CONSTEVAL size_type max_col_index() { return H - 1; }
+		static AA_CONSTEVAL size_type last_row_index() { return W - 1; }
+		static AA_CONSTEVAL size_type last_col_index() { return H - 1; }
 
 
 

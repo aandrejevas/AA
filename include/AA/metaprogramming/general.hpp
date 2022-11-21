@@ -691,7 +691,7 @@ namespace aa {
 		do { std::invoke(f, std::as_const(e)); if (e != 1) --e; else return; } while (true);
 	}
 
-	// Parameter pack negali savyje turėti daug elementų todėl šita funkcija skirta tik kai reikia mažai
+	// Parameter pack negali susidėti iš daug elementų todėl šitą funkciją reiktų naudoti tik kai reikia mažai
 	// iteracijų. Tačiau toks iteravimas greitesnis, nes nereikia prižiūrėti papildomo ciklo kintamojo.
 	//
 	// Greitaveika nenukenčia padavinėjant template parametrus todėl neturime funkcijos užklojimo kito.

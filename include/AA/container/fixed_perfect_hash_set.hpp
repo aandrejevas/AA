@@ -34,6 +34,9 @@ namespace aa {
 		using const_iterator = iterator;
 		using container_type = array_t<bucket_type, N>;
 
+		// Member constants
+		static AA_CONSTEXPR const bucket_type full_mask = numeric_max, empty_mask = numeric_min;
+
 		struct bucket_iterable {
 			// Member types
 			using value_type = value_type;
@@ -68,10 +71,10 @@ namespace aa {
 
 				AA_CONSTEXPR iterator &operator--() {
 					if (index == max_size()) {
-						index = max_index() - unsign<value_type>(std::countl_zero(bucket->word));
+						index = last_index() - unsign<value_type>(std::countl_zero(bucket->word));
 					} else {
-						index = max_index() - unsign<value_type>(std::countl_zero(bucket->word
-							& (constant<(std::numeric_limits<bucket_type>::max() >> 1)>() >> (max_index() - index))));
+						index = last_index() - unsign<value_type>(std::countl_zero(bucket->word
+							& (constant<(std::numeric_limits<bucket_type>::max() >> 1)>() >> (last_index() - index))));
 					}
 					return *this;
 				}
@@ -95,27 +98,27 @@ namespace aa {
 
 			// Element access
 			AA_CONSTEXPR value_type front() const { return unsign<value_type>(std::countr_zero(word)) + offset; }
-			AA_CONSTEXPR value_type back() const { return (max_index() - unsign<value_type>(std::countl_zero(word))) + offset; }
+			AA_CONSTEXPR value_type back() const { return (last_index() - unsign<value_type>(std::countl_zero(word))) + offset; }
 
 
 
 			// Iterators
 			AA_CONSTEXPR const_iterator begin() const { return {this, unsign<value_type>(std::countr_zero(word))}; }
 			AA_CONSTEXPR const_iterator end() const { return {this, max_size()}; }
-			AA_CONSTEXPR const_iterator rbegin() const { return {this, max_index() - unsign<value_type>(std::countl_zero(word))}; }
+			AA_CONSTEXPR const_iterator rbegin() const { return {this, last_index() - unsign<value_type>(std::countl_zero(word))}; }
 			AA_CONSTEXPR const_iterator rend() const { return {this, numeric_max}; }
 
 
 
 			// Capacity
-			AA_CONSTEXPR bool empty() const { return !word; }
-			AA_CONSTEXPR bool full() const { return !~word; }
+			AA_CONSTEXPR bool empty() const { return is_numeric_min(word); }
+			AA_CONSTEXPR bool full() const { return is_numeric_max(word); }
 
 			AA_CONSTEXPR size_type size() const { return unsign<size_type>(std::popcount(word)); }
 			AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
 
-			static AA_CONSTEVAL size_type max_size() { return max_bucket_size(); }
-			static AA_CONSTEVAL size_type max_index() { return max_bucket_size() - 1; }
+			static AA_CONSTEVAL size_type max_size() { return bucket_max_size(); }
+			static AA_CONSTEVAL size_type last_index() { return bucket_last_index(); }
 
 
 
@@ -155,9 +158,8 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const { return used_bins.empty(); }
-		AA_CONSTEXPR bool full() const {
-			return used_bins.full() && unsafe_all_of(bins, [](const bucket_type bin) -> bool { return !~bin; });
-		}
+		AA_CONSTEXPR bool full() const { return used_bins.full(); }
+		AA_CONSTEXPR bool buckets_full() const { return unsafe_all_of(used_bins, bucket_full); }
 
 		AA_CONSTEXPR size_type size() const {
 			if (!empty()) {
@@ -176,7 +178,7 @@ namespace aa {
 		// Jei N=M, tada šis konteineris gali talpinti tik mažesnias reikšmes už max_size,
 		// nebent būtų naudojamas ne tas hasher, kuris yra naudojamas pagal nutylėjimą.
 		static AA_CONSTEVAL size_type max_size() {
-			return max_bucket_size() * max_bucket_count();
+			return bucket_max_size() * max_bucket_count();
 		}
 
 
@@ -188,25 +190,33 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR bucket_iterable bucket(const bucket_pointer bin) const {
-			return {*bin, product<max_bucket_size()>(index(bin))};
+			return {*bin, product<bucket_max_size()>(index(bin))};
 		}
 
 
-		[[gnu::always_inline]] static AA_CONSTEXPR bool bucket_empty(const bucket_pointer bin) { return !*bin; }
-		[[gnu::always_inline]] static AA_CONSTEXPR bool bucket_full(const bucket_pointer bin) { return !~*bin; }
+		[[gnu::always_inline]] static AA_CONSTEXPR bool bucket_empty(const bucket_pointer bin) { return is_numeric_min(*bin); }
+		[[gnu::always_inline]] static AA_CONSTEXPR bool bucket_full(const bucket_pointer bin) { return is_numeric_max(*bin); }
 
 		[[gnu::always_inline]] static AA_CONSTEXPR size_type bucket_size(const bucket_pointer bin) {
 			return unsign<size_type>(std::popcount(*bin));
 		}
 
 		// Funkcija turi gražinti dvejeto laipsnį dėl greitaveikos sumetimų.
-		static AA_CONSTEVAL size_type max_bucket_size() {
+		static AA_CONSTEVAL size_type bucket_max_size() {
 			return std::numeric_limits<bucket_type>::digits;
+		}
+
+		static AA_CONSTEVAL size_type bucket_last_index() {
+			return bucket_max_size() - 1;
 		}
 
 
 		AA_CONSTEXPR size_type bucket_count() const {
 			return used_bins.size();
+		}
+
+		AA_CONSTEXPR size_type last_bucket_index() const {
+			return used_bins.last_index();
 		}
 
 		static AA_CONSTEVAL size_type max_bucket_count() {
@@ -215,11 +225,11 @@ namespace aa {
 
 
 		[[gnu::always_inline]] static AA_CONSTEXPR size_type index(const size_type hash) {
-			return quotient<max_bucket_size()>(hash);
+			return quotient<bucket_max_size()>(hash);
 		}
 
 		[[gnu::always_inline]] static AA_CONSTEXPR bucket_type mask(const size_type hash) {
-			return int_exp2<bucket_type>(remainder<max_bucket_size()>(hash));
+			return int_exp2<bucket_type>(remainder<bucket_max_size()>(hash));
 		}
 
 
@@ -255,17 +265,70 @@ namespace aa {
 
 		AA_CONSTEXPR void unsafe_clear() {
 			do {
-				*used_bins.back() = 0;
+				*used_bins.back() = empty_mask;
 				used_bins.pop_back();
 			} while (!used_bins.empty());
+		}
+
+		AA_CONSTEXPR void reset(const size_type index) {
+			bucket_type &bin = bins[index];
+			if (bin) {
+				bin = empty_mask;
+				used_bins.fast_erase(aa::unsafe_find_last(used_bins, &bin));
+			}
+		}
+
+		AA_CONSTEXPR void keep(const size_type index, const bucket_type mask) {
+			bucket_type &bin = bins[index];
+			if (bin) {
+				bin &= mask;
+				if (!bin) used_bins.fast_erase(aa::unsafe_find_last(used_bins, &bin));
+			}
+		}
+
+		AA_CONSTEXPR void merge(const size_type index, const bucket_type mask) {
+			if (mask) {
+				bucket_type &bin = bins[index];
+				if (!bin) {
+					used_bins.insert_back(&bin);
+					bin = mask;
+				} else bin |= mask;
+			}
+		}
+
+		AA_CONSTEXPR void flip(const size_type index, const bucket_type mask) {
+			bucket_type &bin = bins[index];
+			if (bin) {
+				bin ^= mask;
+				if (!bin) used_bins.fast_erase(aa::unsafe_find_last(used_bins, &bin));
+			} else if (mask) {
+				used_bins.insert_back(&bin);
+				bin = mask;
+			}
+		}
+
+		AA_CONSTEXPR void fill(const size_type index) {
+			bucket_type &bin = bins[index];
+			if (!bin) used_bins.insert_back(&bin);
+			bin = full_mask;
+		}
+
+		AA_CONSTEXPR void set(const size_type index, const bucket_type mask) {
+			if (mask) {
+				bucket_type &bin = bins[index];
+				if (!bin) used_bins.insert_back(&bin);
+				bin = mask;
+			} else reset(index);
 		}
 
 		template<hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR void insert(const K &key) {
 			const size_type hash = this->hash(key);
 			bucket_type &bin = bins[index(hash)];
-			if (!bin) used_bins.insert_back(&bin);
-			bin |= mask(hash);
+			if (!bin) {
+				used_bins.insert_back(&bin);
+				bin = mask(hash);
+			} else bin |= mask(hash);
 		}
 
 		template<hashable_by<const hasher_type &> K>
@@ -288,7 +351,7 @@ namespace aa {
 				if (!bin) used_bins.fast_erase(aa::unsafe_find_last(used_bins, &bin));
 			} else {
 				used_bins.insert_back(&bin);
-				bin |= mask(hash);
+				bin = mask(hash);
 			}
 		}
 
@@ -310,5 +373,8 @@ namespace aa {
 	public:
 		[[no_unique_address]] const hasher_type hasher;
 	};
+
+	template<size_t N, size_t M = N, storable H = generic_hash<>>
+	using uz_fixed_perfect_hash_set = fixed_perfect_hash_set<size_t, N, M, H>;
 
 }

@@ -90,11 +90,11 @@ namespace aa {
 		AA_CONSTEXPR bool full() const { return elements.full(); }
 
 		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
-		AA_CONSTEXPR size_type size() const { return max_index() + 1; }
+		AA_CONSTEXPR size_type size() const { return last_index() + 1; }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
 
-		AA_CONSTEXPR size_type max_index() const { return std::bit_cast<size_type>(elements.rdata() - f_begin); }
+		AA_CONSTEXPR size_type last_index() const { return std::bit_cast<size_type>(elements.rdata() - f_begin); }
 
 
 

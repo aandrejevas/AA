@@ -45,8 +45,7 @@ namespace aa {
 					++count;
 				} while ((iter = iter->next));
 				return count;
-			}
-			return 0;
+			} return 0;
 		}
 
 		AA_CONSTEXPR bool empty() const { return size() == 0; }
@@ -54,10 +53,11 @@ namespace aa {
 
 		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
 		AA_CONSTEXPR size_type size() const { return elements.size() - holes_count(); }
+		AA_CONSTEXPR size_type size_with_holes() const { return elements.size(); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
 
-		AA_CONSTEXPR size_type max_index() const { return elements.max_index(); }
+		AA_CONSTEXPR size_type last_index() const { return elements.last_index(); }
 
 
 

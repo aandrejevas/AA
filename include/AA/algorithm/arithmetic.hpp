@@ -4,8 +4,9 @@
 #include <cstddef> // size_t
 #include <cmath> // fmod
 #include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as
-#include <bit> // countl_zero, has_single_bit
+#include <bit> // countl_zero, has_single_bit, bit_cast
 #include <limits> // numeric_limits
+#include <type_traits> // make_signed_t
 
 
 
@@ -158,6 +159,19 @@ namespace aa {
 	template<arithmetic T>
 	[[gnu::always_inline]] AA_CONSTEXPR auto sq(const T x) {
 		return x * x;
+	}
+
+	// https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
+	template<std::unsigned_integral T>
+	[[gnu::always_inline]] AA_CONSTEXPR T min(const T x, const T y) {
+		const T d = (x - y);
+		return y + (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> constant<std::numeric_limits<T>::digits - 1>()));
+	}
+
+	template<std::unsigned_integral T>
+	[[gnu::always_inline]] AA_CONSTEXPR T max(const T x, const T y) {
+		const T d = (x - y);
+		return x - (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> constant<std::numeric_limits<T>::digits - 1>()));
 	}
 
 }

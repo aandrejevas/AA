@@ -61,7 +61,7 @@ namespace aa {
 		static AA_CONSTEVAL difference_type ssize() { return sizeof...(A); }
 		static AA_CONSTEVAL size_type size() { return sizeof...(A); }
 		static AA_CONSTEVAL size_type max_size() { return sizeof...(A); }
-		static AA_CONSTEVAL size_type max_index() { return sizeof...(A) - 1; }
+		static AA_CONSTEVAL size_type last_index() { return sizeof...(A) - 1; }
 
 
 

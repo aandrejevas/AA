@@ -159,7 +159,7 @@ int main() {
 	{
 		std::unordered_set<size_t> b;
 		fixed_perfect_hash_set<size_t, 1'000> a;
-		printl(a.max_bucket_count(), ' ', a.max_bucket_size(), ' ', a.max_size());
+		printl(a.max_bucket_count(), ' ', a.bucket_max_size(), ' ', a.max_size());
 
 		// Insert test
 		repeat(100'000, [&]() {
@@ -183,12 +183,9 @@ int main() {
 		unsafe_for_each(a.buckets(), [&](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
 
 		// Bucket test
-		repeat(100, [&]() {
-			const size_t c = int_distribution(g, a.max_bucket_size());
-			b.insert(c);
-			a.insert(c);
-		});
-		AA_TRACE_ASSERT(b.size() == a.bucket_size(a.buckets().data()));
+		a.fill(0);
+		unsafe_for_each(std::views::iota(0uz, a.bucket_max_size()), [&](const size_t i) { b.insert(i); });
+		AA_TRACE_ASSERT(b.size() == a.bucket_size(a.buckets().data()) && a.buckets_full());
 
 		// Local iterator test
 		unsafe_for_each(a.bucket(a.buckets().data()), [&](const size_t c) {
