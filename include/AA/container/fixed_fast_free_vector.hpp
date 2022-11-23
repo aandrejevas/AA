@@ -45,7 +45,7 @@ namespace aa {
 					++count;
 				} while ((iter = iter->next));
 				return count;
-			} return 0;
+			} else return 0;
 		}
 
 		AA_CONSTEXPR bool empty() const { return size() == 0; }
