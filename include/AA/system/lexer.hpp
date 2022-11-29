@@ -2,7 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
-#include "../container/fixed_immutable_set.hpp"
+#include "../algorithm/hash.hpp"
 #include <cstddef> // size_t
 #include <string> // string
 #include <functional> // invoke
@@ -16,8 +16,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Lexical_analysis
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<fixed_immutable_set S, size_t R = 50, invocable_ref<size_t, const std::string &> C, input_stream FILE>
-		requires (S.valid())
+	template<string_perfect_hash H, size_t R = 50, invocable_ref<size_t, const std::string &> C, input_stream FILE>
 	AA_CONSTEXPR void lex(FILE &&file, C &&consumer = {}) {
 		using traits_type = typename std::remove_reference_t<FILE>::traits_type;
 
@@ -53,10 +52,9 @@ namespace aa {
 
 			// Member functions
 			AA_CONSTEXPR void init_key() {
-				index = S.index(token);
-				state = S.template find<lexing_state>(index, token,
-					[]<auto>() ->	lexing_state { return lexing_state::VALUE; },
-					[]() ->			lexing_state { return lexing_state::SKIP_VALUE; });
+				index = H(token);
+				if (index != H.max())	state = lexing_state::VALUE;
+				else					state = lexing_state::SKIP_VALUE;
 			}
 
 		public:

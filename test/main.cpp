@@ -1,4 +1,3 @@
-#include <AA/container/fixed_immutable_set.hpp>
 #include <AA/container/fixed_string.hpp>
 #include <AA/container/fixed_grid.hpp>
 #include <AA/container/fixed_free_vector.hpp>
@@ -6,6 +5,7 @@
 #include <AA/container/fixed_flat_set.hpp>
 #include <AA/container/fixed_vector.hpp>
 #include <AA/algorithm/arithmetic.hpp>
+#include <AA/algorithm/hash.hpp>
 #include <AA/algorithm/find.hpp>
 #include <AA/algorithm/shift.hpp>
 #include <AA/algorithm/permute.hpp>
@@ -27,7 +27,7 @@
 #include <iterator> // forward_iterator, default_sentinel
 #include <ranges> // reverse, iota, contiguous_range, random_access_range, bidirectional_range, subrange
 #include <algorithm> // is_sorted, is_permutation, for_each
-#include <string> // string, char_traits
+#include <string> // string
 #include <limits> // numeric_limits
 #include <iostream> // cout
 #include <bit> // bit_cast
@@ -96,22 +96,7 @@ int main() {
 	{
 		tuple<std::string, double, prev_unsigned_t<size_t>> a;
 
-		using hasher_type = decltype([]<class T>(const T &v) -> size_t {
-			if constexpr (same_range_char_traits_as<T, std::char_traits<char>>) {
-				switch (v.size()) {
-					case 6:
-						switch (v.back()) {
-							case '1': return 0;
-							case '2': return 1;
-							case '3': return 2;
-							default: return 3;
-						}
-					default: return 3;
-				}
-			} else return 3;
-		});
-
-		parse<constant<et_fixed_immutable_set<hasher_type, "TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs, universal_sentinel<false>>>()>
+		parse<constant<m_string_perfect_hash<"TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs>>()>
 			(a, pathed_ifstream{"params.txt"}.get());
 
 		AA_TRACE_ASSERT(a.get<0>() == "text");
@@ -197,9 +182,10 @@ int main() {
 		repeat(100'000, [&]() {
 			a.insert(int_distribution(g, a.max_size()));
 		});
-		do {
-			a.erase(a.bucket(a.first_dirty_index()).front());
-		} while (!a.empty());
+		bool use_f = true; do {
+			a.erase(a.bucket(use_f ? a.first_dirty_index() : a.last_dirty_index()).front());
+			if (!a.empty()) use_f = !use_f; else break;
+		} while (true);
 		unsafe_for_each(a.buckets(), [](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
 
 		static_assert(std::ranges::bidirectional_range<decltype(a)::bucket_iterable>);

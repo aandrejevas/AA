@@ -33,6 +33,9 @@ namespace aa {
 		using bucket_pointer = const bucket_type *;
 		using container_type = array_t<bucket_type, N>;
 
+		// Member constants
+		static AA_CONSTEXPR const bucket_type full_mask = numeric_max, empty_mask = numeric_min;
+
 		struct bucket_iterable {
 			// Member types
 			using value_type = value_type;
@@ -55,7 +58,7 @@ namespace aa {
 						index = unsign<value_type>(std::countr_zero(bucket->word));
 					} else {
 						index = unsign<value_type>(std::countr_zero(bucket->word
-							& (constant<(std::numeric_limits<bucket_type>::max() << 1)>() << index)));
+							& (constant<(full_mask << 1)>() << index)));
 					}
 					return *this;
 				}
@@ -71,7 +74,7 @@ namespace aa {
 						index = last_index() - unsign<value_type>(std::countl_zero(bucket->word));
 					} else {
 						index = last_index() - unsign<value_type>(std::countl_zero(bucket->word
-							& (constant<(std::numeric_limits<bucket_type>::max() >> 1)>() >> (last_index() - index))));
+							& (constant<(full_mask >> 1)>() >> (last_index() - index))));
 					}
 					return *this;
 				}
@@ -159,11 +162,6 @@ namespace aa {
 			bucket_type bitset;
 			value_type offset;
 		};
-
-
-
-		// Member constants
-		static AA_CONSTEXPR const bucket_type full_mask = numeric_max, empty_mask = numeric_min;
 
 
 
@@ -321,7 +319,7 @@ namespace aa {
 		}
 
 		[[gnu::always_inline]] AA_CONSTEXPR void unsafe_clear() {
-			std::memset(bins.data() + dirty_f, 0, size_of<bucket_type>(dirty_l - dirty_f + 1));
+			std::memset(bins.data() + dirty_f, empty_mask, size_of<bucket_type>(dirty_l - dirty_f + 1));
 			mark_not_dirty();
 		}
 
