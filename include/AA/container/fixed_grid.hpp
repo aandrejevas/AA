@@ -140,8 +140,8 @@ namespace aa {
 		AA_CONSTEXPR size_type size() const { return nodes.size(); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
-		static AA_CONSTEVAL size_type max_row_size() { return W; }
-		static AA_CONSTEVAL size_type max_col_size() { return H; }
+		static AA_CONSTEVAL size_type row_size() { return W; }
+		static AA_CONSTEVAL size_type col_size() { return H; }
 		static AA_CONSTEVAL size_type last_row_index() { return W - 1; }
 		static AA_CONSTEVAL size_type last_col_index() { return H - 1; }
 

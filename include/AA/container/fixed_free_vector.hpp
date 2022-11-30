@@ -159,6 +159,7 @@ namespace aa {
 		AA_CONSTEXPR size_type size_with_holes() const { return elements.size(); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
+		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
 		AA_CONSTEXPR size_type last_index() const { return elements.last_index(); }
 

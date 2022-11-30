@@ -2,14 +2,18 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t, ptrdiff_t
+#include <memory> // construct_at
+#include <utility> // forward
+#include <concepts> // constructible_from
+#include <bit> // bit_cast
 
 
 
 namespace aa {
 
-	// https://en.wikipedia.org/wiki/Array_data_structure
+	// https://en.wikipedia.org/wiki/Circular_buffer
 	template<trivially_copyable T, size_t N>
-	struct fixed_array {
+	struct fixed_circular_vector {
 		// Member types
 		using value_type = T;
 		using size_type = size_t;
@@ -20,7 +24,6 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using iterator = pointer;
 		using const_iterator = const_pointer;
-		using container_type = array_t<value_type, N>;
 
 
 
@@ -48,9 +51,13 @@ namespace aa {
 		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
 		AA_CONSTEXPR const_pointer cdata() const { return data(); }
 
-		AA_CONSTEXPR pointer rdata() { return r_begin; }
-		AA_CONSTEXPR const_pointer rdata() const { return r_begin; }
+		AA_CONSTEXPR pointer rdata() { return full() ? r_begin : r_curr; }
+		AA_CONSTEXPR const_pointer rdata() const { return full() ? r_begin : r_curr; }
 		AA_CONSTEXPR const_pointer crdata() const { return rdata(); }
+
+		AA_CONSTEXPR pointer tdata() { return r_curr; }
+		AA_CONSTEXPR const_pointer tdata() const { return r_curr; }
+		AA_CONSTEXPR const_pointer ctdata() const { return tdata(); }
 
 		AA_CONSTEXPR reference front() { return *data(); }
 		AA_CONSTEXPR const_reference front() const { return *data(); }
@@ -59,6 +66,10 @@ namespace aa {
 		AA_CONSTEXPR reference back() { return *rdata(); }
 		AA_CONSTEXPR const_reference back() const { return *rdata(); }
 		AA_CONSTEXPR const_reference cback() const { return back(); }
+
+		AA_CONSTEXPR reference top() { return *tdata(); }
+		AA_CONSTEXPR const_reference top() const { return *tdata(); }
+		AA_CONSTEXPR const_reference ctop() const { return top(); }
 
 
 
@@ -75,34 +86,77 @@ namespace aa {
 		AA_CONSTEXPR const_iterator rbegin() const { return rdata(); }
 		AA_CONSTEXPR const_iterator crbegin() const { return rbegin(); }
 
-		AA_CONSTEXPR iterator rend() { return data() - 1; }
-		AA_CONSTEXPR const_iterator rend() const { return data() - 1; }
+		AA_CONSTEXPR iterator rend() { return r_end; }
+		AA_CONSTEXPR const_iterator rend() const { return r_end; }
 		AA_CONSTEXPR const_iterator crend() const { return rend(); }
 
 
 
 		// Capacity
-		static AA_CONSTEVAL bool empty() { return !N; }
-		static AA_CONSTEVAL difference_type ssize() { return N; }
-		static AA_CONSTEVAL size_type size() { return N; }
+		AA_CONSTEXPR bool empty() const { return r_curr == r_end; }
+		AA_CONSTEXPR bool full() const { return is_full; }
+
+		AA_CONSTEXPR difference_type ssize() const { return full() ? N : (r_curr - r_end); }
+		AA_CONSTEXPR size_type size() const { return std::bit_cast<size_type>(ssize()); }
+
 		static AA_CONSTEVAL size_type max_size() { return N; }
-		static AA_CONSTEVAL size_type last_index() { return N - 1; }
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }
+
+		AA_CONSTEXPR size_type last_index() const { return full() ? max_index() : std::bit_cast<size_type>(r_curr - data()); }
+
+
+
+		// Modifiers
+		AA_CONSTEXPR void clear() {
+			is_full = false;
+			r_curr = r_end;
+		}
+
+		AA_CONSTEXPR void push() {
+			if (r_curr == r_begin) {
+				is_full = true;
+				r_curr = data();
+			} else {
+				++r_curr;
+			}
+		}
+
+		template<class... A>
+			requires (std::constructible_from<value_type, A...>)
+		AA_CONSTEXPR void emplace(A&&... args) {
+			if (r_curr == r_begin) {
+				is_full = true;
+				std::ranges::construct_at(r_curr = data(), std::forward<A>(args)...);
+			} else {
+				std::ranges::construct_at(++r_curr, std::forward<A>(args)...);
+			}
+		}
+
+		AA_CONSTEXPR void insert(const value_type &value) {
+			if (r_curr == r_begin) {
+				is_full = true;
+				*(r_curr = data()) = value;
+			} else {
+				*++r_curr = value;
+			}
+		}
 
 
 
 		// Special member functions
-		AA_CONSTEXPR fixed_array() {}
-		AA_CONSTEXPR fixed_array(const container_type &e) : elements{e} {}
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+		AA_CONSTEXPR fixed_circular_vector() {}
+#pragma GCC diagnostic pop
 
 
 
 		// Member objects
-		container_type elements;
+		array_t<value_type, N> elements;
 
 	protected:
-		// Šitas kintamasis turi būti paslėptas, nes kitaip jis suteiktų galimybę naudotojui keisti const elementus.
-		value_type *const r_begin = elements.data() + last_index();
+		bool is_full = false;
+		value_type *const r_end = elements.data() - 1, *const r_begin = elements.data() + max_index(), *r_curr = r_end;
 	};
 
 }

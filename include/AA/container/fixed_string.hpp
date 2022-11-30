@@ -88,6 +88,7 @@ namespace aa {
 		static AA_CONSTEVAL size_type size() { return N; }
 		static AA_CONSTEVAL size_type max_size() { return N; }
 		static AA_CONSTEVAL size_type last_index() { return N - 1; }
+		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
 
 
