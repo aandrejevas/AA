@@ -2,10 +2,12 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
+#include "../algorithm/init.hpp"
 #include <iostream> // cout, cin
 #include <utility> // forward
 #include <ostream> // basic_ostream, ostream, wostream, endl, flush
 #include <istream> // basic_istream, istream
+#include <type_traits> // remove_const_t
 
 
 
@@ -33,6 +35,11 @@ namespace aa {
 		return ((s >> std::forward<A1>(a1)) >> ... >> std::forward<A>(args));
 	}
 
+	template<class T, class S>
+	[[gnu::always_inline]] AA_CONSTEXPR std::remove_const_t<T> read(S &&s) {
+		return create_with_invocable<T>([&](std::remove_const_t<T> &t) -> void { read(s, t); });
+	}
+
 
 
 	// Čia neatliekamas perfect forwarding, nes atrodo spausdinimui užtenka const kintamųjų. Žinoma gali atsirasti
@@ -55,6 +62,11 @@ namespace aa {
 		requires (!input_stream<A1>)
 	[[gnu::always_inline]] AA_CONSTEXPR std::istream &read(A1 &&a1, A&&... args) {
 		return read(std::cin, std::forward<A1>(a1), std::forward<A>(args)...);
+	}
+
+	template<class T>
+	[[gnu::always_inline]] AA_CONSTEXPR std::remove_const_t<T> read() {
+		return read<T>(std::cin);
 	}
 
 

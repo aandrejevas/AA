@@ -93,10 +93,8 @@ int main() {
 		//}
 	}
 	{
-		tuple<std::string, double, prev_unsigned_t<size_t>> a;
-
-		parse<constant<m_string_perfect_hash<"TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs>>()>
-			(a, pathed_ifstream{"params.txt"}.get());
+		const auto a = parse<tuple<std::string, double, prev_unsigned_t<size_t>>,
+			constant<m_string_perfect_hash<"TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs>>()>(pathed_ifstream{"params.txt"}.get());
 
 		AA_TRACE_ASSERT(a.get<0>() == "text");
 		AA_TRACE_ASSERT(std::bit_cast<size_t>(a.get<1>()) == std::bit_cast<size_t>(22.5));
