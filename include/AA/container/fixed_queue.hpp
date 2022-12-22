@@ -106,7 +106,10 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		AA_CONSTEXPR iterator emplace_back(A&&... args) { return elements.emplace_back(std::forward<A>(args)...); }
 
-		AA_CONSTEXPR void insert_back(const value_type &value) { elements.insert_back(value); }
+		template<assignable_to<reference> V>
+		AA_CONSTEXPR void insert_back(V &&value) { elements.insert_back(std::forward<V>(value)); }
+
+		AA_CONSTEXPR void push_back() { elements.push_back(); }
 
 		AA_CONSTEXPR void pop_back() {
 			if (f_begin == elements.rdata())
@@ -115,9 +118,12 @@ namespace aa {
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		AA_CONSTEXPR iterator emplace_front(A&&... args) { return std::ranges::construct_at(--f_begin, std::forward<A>(args)...); }
+		AA_CONSTEXPR iterator emplace_front(A&&... args) { return std::ranges::construct_at(push_front(), std::forward<A>(args)...); }
 
-		AA_CONSTEXPR void insert_front(const value_type &value) { *--f_begin = value; }
+		template<assignable_to<reference> V>
+		AA_CONSTEXPR void insert_front(V &&value) { *push_front() = std::forward<V>(value); }
+
+		AA_CONSTEXPR void push_front() { --f_begin; }
 
 		AA_CONSTEXPR void pop_front() {
 			if (f_begin == elements.rdata())
@@ -128,7 +134,10 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		AA_CONSTEXPR iterator emplace(const const_iterator pos, A&&... args) { return elements.emplace(pos, std::forward<A>(args)...); }
 
-		AA_CONSTEXPR void insert(const const_iterator pos, const value_type &value) { elements.insert(pos, value); }
+		template<assignable_to<reference> V>
+		AA_CONSTEXPR void insert(const const_iterator pos, V &&value) { elements.insert(pos, std::forward<V>(value)); }
+
+		AA_CONSTEXPR void push(const const_iterator pos) { elements.push(pos); }
 
 		AA_CONSTEXPR void erase(const const_iterator pos) {
 			if (f_begin == elements.rdata())

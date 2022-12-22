@@ -150,7 +150,7 @@ namespace aa {
 	// Nekopijuojame į fixed_string null character, nes tik užimtų bereikalingai vietą simbolis.
 	// Netikriname ar (N != 0), nes C++ standartas draudžia deklaruoti tokius masyvus.
 	template<class T, size_t N>
-	basic_fixed_string(const T(&)[N])->basic_fixed_string<T, std::char_traits<T>, N - 1>;
+	basic_fixed_string(const T(&)[N]) -> basic_fixed_string<T, std::char_traits<T>, N - 1>;
 
 
 

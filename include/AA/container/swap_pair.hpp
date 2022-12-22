@@ -47,7 +47,7 @@ namespace aa {
 	};
 
 	template<class T1, class T2>
-	swap_pair(T1 &&, T2 &&)->swap_pair<std::common_type_t<T1, T2>>;
+	swap_pair(T1 &&, T2 &&) -> swap_pair<std::common_type_t<T1, T2>>;
 
 }
 

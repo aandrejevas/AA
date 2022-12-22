@@ -192,7 +192,7 @@ int main() {
 		fixed_free_vector<size_t, 50'000> a;
 
 		unsafe_for_each(std::views::iota(0uz, a.max_size()), [&](const size_t i) {
-			AA_TRACE_ASSERT(!a[i]); a.emplace(i); AA_TRACE_ASSERT(a[i]); AA_TRACE_ASSERT(*a[i] == i);
+			AA_TRACE_ASSERT(!a[i]); a.insert(i); AA_TRACE_ASSERT(a[i]); AA_TRACE_ASSERT(*a[i] == i);
 		});
 		AA_TRACE_ASSERT(a.full() && !a.has_holes());
 
@@ -200,7 +200,7 @@ int main() {
 		AA_TRACE_ASSERT(a.full() && a.empty());
 
 		unsafe_for_each(std::views::iota(0uz, a.max_size()) | std::views::reverse, [&](const size_t i) {
-			AA_TRACE_ASSERT(!a[i]); a.emplace(i); AA_TRACE_ASSERT(a[i]); AA_TRACE_ASSERT(*a[i] == i);
+			AA_TRACE_ASSERT(!a[i]); a.insert(i); AA_TRACE_ASSERT(a[i]); AA_TRACE_ASSERT(*a[i] == i);
 		});
 		AA_TRACE_ASSERT(a.full() && !a.has_holes());
 

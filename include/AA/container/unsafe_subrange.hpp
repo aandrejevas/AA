@@ -53,7 +53,7 @@ namespace aa {
 	};
 
 	template<class I, class S>
-	unsafe_subrange(I &&, S &&)->unsafe_subrange<I, S>;
+	unsafe_subrange(I &&, S &&) -> unsafe_subrange<I, S>;
 
 }
 

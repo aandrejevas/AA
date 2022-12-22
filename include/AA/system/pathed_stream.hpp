@@ -87,7 +87,7 @@ namespace aa {
 	};
 
 	template<class P, class... U>
-	pathed_ofstream(P &&, U&&...)->pathed_ofstream<P>;
+	pathed_ofstream(P &&, U&&...) -> pathed_ofstream<P>;
 
 	template<class P>
 	struct pathed_ifstream : pathed_stream<P, std::ifstream> {
@@ -95,6 +95,6 @@ namespace aa {
 	};
 
 	template<class P, class... U>
-	pathed_ifstream(P &&, U&&...)->pathed_ifstream<P>;
+	pathed_ifstream(P &&, U&&...) -> pathed_ifstream<P>;
 
 }

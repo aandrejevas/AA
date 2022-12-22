@@ -112,33 +112,24 @@ namespace aa {
 			r_curr = r_end;
 		}
 
-		AA_CONSTEXPR void push() {
+		AA_CONSTEXPR iterator push() {
 			if (r_curr == r_begin) {
 				is_full = true;
-				r_curr = data();
+				return r_curr = data();
 			} else {
-				++r_curr;
+				return ++r_curr;
 			}
 		}
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
 		AA_CONSTEXPR void emplace(A&&... args) {
-			if (r_curr == r_begin) {
-				is_full = true;
-				std::ranges::construct_at(r_curr = data(), std::forward<A>(args)...);
-			} else {
-				std::ranges::construct_at(++r_curr, std::forward<A>(args)...);
-			}
+			std::ranges::construct_at(push(), std::forward<A>(args)...);
 		}
 
-		AA_CONSTEXPR void insert(const value_type &value) {
-			if (r_curr == r_begin) {
-				is_full = true;
-				*(r_curr = data()) = value;
-			} else {
-				*++r_curr = value;
-			}
+		template<assignable_to<reference> V>
+		AA_CONSTEXPR void insert(V &&value) {
+			*push() = std::forward<V>(value);
 		}
 
 

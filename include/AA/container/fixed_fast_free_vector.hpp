@@ -77,13 +77,14 @@ namespace aa {
 			}
 		}
 
-		AA_CONSTEXPR void insert(const value_type &value) {
+		template<assignable_to<reference> V>
+		AA_CONSTEXPR void insert(V &&value) {
 			if (first_hole) {
 				node_type &hole = *first_hole;
 				first_hole = hole.next;
-				hole.element = value;
+				hole.element = std::forward<V>(value);
 			} else {
-				elements.push_back()->element = value;
+				elements.push_back()->element = std::forward<V>(value);
 			}
 		}
 

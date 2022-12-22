@@ -75,6 +75,6 @@ namespace aa {
 	};
 
 	template<class... A>
-	timekeeper(A&&...)->timekeeper<>;
+	timekeeper(A&&...) -> timekeeper<>;
 
 }

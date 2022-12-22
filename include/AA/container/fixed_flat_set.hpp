@@ -104,7 +104,9 @@ namespace aa {
 
 		// Modifiers
 		AA_CONSTEXPR void clear() { elements.clear(); }
-		AA_CONSTEXPR void clear(const value_type &value) { *elements.resize(elements.begin()) = value; }
+
+		template<assignable_to<reference> V>
+		AA_CONSTEXPR void clear(V &&value) { *elements.resize(elements.begin()) = std::forward<V>(value); }
 
 		// Neturime, kaip fixed_vector turi, resize funkcijų, nes jomis naudotojas galėtų
 		// padidinti savavališkai elementų kiekį ir taip sugadinti elementų tvarką.
@@ -112,7 +114,8 @@ namespace aa {
 		AA_CONSTEXPR const_iterator pop_back() { return elements.pop_back(); }
 		AA_CONSTEXPR const_iterator pop_back(const size_type count) { return elements.pop_back(count); }
 
-		AA_CONSTEXPR std::conditional_t<MULTISET, void, bool> insert(const value_type &value) {
+		template<cref_assignable_to<reference> V>
+		AA_CONSTEXPR std::conditional_t<MULTISET, void, bool> insert(const V &value) {
 			if constexpr (MULTISET) {
 				if (empty()) {
 					clear(value);
@@ -162,9 +165,9 @@ namespace aa {
 		template<class U = comparer_type>
 		AA_CONSTEXPR fixed_flat_set(U &&c = {}) : comparer{std::forward<U>(c)} {}
 
-		template<class U = comparer_type>
-		AA_CONSTEXPR fixed_flat_set(const value_type &value, U &&c = {})
-			: elements{elements.begin()}, comparer{std::forward<U>(c)} { elements.back() = value; }
+		template<assignable_to<reference> V, class U = comparer_type>
+		AA_CONSTEXPR fixed_flat_set(V &&value, U &&c = {})
+			: elements{elements.begin()}, comparer{std::forward<U>(c)} { elements.back() = std::forward<V>(value); }
 
 
 

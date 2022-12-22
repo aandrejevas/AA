@@ -195,6 +195,17 @@ namespace aa {
 			}
 		}
 
+		template<assignable_to<reference> V>
+		AA_CONSTEXPR void insert(V &&value) {
+			if (first_hole) {
+				union_type &hole = unwrap(first_hole);
+				first_hole = std::get<hole_index>(hole);
+				hole = std::forward<V>(value);
+			} else {
+				unwrap(elements.push_back()) = std::forward<V>(value);
+			}
+		}
+
 		AA_CONSTEXPR void erase(const size_type pos) {
 			node_type *const element = elements.data(pos);
 			if (unwrap(element).index() == elem_index) {

@@ -113,26 +113,33 @@ namespace aa {
 		AA_CONSTEXPR iterator pop_back(const size_type count) { return r_begin -= count; }
 		AA_CONSTEXPR iterator push_back(const size_type count) { return r_begin += count; }
 
+		// Neišeina emplace_back ir push_back apjungti, nes įsivaizduokime tokį svenarijų, visi masyvo elementai
+		// pradžioje sukonstruojami ir mes norime tiesiog rodyklę pastumti, emplace_back iš naujo sukonstruotų elementą.
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
 		AA_CONSTEXPR iterator emplace_back(A&&... args) {
-			return std::ranges::construct_at(++r_begin, std::forward<A>(args)...);
+			return std::ranges::construct_at(push_back(), std::forward<A>(args)...);
 		}
 
-		AA_CONSTEXPR void insert_back(const value_type &value) { *++r_begin = value; }
+		template<assignable_to<reference> V>
+		AA_CONSTEXPR void insert_back(V &&value) { *push_back() = std::forward<V>(value); }
+
+		AA_CONSTEXPR void push(const const_iterator pos) {
+			std::memmove(const_cast<iterator>(pos + 1), pos,
+				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
+		}
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
 		AA_CONSTEXPR iterator emplace(const const_iterator pos, A&&... args) {
-			std::memmove(const_cast<iterator>(pos + 1), pos,
-				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
+			push(pos);
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
-		AA_CONSTEXPR void insert(const const_iterator pos, const value_type &value) {
-			std::memmove(const_cast<iterator>(pos + 1), pos,
-				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
-			*const_cast<iterator>(pos) = value;
+		template<assignable_to<reference> V>
+		AA_CONSTEXPR void insert(const const_iterator pos, V &&value) {
+			push(pos);
+			*const_cast<iterator>(pos) = std::forward<V>(value);
 		}
 
 		AA_CONSTEXPR void erase(const const_iterator pos) {
@@ -147,9 +154,10 @@ namespace aa {
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
-		AA_CONSTEXPR void fast_insert(const const_iterator pos, const value_type &value) {
+		template<assignable_to<reference> V>
+		AA_CONSTEXPR void fast_insert(const const_iterator pos, V &&value) {
 			insert_back(*pos);
-			*const_cast<iterator>(pos) = value;
+			*const_cast<iterator>(pos) = std::forward<V>(value);
 		}
 
 		AA_CONSTEXPR void fast_erase(const const_iterator pos) {
