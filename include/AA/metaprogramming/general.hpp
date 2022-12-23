@@ -251,6 +251,8 @@ namespace aa {
 
 	AA_CONSTEXPR const getter<0> get_0, get_x, get_w;
 	AA_CONSTEXPR const getter<1> get_1, get_y, get_h;
+	AA_CONSTEXPR const getter<2> get_2, get_z;
+	AA_CONSTEXPR const getter<3> get_3;
 
 
 

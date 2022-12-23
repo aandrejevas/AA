@@ -23,12 +23,20 @@ namespace aa {
 	};
 
 	template<auto D = ' '>
-	struct delim_inserter {
+	struct delim_r_inserter {
 		template<output_stream S, class U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, u, D); }
 	};
 
-	delim_inserter()->delim_inserter<>;
+	delim_r_inserter()->delim_r_inserter<>;
+
+	template<auto D = ' '>
+	struct delim_l_inserter {
+		template<output_stream S, class U>
+		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, D, u); }
+	};
+
+	delim_l_inserter()->delim_l_inserter<>;
 
 	template<int N>
 	struct width_inserter {
@@ -66,7 +74,7 @@ namespace aa {
 	// tą patį efektą galima pasiekti padavus tinkamą range, tą galima padaryti pavyzdžiui pasinaudojus std::views::transform.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpadded"
-	template<std::ranges::input_range R, class F = delim_inserter<>>
+	template<std::ranges::input_range R, class F = delim_r_inserter<>>
 	struct range_writer {
 #pragma GCC diagnostic pop
 		[[no_unique_address]] R range;
@@ -85,14 +93,14 @@ namespace aa {
 		}
 	};
 
-	template<class R, class F = delim_inserter<>>
+	template<class R, class F = delim_r_inserter<>>
 	range_writer(R &&, F && = {}) -> range_writer<R, F>;
 
 
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpadded"
-	template<class E, class F = delim_inserter<>>
+	template<class E, class F = delim_r_inserter<>>
 	struct writer {
 #pragma GCC diagnostic pop
 		[[no_unique_address]] E element;
@@ -107,16 +115,16 @@ namespace aa {
 	};
 
 	// Reikia šitų guides, nes kitaip copy elision suvalgo konstruktorius. range_writer jų nereikia, nes negali jis savyje būti.
-	template<class IE, class IF, class F = delim_inserter<>>
+	template<class IE, class IF, class F = delim_r_inserter<>>
 	writer(const writer<IE, IF> &, F && = {}) -> writer<const writer<IE, IF> &, F>;
 
-	template<class IE, class IF, class F = delim_inserter<>>
+	template<class IE, class IF, class F = delim_r_inserter<>>
 	writer(writer<IE, IF> &, F && = {}) -> writer<writer<IE, IF> &, F>;
 
-	template<class IE, class IF, class F = delim_inserter<>>
+	template<class IE, class IF, class F = delim_r_inserter<>>
 	writer(const writer<IE, IF> &&, F && = {}) -> writer<writer<IE, IF>, F>;
 
-	template<not_instantiation_of<writer> E, class F = delim_inserter<>>
+	template<not_instantiation_of<writer> E, class F = delim_r_inserter<>>
 	writer(E &&, F && = {}) -> writer<E, F>;
 
 }
