@@ -19,7 +19,7 @@ namespace aa {
 	//
 	// Nėra atitinkamos funkcijos rend iteratoriui, nes jis nėra svarbus.
 	template<std::ranges::range R>
-	[[gnu::always_inline]] AA_CONSTEXPR std::ranges::sentinel_t<R> get_rbegin(R &&r) {
+	AA_CONSTEXPR std::ranges::sentinel_t<R> get_rbegin(R &&r) {
 		if constexpr (unusual_range<R>) {
 			return std::ranges::rbegin(r);
 		} else if constexpr (std::ranges::bidirectional_range<R>) {

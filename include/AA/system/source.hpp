@@ -56,19 +56,19 @@ namespace aa {
 
 
 	template<source_data D, not_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
-	[[gnu::always_inline]] AA_CONSTEXPR void log(S &&s, const A&... args) {
+	AA_CONSTEXPR void log(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		printl(s, D, ": ", args...);
 		else							log<D>(s, "Info logged.");
 	}
 
 	template<source_data D, class... A>
 		requires ((!output_stream<first_or_void_t<A...>>) && std::same_as<typename decltype(D)::ostream_type, std::ostream>)
-	[[gnu::always_inline]] AA_CONSTEXPR void log(const A&... args) {
+	AA_CONSTEXPR void log(const A&... args) {
 		log<D>(std::clog, args...);
 	}
 
 	template<source_data D, not_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
-	[[gnu::always_inline, noreturn]] AA_CONSTEXPR void abort(S &&s, const A&... args) {
+	[[noreturn]] AA_CONSTEXPR void abort(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		log<D>(s, args...);
 		else							log<D>(s, "Program aborted.");
 		std::abort();
@@ -76,13 +76,13 @@ namespace aa {
 
 	template<source_data D, class... A>
 		requires ((!output_stream<first_or_void_t<A...>>) && std::same_as<typename decltype(D)::ostream_type, std::ostream>)
-	[[gnu::always_inline, noreturn]] AA_CONSTEXPR void abort(const A&... args) {
+	[[noreturn]] AA_CONSTEXPR void abort(const A&... args) {
 		abort<D>(std::cerr, args...);
 	}
 
 	// TODO: Su C++23 čia galima bus naudoti static operator().
 	template<source_data D, bool T = true, class F>
-	[[gnu::always_inline]] AA_CONSTEXPR void trace(const bool condition, F &&f) {
+	AA_CONSTEXPR void trace(const bool condition, F &&f) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {
 				invoke<D>(std::forward<F>(f));
@@ -92,7 +92,7 @@ namespace aa {
 
 	// Dėl atributo, naudoti šią funkciją turėtų būti tas pats kaip naudoti macro greitaveikos atžvilgiu.
 	template<source_data D, bool T = true, not_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
-	[[gnu::always_inline]] AA_CONSTEXPR void assert(const bool condition, S &&s, const A&... args) {
+	AA_CONSTEXPR void assert(const bool condition, S &&s, const A&... args) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {
 				if constexpr (sizeof...(A))		abort<D>(s, args...);
@@ -103,7 +103,7 @@ namespace aa {
 
 	template<source_data D, bool T = true, class... A>
 		requires ((!output_stream<first_or_void_t<A...>>) && std::same_as<typename decltype(D)::ostream_type, std::ostream>)
-	[[gnu::always_inline]] AA_CONSTEXPR void assert(const bool condition, const A&... args) {
+	AA_CONSTEXPR void assert(const bool condition, const A&... args) {
 		assert<D, T>(condition, std::cerr, args...);
 	}
 

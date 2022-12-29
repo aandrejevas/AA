@@ -17,7 +17,7 @@ namespace aa {
 	// ir atrodo nereiktų jų padavinėti per parametrus, bet template argumentai irgi ne alternatyva.
 	template<class T, class A1, class... A>
 		requires (output_stream<T, A1, A...>)
-	[[gnu::always_inline]] AA_CONSTEXPR apply_traits_t<std::basic_ostream, T> &print(T &&s, const A1 &a1, const A&... args) {
+	AA_CONSTEXPR apply_traits_t<std::basic_ostream, T> &print(T &&s, const A1 &a1, const A&... args) {
 		return ((s << a1) << ... << args);
 	}
 
@@ -25,18 +25,18 @@ namespace aa {
 	// gali būti tipų, su kuriais negali susidoroti klasė, kuri paveldi iš basic_ostream.
 	template<auto L = '\n', class T, class... A>
 		requires (output_stream<T, A..., decltype(L)>)
-	[[gnu::always_inline]] AA_CONSTEXPR apply_traits_t<std::basic_ostream, T> &printl(T &&s, const A&... args) {
+	AA_CONSTEXPR apply_traits_t<std::basic_ostream, T> &printl(T &&s, const A&... args) {
 		return (s << ... << args) << L;
 	}
 
 	template<class T, class A1, class... A>
 		requires (input_stream<T, A1, A...>)
-	[[gnu::always_inline]] AA_CONSTEXPR apply_traits_t<std::basic_istream, T> &read(T &&s, A1 &&a1, A&&... args) {
+	AA_CONSTEXPR apply_traits_t<std::basic_istream, T> &read(T &&s, A1 &&a1, A&&... args) {
 		return ((s >> std::forward<A1>(a1)) >> ... >> std::forward<A>(args));
 	}
 
 	template<class T, class S>
-	[[gnu::always_inline]] AA_CONSTEXPR std::remove_const_t<T> read(S &&s) {
+	AA_CONSTEXPR std::remove_const_t<T> read(S &&s) {
 		return create_with_invocable<T>([&](std::remove_const_t<T> &t) -> void { read(s, t); });
 	}
 
@@ -47,25 +47,25 @@ namespace aa {
 	// atvejams klasė gali būti taip parašyta, kad ji ignoruotų const kvalifikatorių.
 	template<class A1, class... A>
 		requires (!output_stream<A1>)
-	[[gnu::always_inline]] AA_CONSTEXPR std::ostream &print(const A1 &a1, const A&... args) {
+	AA_CONSTEXPR std::ostream &print(const A1 &a1, const A&... args) {
 		return print(std::cout, a1, args...);
 	}
 
 	// L negali būti stream, bet vis tiek mums reikia tipo dėl atvejo kai A sąrašas tuščias.
 	template<auto L = '\n', class... A>
 		requires (!output_stream<first_t<A..., decltype(L)>>)
-	[[gnu::always_inline]] AA_CONSTEXPR std::ostream &printl(const A&... args) {
+	AA_CONSTEXPR std::ostream &printl(const A&... args) {
 		return printl<L>(std::cout, args...);
 	}
 
 	template<class A1, class... A>
 		requires (!input_stream<A1>)
-	[[gnu::always_inline]] AA_CONSTEXPR std::istream &read(A1 &&a1, A&&... args) {
+	AA_CONSTEXPR std::istream &read(A1 &&a1, A&&... args) {
 		return read(std::cin, std::forward<A1>(a1), std::forward<A>(args)...);
 	}
 
 	template<class T>
-	[[gnu::always_inline]] AA_CONSTEXPR std::remove_const_t<T> read() {
+	AA_CONSTEXPR std::remove_const_t<T> read() {
 		return read<T>(std::cin);
 	}
 

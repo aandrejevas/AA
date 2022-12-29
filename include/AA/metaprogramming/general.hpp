@@ -46,22 +46,22 @@ namespace aa {
 
 
 	template<class T, std::convertible_to<T> X>
-	[[gnu::always_inline]] AA_CONSTEXPR T cast(X &&x) {
+	AA_CONSTEXPR T cast(X &&x) {
 		return static_cast<T>(std::forward<X>(x));
 	}
 
 	template<std::signed_integral X>
-	[[gnu::always_inline]] AA_CONSTEXPR std::make_unsigned_t<X> unsign(const X x) {
+	AA_CONSTEXPR std::make_unsigned_t<X> unsign(const X x) {
 		return std::bit_cast<std::make_unsigned_t<X>>(x);
 	}
 
 	template<std::unsigned_integral T, std::signed_integral X>
-	[[gnu::always_inline]] AA_CONSTEXPR T unsign(const X x) {
+	AA_CONSTEXPR T unsign(const X x) {
 		return static_cast<T>(unsign(x));
 	}
 
 	template<class T, std::convertible_to<T> X>
-	[[gnu::always_inline]] AA_CONSTEXPR T unsign_cast(X &&x) {
+	AA_CONSTEXPR T unsign_cast(X &&x) {
 		if constexpr (std::unsigned_integral<T> && std::signed_integral<X>) {
 			return unsign<T>(x);
 		} else {
@@ -72,7 +72,7 @@ namespace aa {
 
 
 	template<std::default_initializable T>
-	[[gnu::always_inline]] AA_CONSTEXPR T *start_lifetime(T *const location) {
+	AA_CONSTEXPR T *start_lifetime(T *const location) {
 		return ::new(static_cast<void *>(location)) T;
 	}
 
@@ -243,7 +243,7 @@ namespace aa {
 	template<size_t I>
 	struct getter {
 		template<gettable<I> T>
-		[[gnu::always_inline]] AA_CONSTEXPR get_result_t<I, T> operator()(T &&t) const {
+		AA_CONSTEXPR get_result_t<I, T> operator()(T &&t) const {
 			if constexpr (member_get<T, I>)		return t.template get<I>();
 			else								return get<I>(t);
 		}
@@ -259,22 +259,22 @@ namespace aa {
 	// Neįmanoma requires į concept paversti.
 	template<auto... A, class F, class... T>
 		requires (requires(F &&f, T&&... t) { std::forward<F>(f).template AA_CALL_OPERATOR<A...>(std::forward<T>(t)...); })
-	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) invoke(F &&f, T&&... t) {
+	AA_CONSTEXPR decltype(auto) invoke(F &&f, T&&... t) {
 		return std::forward<F>(f).template AA_CALL_OPERATOR<A...>(std::forward<T>(t)...);
 	}
 
 	template<class F, size_t... I>
-	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) apply(F &&f, const std::index_sequence<I...> &&) {
+	AA_CONSTEXPR decltype(auto) apply(F &&f, const std::index_sequence<I...> &&) {
 		return invoke<I...>(std::forward<F>(f));
 	}
 
 	template<size_t N, class F>
-	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) apply(F &&f) {
+	AA_CONSTEXPR decltype(auto) apply(F &&f) {
 		return aa::apply(std::forward<F>(f), std::make_index_sequence<N>{});
 	}
 
 	template<class T, class F>
-	[[gnu::always_inline]] AA_CONSTEXPR decltype(auto) apply(F &&f) {
+	AA_CONSTEXPR decltype(auto) apply(F &&f) {
 		return aa::apply<std::tuple_size_v<std::remove_reference_t<T>>>(std::forward<F>(f));
 	}
 
@@ -328,7 +328,7 @@ namespace aa {
 	{ return {([](F &&f, T &&t) -> R { return std::invoke(std::forward<F>(f), getter<I>{}(t)); })...}; });
 
 	template<class R = void, class F, class T>
-	[[gnu::always_inline]] AA_CONSTEXPR R visit(const size_t i, F &&f, T &&t) {
+	AA_CONSTEXPR R visit(const size_t i, F &&f, T &&t) {
 		return tuple_getter_table<R, F, T &>[i](std::forward<F>(f), t);
 	}
 
@@ -338,7 +338,7 @@ namespace aa {
 	{ return {([](F &&f) -> R { return invoke<T::template get<I>()>(std::forward<F>(f)); })...}; });
 
 	template<class T, class R = void, class F>
-	[[gnu::always_inline]] AA_CONSTEXPR R visit(const size_t i, F &&f) {
+	AA_CONSTEXPR R visit(const size_t i, F &&f) {
 		return pack_getter_table<T, R, F>[i](std::forward<F>(f));
 	}
 
@@ -578,7 +578,7 @@ namespace aa {
 		AA_CONSTEXPR universal_sentinel_t() = default;
 
 		template<class T>
-		[[gnu::always_inline]] friend AA_CONSTEXPR bool operator==(const universal_sentinel_t &, const T &) { return C; }
+		friend AA_CONSTEXPR bool operator==(const universal_sentinel_t &, const T &) { return C; }
 	};
 
 	template<bool C>
@@ -601,12 +601,12 @@ namespace aa {
 	AA_CONSTEXPR const numeric_min_t numeric_min;
 
 	template<std::equality_comparable T>
-	[[gnu::always_inline]] AA_CONSTEXPR bool is_numeric_max(const T &x) {
+	AA_CONSTEXPR bool is_numeric_max(const T &x) {
 		return x == std::numeric_limits<T>::max();
 	}
 
 	template<std::equality_comparable T>
-	[[gnu::always_inline]] AA_CONSTEXPR bool is_numeric_min(const T &x) {
+	AA_CONSTEXPR bool is_numeric_min(const T &x) {
 		return x == std::numeric_limits<T>::min();
 	}
 
@@ -784,22 +784,22 @@ namespace aa {
 
 		// Element access
 		template<size_t I>
-		[[gnu::always_inline]] AA_CONSTEXPR value_type<I> &get() { return unit_type<I>::value; }
+		AA_CONSTEXPR value_type<I> &get() { return unit_type<I>::value; }
 
 		template<size_t I>
-		[[gnu::always_inline]] AA_CONSTEXPR const value_type<I> &get() const { return unit_type<I>::value; }
+		AA_CONSTEXPR const value_type<I> &get() const { return unit_type<I>::value; }
 
 		template<class U>
-		[[gnu::always_inline]] AA_CONSTEXPR value_type<index<U>> &get() { return get<index<U>>(); }
+		AA_CONSTEXPR value_type<index<U>> &get() { return get<index<U>>(); }
 
 		template<class U>
-		[[gnu::always_inline]] AA_CONSTEXPR const value_type<index<U>> &get() const { return get<index<U>>(); }
+		AA_CONSTEXPR const value_type<index<U>> &get() const { return get<index<U>>(); }
 
 		template<class R = void, class F>
-		[[gnu::always_inline]] AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<R>(i, std::forward<F>(f), *this); }
+		AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<R>(i, std::forward<F>(f), *this); }
 
 		template<class R = void, class F>
-		[[gnu::always_inline]] AA_CONSTEXPR R get(const size_t i, F &&f) const { return visit<R>(i, std::forward<F>(f), *this); }
+		AA_CONSTEXPR R get(const size_t i, F &&f) const { return visit<R>(i, std::forward<F>(f), *this); }
 	};
 
 	template<class... T>
@@ -871,7 +871,7 @@ namespace aa {
 		static AA_CONSTEVAL value_type<I> get() { return unit_type<I>::value; }
 
 		template<class R = void, class F>
-		[[gnu::always_inline]] static AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<pack, R>(i, std::forward<F>(f)); }
+		static AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<pack, R>(i, std::forward<F>(f)); }
 	};
 
 }

@@ -14,7 +14,7 @@ namespace aa {
 	template<template<class> class H = std::hash>
 	struct generic_hash {
 		template<hashable_by_template<H> T>
-		[[gnu::always_inline]] AA_CONSTEXPR size_t operator()(const T &t) const {
+		AA_CONSTEXPR size_t operator()(const T &t) const {
 			return H<T>{}(t);
 		}
 
@@ -31,7 +31,7 @@ namespace aa {
 	template<size_t N, template<class> class H = std::hash>
 	struct mod_generic_hash {
 		template<hashable_by_template<H> T>
-		[[gnu::always_inline]] AA_CONSTEXPR size_t operator()(const T &t) const {
+		AA_CONSTEXPR size_t operator()(const T &t) const {
 			return remainder<N>(H<T>{}(t));
 		}
 
@@ -52,7 +52,7 @@ namespace aa {
 
 	protected:
 		template<size_t I, auto V, class T>
-		[[gnu::always_inline]] static AA_CONSTEXPR void trie(const T &t, size_t &h, const bool c) {
+		static AA_CONSTEXPR void trie(const T &t, size_t &h, const bool c) {
 			if (c) {
 				if constexpr (I == std::ranges::size(V)) {
 					h = pack_index_v<V, A...>;

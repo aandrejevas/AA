@@ -238,11 +238,11 @@ namespace aa {
 		static AA_CONSTEVAL size_type bucket_count() { return N; }
 
 
-		[[gnu::always_inline]] static AA_CONSTEXPR size_type index(const size_type hash) {
+		static AA_CONSTEXPR size_type index(const size_type hash) {
 			return quotient<bucket_max_size()>(hash);
 		}
 
-		[[gnu::always_inline]] static AA_CONSTEXPR bucket_type mask(const size_type hash) {
+		static AA_CONSTEXPR bucket_type mask(const size_type hash) {
 			return int_exp2<bucket_type>(remainder<bucket_max_size()>(hash));
 		}
 
@@ -250,7 +250,7 @@ namespace aa {
 
 		// Observers
 		template<hashable_by<const hasher_type &> K>
-		[[gnu::always_inline]] AA_CONSTEXPR size_type hash(const K &key) const {
+		AA_CONSTEXPR size_type hash(const K &key) const {
 			return std::invoke(hasher, key);
 		}
 
@@ -269,7 +269,7 @@ namespace aa {
 
 		// Lookup
 		template<hashable_by<const hasher_type &> K>
-		[[gnu::always_inline]] AA_CONSTEXPR bool contains(const K &key) const {
+		AA_CONSTEXPR bool contains(const K &key) const {
 			const size_type hash = this->hash(key);
 			return bins[index(hash)] & mask(hash);
 		}
@@ -278,7 +278,7 @@ namespace aa {
 
 		// Modifiers
 	protected:
-		[[gnu::always_inline]] AA_CONSTEXPR void mark_not_dirty() {
+		AA_CONSTEXPR void mark_not_dirty() {
 			dirty_f = numeric_max;
 			dirty_l = numeric_min;
 		}
@@ -305,7 +305,7 @@ namespace aa {
 			}
 		}
 
-		[[gnu::always_inline]] AA_CONSTEXPR void expand_dirty_region(const size_type index) {
+		AA_CONSTEXPR void expand_dirty_region(const size_type index) {
 			// Patikrinau, čia greičiausia teisinga realizacija.
 			if (dirty_f > index) dirty_f = index;
 			if (dirty_l < index) dirty_l = index;
@@ -318,7 +318,7 @@ namespace aa {
 			}
 		}
 
-		[[gnu::always_inline]] AA_CONSTEXPR void unsafe_clear() {
+		AA_CONSTEXPR void unsafe_clear() {
 			std::memset(bins.data() + dirty_f, empty_mask, size_of<bucket_type>(dirty_l - dirty_f + 1));
 			mark_not_dirty();
 		}
@@ -344,7 +344,7 @@ namespace aa {
 		}
 
 		template<hashable_by<const hasher_type &> K>
-		[[gnu::always_inline]] AA_CONSTEXPR void insert(const K &key) {
+		AA_CONSTEXPR void insert(const K &key) {
 			const size_type hash = this->hash(key), index = this->index(hash);
 			expand_dirty_region(index);
 			bins[index] |= mask(hash);

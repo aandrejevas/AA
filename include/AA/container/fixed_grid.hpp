@@ -45,7 +45,7 @@ namespace aa {
 		using container_type = std::conditional_t<ERASABLE, fixed_fast_free_vector<node_type, N>, fixed_vector<node_type, N>>;
 
 		template<class... A>
-		[[gnu::always_inline]] AA_CONSTEXPR node_type *emplace(A&&... args) {
+		AA_CONSTEXPR node_type *emplace(A&&... args) {
 			if constexpr (ERASABLE)		return nodes.emplace(std::forward<A>(args)...);
 			else						return nodes.emplace_back(std::forward<A>(args)...);
 		}
@@ -150,7 +150,7 @@ namespace aa {
 		// Observers
 		AA_CONSTEXPR size_type get_pass() const { return pass; }
 
-		[[gnu::always_inline]] AA_CONSTEXPR const position_type &locate(const value_type &e) const {
+		AA_CONSTEXPR const position_type &locate(const value_type &e) const {
 			return std::invoke(locator, e);
 		}
 

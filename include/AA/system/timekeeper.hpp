@@ -30,7 +30,7 @@ namespace aa {
 
 
 		// Member functions
-		[[gnu::always_inline]] static AA_CONSTEXPR rep now() {
+		static AA_CONSTEXPR rep now() {
 			return clock_type::now().time_since_epoch().count();
 		}
 
@@ -39,15 +39,15 @@ namespace aa {
 			end = 0;
 		}
 
-		[[gnu::always_inline]] AA_CONSTEXPR void start() {
+		AA_CONSTEXPR void start() {
 			begin = now();
 		}
 
-		[[gnu::always_inline]] AA_CONSTEXPR void resume() {
+		AA_CONSTEXPR void resume() {
 			begin += (now() - end);
 		}
 
-		[[gnu::always_inline]] AA_CONSTEXPR void stop() {
+		AA_CONSTEXPR void stop() {
 			end = now();
 		}
 

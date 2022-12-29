@@ -90,11 +90,11 @@ namespace aa {
 
 		// Element access
 	protected:
-		[[gnu::always_inline]] static AA_CONSTEXPR union_type &unwrap(node_type *const n) { return n->v; }
-		[[gnu::always_inline]] static AA_CONSTEXPR const union_type &unwrap(const node_type *const n) { return n->v; }
+		static AA_CONSTEXPR union_type &unwrap(node_type *const n) { return n->v; }
+		static AA_CONSTEXPR const union_type &unwrap(const node_type *const n) { return n->v; }
 
-		[[gnu::always_inline]] static AA_CONSTEXPR pointer get_elem(node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
-		[[gnu::always_inline]] static AA_CONSTEXPR const_pointer get_elem(const node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
+		static AA_CONSTEXPR pointer get_elem(node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
+		static AA_CONSTEXPR const_pointer get_elem(const node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
 
 	public:
 		AA_CONSTEXPR pointer operator[](const size_type pos) { return get_elem(elements.data(pos)); }

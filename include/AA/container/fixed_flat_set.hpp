@@ -67,7 +67,7 @@ namespace aa {
 
 		// Observers
 		template<class K1, in_relation_with<K1, const comparer_type &> K2>
-		[[gnu::always_inline]] AA_CONSTEXPR bool compare(const K1 &key1, const K2 &key2) const {
+		AA_CONSTEXPR bool compare(const K1 &key1, const K2 &key2) const {
 			return std::invoke(comparer, key1, key2);
 		}
 
