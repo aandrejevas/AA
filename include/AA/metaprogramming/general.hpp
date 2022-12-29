@@ -71,9 +71,10 @@ namespace aa {
 
 
 
+	// Nereikia location į kažką cast'inti, standarte irgi mačiau nedaroma tokia operacija.
 	template<std::default_initializable T>
 	AA_CONSTEXPR T *start_lifetime(T *const location) {
-		return ::new(static_cast<void *>(location)) T;
+		return ::new(location) T;
 	}
 
 
