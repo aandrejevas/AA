@@ -56,3 +56,7 @@
 # // Reikia stengtis turėti kuo mažiau macros. DISCARD macro nereikia, nes tiesiog galime cast'inti į void. Taip pat
 # // nėra reikalo naudoti std::ignore, kad discard'inti, nes reiktų visur dėti papildomą include, taip pat nėra apibrėžta
 # // gerai kaip veikia std::ignore. NAMEOF macro nereikia, nes mažai panaudojamas toks macro ir neteisingai jis veikia.
+#
+# // Nenaudojame atributo "always_inline", nes standartinėje bibliotekoje atributas nenaudojamas, trukdo derintuvei
+# // atributas, gali būti, kad tik kenkiu greitaveikai naudodamas tą atributą, geriau už kompiliatorių nenuspręsiu,
+# // kur jį reikia naudoti, o kur ne, galiausiai išprotėčiau jei dar reiktų prižiūrėti ar visur tvarkingai sudėtas jis.
