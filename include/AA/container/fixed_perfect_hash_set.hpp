@@ -11,7 +11,7 @@
 #include <limits> // numeric_limits
 #include <functional> // invoke
 #include <utility> // forward
-#include <iterator> // bidirectional_iterator_tag, forward_iterator_tag, default_sentinel_t
+#include <iterator> // bidirectional_iterator_tag, forward_iterator_tag, default_sentinel_t, iter_value_t
 #include <bit> // countr_zero, countl_zero, popcount, bit_cast
 #include <type_traits> // conditional_t
 #include <concepts> // same_as
@@ -48,6 +48,9 @@ namespace aa {
 		};
 
 	public:
+		using iterator = std::conditional_t<is_space_efficient, bucket_pointer, const bucket_pointer *>;
+		using const_iterator = iterator;
+
 		struct bucket_iterable {
 			// Member types
 			using value_type = value_type;
@@ -186,19 +189,14 @@ namespace aa {
 			else								return dirty.full();
 		}
 		AA_CONSTEXPR bool dirty_buckets_full() const {
-			if constexpr (is_space_efficient)	return empty() || unsafe_all_of(dirty_subrange(), bucket_full<bucket_type>);
-			else								return empty() || unsafe_all_of(dirty, bucket_full<bucket_pointer>);
+			return empty() || unsafe_all_of(dirty_subrange(), bucket_full<std::iter_value_t<const_iterator>>);
 		}
 		AA_CONSTEXPR bool full() const { return all_buckets_dirty() && dirty_buckets_full(); }
 
 		AA_CONSTEXPR size_type size() const {
 			if (!empty()) {
 				size_type sum = 0;
-				if constexpr (is_space_efficient) {
-					unsafe_for_each(dirty_subrange(), [&sum](const bucket_type bin) -> void { sum += bucket_size(bin); });
-				} else {
-					unsafe_for_each(dirty, [&sum](const bucket_pointer bin) -> void { sum += bucket_size(bin); });
-				}
+				unsafe_for_each(dirty_subrange(), [&sum]<class U>(const U bin) -> void { sum += bucket_size(bin); });
 				return sum;
 			} else return 0;
 		}
@@ -241,25 +239,24 @@ namespace aa {
 		template<same_as_any<bucket_type, bucket_pointer> U>
 		static AA_CONSTEXPR bool bucket_empty(const U bin) {
 			if constexpr (std::same_as<U, bucket_type>)	return is_numeric_min(bin);
-			else										return is_numeric_min(*bin);
+			else										return bucket_empty(*bin);
 		}
 
 		template<same_as_any<bucket_type, bucket_pointer> U>
 		static AA_CONSTEXPR bool bucket_full(const U bin) {
 			if constexpr (std::same_as<U, bucket_type>)	return is_numeric_max(bin);
-			else										return is_numeric_max(*bin);
+			else										return bucket_full(*bin);
 		}
 
 		template<same_as_any<bucket_type, bucket_pointer> U>
 		static AA_CONSTEXPR size_type bucket_size(const U bin) {
 			if constexpr (std::same_as<U, bucket_type>)	return unsign<size_type>(std::popcount(bin));
-			else										return unsign<size_type>(std::popcount(*bin));
+			else										return bucket_size(*bin);
 		}
 
 		template<same_as_any<bucket_type, bucket_pointer> U>
 		static AA_CONSTEXPR difference_type bucket_ssize(const U bin) {
-			if constexpr (std::same_as<U, bucket_type>)	return std::bit_cast<difference_type>(bucket_size(bin));
-			else										return std::bit_cast<difference_type>(bucket_size(*bin));
+			return std::bit_cast<difference_type>(bucket_size(bin));
 		}
 
 		// Funkcija turi gražinti dvejeto laipsnį dėl greitaveikos sumetimų.
@@ -310,8 +307,9 @@ namespace aa {
 		AA_CONSTEXPR size_type first_dirty_index() const requires (is_space_efficient) { return dirty.f; }
 		AA_CONSTEXPR size_type last_dirty_index() const requires (is_space_efficient) { return dirty.l; }
 
-		AA_CONSTEXPR aa::unsafe_subrange<bucket_pointer> dirty_subrange() const requires (is_space_efficient) {
-			return {bins.data() + dirty.f, bins.data() + dirty.l};
+		AA_CONSTEXPR aa::unsafe_subrange<const_iterator> dirty_subrange() const {
+			if constexpr (is_space_efficient)	return {bins.data() + dirty.f, bins.data() + dirty.l};
+			else								return {dirty};
 		}
 
 

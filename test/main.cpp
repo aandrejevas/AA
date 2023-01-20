@@ -141,7 +141,7 @@ int main() {
 	}
 	{
 		std::unordered_set<size_t> b;
-		fixed_perfect_hash_set<size_t, 1'000> a;
+		fixed_perfect_hash_set<size_t, 1'000/*, 1000*/> a;
 		printl(a.bucket_count(), ' ', a.bucket_max_size(), ' ', a.max_size());
 
 		// Insert test
@@ -183,9 +183,13 @@ int main() {
 			a.erase(a.bucket(use_f ? a.first_dirty_index() : a.last_dirty_index()).front());
 			if (!a.empty()) use_f = !use_f; else break;
 		} while (true);
+		/*do {
+			a.erase(a.bucket(a.dirty_subrange()[int_distribution(g, a.bucket_count())]).front());
+		} while (!a.empty());*/
 		unsafe_for_each(a.buckets(), [](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
 
 		static_assert(std::ranges::bidirectional_range<decltype(a)::bucket_iterable>);
+		static_assert(std::ranges::contiguous_range<decltype(a.dirty_subrange())>);
 		static_assert(std::forward_iterator<decltype(a)::local_iterator>);
 	}
 	{

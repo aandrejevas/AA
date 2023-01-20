@@ -1,11 +1,13 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../metaprogramming/range.hpp"
 #include <iterator> // input_or_output_iterator, sentinel_for, next, prev, bidirectional_iterator, random_access_iterator, contiguous_iterator, sized_sentinel_for, iter_difference_t, iter_reference_t
-#include <ranges> // view_interface
+#include <ranges> // view_interface, iterator_t, sentinel_t, begin, borrowed_range
 #include <type_traits> // make_unsigned_t, add_pointer_t, type_identity
 #include <utility> // forward, tuple_size, tuple_element
 #include <memory> // to_address
+#include <concepts> // convertible_to
 
 
 
@@ -48,12 +50,18 @@ namespace aa {
 		// Reikia konstruktorių, nes kitaip metami warnings -Wmissing-field-initializers.
 		AA_CONSTEXPR unsafe_subrange() = default;
 
-		template<class T1 = I, class T2 = S>
+		template<std::convertible_to<I> T1 = I, std::convertible_to<S> T2 = S>
 		AA_CONSTEXPR unsafe_subrange(T1 &&t1, T2 &&t2) : b{std::forward<T1>(t1), std::forward<T2>(t2)} {}
+
+		template<std::ranges::borrowed_range R>
+		AA_CONSTEXPR unsafe_subrange(R &&r) : unsafe_subrange{std::ranges::begin(r), get_rbegin(r)} {}
 	};
 
 	template<class I, class S>
 	unsafe_subrange(I &&, S &&) -> unsafe_subrange<I, S>;
+
+	template<class R>
+	unsafe_subrange(R &&) -> unsafe_subrange<std::ranges::iterator_t<R>, std::ranges::sentinel_t<R>>;
 
 }
 
