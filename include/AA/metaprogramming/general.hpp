@@ -106,16 +106,6 @@ namespace aa {
 
 
 
-	// Klasė negali būti pakeista į concept, nes concepts negali būti recursive.
-	template<class T = void, class... A>
-	struct are_unique : bool_identity<!(... || std::same_as<T, A>) && are_unique<A...>::value> {};
-
-	template<class T>
-	struct are_unique<T> : true_identity {};
-
-	template<class... A>
-	AA_CONSTEXPR const bool are_unique_v = are_unique<A...>::value;
-
 	// Klasė galėtų būti pakeista į concept, bet nėra logiška, kad concept'as galėtų būti naudojamas su 0 template parametrų.
 	template<class T = void, class... A>
 	struct are_same : bool_identity<(... && std::same_as<T, A>)> {};
@@ -141,6 +131,9 @@ namespace aa {
 
 	template<class T, template<class...> class U>
 	concept not_instantiation_of = !instantiation_of<T, U>;
+
+	template<class T, class... A>
+	concept same_as_any = (... || std::same_as<T, A>);
 
 	template<class T>
 	concept pointer = std::is_pointer_v<T>;

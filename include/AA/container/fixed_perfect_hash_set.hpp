@@ -4,6 +4,7 @@
 #include "../algorithm/arithmetic.hpp"
 #include "../algorithm/hash.hpp"
 #include "../algorithm/find.hpp"
+#include "fixed_vector.hpp"
 #include "unsafe_subrange.hpp"
 #include <cstring> // memset
 #include <cstddef> // size_t, ptrdiff_t
@@ -12,6 +13,8 @@
 #include <utility> // forward
 #include <iterator> // bidirectional_iterator_tag, forward_iterator_tag, default_sentinel_t
 #include <bit> // countr_zero, countl_zero, popcount, bit_cast
+#include <type_traits> // conditional_t
+#include <concepts> // same_as
 
 
 
@@ -21,7 +24,8 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Hash_table
 	// Konteineris laiko savyje maišos kodus.
 	// Neturi klasė iteratoriu, nes nežinome, kurie buckets naudojami, dirty regione taip pat ne visi naudojami.
-	template<regular_unsigned_integral T, size_t N, storable H = generic_hash<>>
+	template<regular_unsigned_integral T, size_t N, size_t M = 0, storable H = generic_hash<>>
+		requires (N >= M)
 	struct fixed_perfect_hash_set {
 		// Member types
 		// Neturime reference ir pointer tipų, nes konteineris nelaiko elementų, jis juos apskaičiuoja.
@@ -34,8 +38,16 @@ namespace aa {
 		using container_type = array_t<bucket_type, N>;
 
 		// Member constants
-		static AA_CONSTEXPR const bucket_type full_mask = numeric_max, empty_mask = numeric_min;
+		static AA_CONSTEXPR const bucket_type full_mask = numeric_max, empty_mask = numeric_min,
+			left_shifted_mask = (full_mask << 1), right_shifted_mask = (full_mask >> 1);
+		static AA_CONSTEXPR const bool is_space_efficient = !M;
 
+	protected:
+		struct dirty_region {
+			size_type f = numeric_max, l = numeric_min;
+		};
+
+	public:
 		struct bucket_iterable {
 			// Member types
 			using value_type = value_type;
@@ -57,8 +69,7 @@ namespace aa {
 					if (is_numeric_max(index)) {
 						index = unsign<value_type>(std::countr_zero(bucket->word));
 					} else {
-						index = unsign<value_type>(std::countr_zero(bucket->word
-							& (constant<(full_mask << 1)>() << index)));
+						index = unsign<value_type>(std::countr_zero(bucket->word & (left_shifted_mask << index)));
 					}
 					return *this;
 				}
@@ -74,7 +85,7 @@ namespace aa {
 						index = last_index() - unsign<value_type>(std::countl_zero(bucket->word));
 					} else {
 						index = last_index() - unsign<value_type>(std::countl_zero(bucket->word
-							& (constant<(full_mask >> 1)>() >> (last_index() - index))));
+							& (right_shifted_mask >> (last_index() - index))));
 					}
 					return *this;
 				}
@@ -166,15 +177,28 @@ namespace aa {
 
 
 		// Capacity
-		AA_CONSTEXPR bool empty() const { return is_numeric_min(dirty_l); }
-		AA_CONSTEXPR bool all_buckets_dirty() const { return is_numeric_min(dirty_f) && dirty_l == last_bucket_index(); }
-		AA_CONSTEXPR bool dirty_buckets_full() const { return empty() || unsafe_all_of(dirty_subrange(), bucket_full); }
-		AA_CONSTEXPR bool full() const { return all_buckets_dirty() && unsafe_all_of(bins, bucket_full); }
+		AA_CONSTEXPR bool empty() const {
+			if constexpr (is_space_efficient)	return is_numeric_min(dirty.l);
+			else								return dirty.empty();
+		}
+		AA_CONSTEXPR bool all_buckets_dirty() const {
+			if constexpr (is_space_efficient)	return dirty.f == 0 && dirty.l == max_bucket_index();
+			else								return dirty.full();
+		}
+		AA_CONSTEXPR bool dirty_buckets_full() const {
+			if constexpr (is_space_efficient)	return empty() || unsafe_all_of(dirty_subrange(), bucket_full<bucket_type>);
+			else								return empty() || unsafe_all_of(dirty, bucket_full<bucket_pointer>);
+		}
+		AA_CONSTEXPR bool full() const { return all_buckets_dirty() && dirty_buckets_full(); }
 
 		AA_CONSTEXPR size_type size() const {
 			if (!empty()) {
 				size_type sum = 0;
-				unsafe_for_each(dirty_subrange(), [&sum](const bucket_type bin) -> void { sum += bucket_size(bin); });
+				if constexpr (is_space_efficient) {
+					unsafe_for_each(dirty_subrange(), [&sum](const bucket_type bin) -> void { sum += bucket_size(bin); });
+				} else {
+					unsafe_for_each(dirty, [&sum](const bucket_pointer bin) -> void { sum += bucket_size(bin); });
+				}
 				return sum;
 			} else return 0;
 		}
@@ -186,7 +210,7 @@ namespace aa {
 		// Šis konteineris gali talpinti tik pavyzdžiui mažesnius sveikuosius skaičius už max_size
 		// nebent būtų naudojamas ne tas hasher, kuris yra naudojamas pagal nutylėjimą.
 		static AA_CONSTEVAL size_type max_size() {
-			return bucket_max_size() * bucket_count();
+			return bucket_max_size() * max_bucket_count();
 		}
 
 
@@ -214,14 +238,28 @@ namespace aa {
 		}
 
 
-		static AA_CONSTEXPR bool bucket_empty(const bucket_type bin) { return is_numeric_min(bin); }
-		static AA_CONSTEXPR bool bucket_full(const bucket_type bin) { return is_numeric_max(bin); }
-
-		static AA_CONSTEXPR size_type bucket_size(const bucket_type bin) {
-			return unsign<size_type>(std::popcount(bin));
+		template<same_as_any<bucket_type, bucket_pointer> U>
+		static AA_CONSTEXPR bool bucket_empty(const U bin) {
+			if constexpr (std::same_as<U, bucket_type>)	return is_numeric_min(bin);
+			else										return is_numeric_min(*bin);
 		}
-		static AA_CONSTEXPR difference_type bucket_ssize(const bucket_type bin) {
-			return std::bit_cast<difference_type>(bucket_size(bin));
+
+		template<same_as_any<bucket_type, bucket_pointer> U>
+		static AA_CONSTEXPR bool bucket_full(const U bin) {
+			if constexpr (std::same_as<U, bucket_type>)	return is_numeric_max(bin);
+			else										return is_numeric_max(*bin);
+		}
+
+		template<same_as_any<bucket_type, bucket_pointer> U>
+		static AA_CONSTEXPR size_type bucket_size(const U bin) {
+			if constexpr (std::same_as<U, bucket_type>)	return unsign<size_type>(std::popcount(bin));
+			else										return unsign<size_type>(std::popcount(*bin));
+		}
+
+		template<same_as_any<bucket_type, bucket_pointer> U>
+		static AA_CONSTEXPR difference_type bucket_ssize(const U bin) {
+			if constexpr (std::same_as<U, bucket_type>)	return std::bit_cast<difference_type>(bucket_size(bin));
+			else										return std::bit_cast<difference_type>(bucket_size(*bin));
 		}
 
 		// Funkcija turi gražinti dvejeto laipsnį dėl greitaveikos sumetimų.
@@ -234,8 +272,19 @@ namespace aa {
 		}
 
 
-		static AA_CONSTEVAL size_type last_bucket_index() { return N - 1; }
-		static AA_CONSTEVAL size_type bucket_count() { return N; }
+		static AA_CONSTEVAL size_type max_bucket_index() {
+			if constexpr (is_space_efficient) return N - 1; else return M - 1;
+		}
+
+		static AA_CONSTEVAL size_type last_bucket_index() requires (is_space_efficient) { return N - 1; }
+		AA_CONSTEXPR size_type last_bucket_index() const requires (!is_space_efficient) { return dirty.last_index(); }
+
+		static AA_CONSTEVAL size_type max_bucket_count() {
+			if constexpr (is_space_efficient) return N; else return M;
+		}
+
+		static AA_CONSTEVAL size_type bucket_count() requires (is_space_efficient) { return N; }
+		AA_CONSTEXPR size_type bucket_count() const requires (!is_space_efficient) { return dirty.size(); }
 
 
 		static AA_CONSTEXPR size_type index(const size_type hash) {
@@ -258,11 +307,11 @@ namespace aa {
 		// konteineris galima sakyti yra pats konteineris tai nėra tikslo to daryti.
 		AA_CONSTEXPR const container_type &buckets() const { return bins; }
 
-		AA_CONSTEXPR size_type first_dirty_index() const { return dirty_f; }
-		AA_CONSTEXPR size_type last_dirty_index() const { return dirty_l; }
+		AA_CONSTEXPR size_type first_dirty_index() const requires (is_space_efficient) { return dirty.f; }
+		AA_CONSTEXPR size_type last_dirty_index() const requires (is_space_efficient) { return dirty.l; }
 
-		AA_CONSTEXPR aa::unsafe_subrange<bucket_pointer> dirty_subrange() const {
-			return {bins.data() + dirty_f, bins.data() + dirty_l};
+		AA_CONSTEXPR aa::unsafe_subrange<bucket_pointer> dirty_subrange() const requires (is_space_efficient) {
+			return {bins.data() + dirty.f, bins.data() + dirty.l};
 		}
 
 
@@ -278,37 +327,37 @@ namespace aa {
 
 		// Modifiers
 	protected:
-		AA_CONSTEXPR void mark_not_dirty() {
-			dirty_f = numeric_max;
-			dirty_l = numeric_min;
+		AA_CONSTEXPR void mark_not_dirty() requires (is_space_efficient) {
+			dirty.f = numeric_max;
+			dirty.l = numeric_min;
 		}
 
-		AA_CONSTEXPR void contract_dirty_region(const size_type index) {
-			const bool f_not_dirty = (index == dirty_f), l_not_dirty = (index == dirty_l);
+		AA_CONSTEXPR void contract_dirty_region(const size_type index) requires (is_space_efficient) {
+			const bool f_not_dirty = (index == dirty.f), l_not_dirty = (index == dirty.l);
 			if (f_not_dirty && l_not_dirty) mark_not_dirty();
 			else if (f_not_dirty) {
-				bucket_pointer f = bins.data() + (dirty_f + 1);
-				const bucket_pointer l = bins.data() + dirty_l;
+				bucket_pointer f = bins.data() + (dirty.f + 1);
+				const bucket_pointer l = bins.data() + dirty.l;
 				do {
-					if (!bucket_empty(*f)) { dirty_f = this->index(f); return; }
+					if (!bucket_empty(*f)) { dirty.f = this->index(f); return; }
 					if (f != l) ++f; else break;
 				} while (true);
 				mark_not_dirty();
 			} else if (l_not_dirty) {
-				bucket_pointer l = bins.data() + (dirty_l - 1);
-				const bucket_pointer f = bins.data() + dirty_f;
+				bucket_pointer l = bins.data() + (dirty.l - 1);
+				const bucket_pointer f = bins.data() + dirty.f;
 				do {
-					if (!bucket_empty(*l)) { dirty_l = this->index(l); return; }
+					if (!bucket_empty(*l)) { dirty.l = this->index(l); return; }
 					if (l != f) --l; else break;
 				} while (true);
 				mark_not_dirty();
 			}
 		}
 
-		AA_CONSTEXPR void expand_dirty_region(const size_type index) {
+		AA_CONSTEXPR void expand_dirty_region(const size_type index) requires (is_space_efficient) {
 			// Patikrinau, čia greičiausia teisinga realizacija.
-			if (dirty_f > index) dirty_f = index;
-			if (dirty_l < index) dirty_l = index;
+			if (dirty.f > index) dirty.f = index;
+			if (dirty.l < index) dirty.l = index;
 		}
 
 	public:
@@ -319,42 +368,72 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR void unsafe_clear() {
-			std::memset(bins.data() + dirty_f, empty_mask, size_of<bucket_type>(dirty_l - dirty_f + 1));
-			mark_not_dirty();
+			if constexpr (is_space_efficient) {
+				std::memset(bins.data() + dirty.f, empty_mask, size_of<bucket_type>(dirty.l - dirty.f + 1));
+				mark_not_dirty();
+			} else {
+				do {
+					*dirty.back() = empty_mask;
+					dirty.pop_back();
+				} while (!dirty.empty());
+			}
 		}
 
 		AA_CONSTEXPR void clear_bucket(const size_type index) {
-			bins[index] = empty_mask;
-			contract_dirty_region(index);
-		}
-
-		AA_CONSTEXPR void clear_bucket(const bucket_pointer bin) {
-			*const_cast<bucket_type *>(bin) = empty_mask;
-			contract_dirty_region(index(bin));
+			if constexpr (is_space_efficient) {
+				bins[index] = empty_mask;
+				contract_dirty_region(index);
+			} else {
+				bucket_type &bin = bins[index];
+				if (bin) {
+					bin = empty_mask;
+					dirty.fast_erase(aa::unsafe_find_last(dirty, &bin));
+				}
+			}
 		}
 
 		AA_CONSTEXPR void fill_bucket(const size_type index) {
-			expand_dirty_region(index);
-			bins[index] = full_mask;
-		}
-
-		AA_CONSTEXPR void fill_bucket(const bucket_pointer bin) {
-			expand_dirty_region(index(bin));
-			*const_cast<bucket_type *>(bin) = full_mask;
+			if constexpr (is_space_efficient) {
+				expand_dirty_region(index);
+				bins[index] = full_mask;
+			} else {
+				bucket_type &bin = bins[index];
+				if (!bin) dirty.insert_back(&bin);
+				bin = full_mask;
+			}
 		}
 
 		template<hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR void insert(const K &key) {
-			const size_type hash = this->hash(key), index = this->index(hash);
-			expand_dirty_region(index);
-			bins[index] |= mask(hash);
+			if constexpr (is_space_efficient) {
+				const size_type hash = this->hash(key), index = this->index(hash);
+				expand_dirty_region(index);
+				bins[index] |= mask(hash);
+			} else {
+				const size_type hash = this->hash(key);
+				bucket_type &bin = bins[index(hash)];
+				if (!bin) {
+					dirty.insert_back(&bin);
+					bin = mask(hash);
+				} else bin |= mask(hash);
+			}
 		}
 
 		template<hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR void erase(const K &key) {
-			const size_type hash = this->hash(key), index = this->index(hash);
-			if (!(bins[index] &= ~mask(hash)))
-				contract_dirty_region(index);
+			if constexpr (is_space_efficient) {
+				const size_type hash = this->hash(key), index = this->index(hash);
+				if (!(bins[index] &= ~mask(hash)))
+					contract_dirty_region(index);
+			} else {
+				const size_type hash = this->hash(key);
+				bucket_type &bin = bins[index(hash)];
+				// Reikia sąlygos, nes kitaip būtų bandoma pašalinti nenaudojamą bucket.
+				if (bin) {
+					if (!(bin &= ~mask(hash)))
+						dirty.fast_erase(aa::unsafe_find_last(dirty, &bin));
+				}
+			}
 		}
 
 
@@ -368,13 +447,10 @@ namespace aa {
 		// Member objects
 	protected:
 		container_type bins = {};
-		size_type dirty_f = numeric_max, dirty_l = numeric_min;
+		std::conditional_t<is_space_efficient, dirty_region, fixed_vector<bucket_type *, M>> dirty;
 
 	public:
 		[[no_unique_address]] const hasher_type hasher;
 	};
-
-	template<size_t N, storable H = generic_hash<>>
-	using uz_fixed_perfect_hash_set = fixed_perfect_hash_set<size_t, N, H>;
 
 }
