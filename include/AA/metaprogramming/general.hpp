@@ -71,14 +71,6 @@ namespace aa {
 
 
 
-	// Nereikia location į kažką cast'inti, standarte irgi mačiau nedaroma tokia operacija.
-	template<std::default_initializable T>
-	AA_CONSTEXPR T *start_lifetime(T *const location) {
-		return ::new(location) T;
-	}
-
-
-
 	template<class T>
 	concept char_traits_like = requires {
 		typename T::char_type; typename T::int_type; typename T::off_type; typename T::pos_type; typename T::state_type; };

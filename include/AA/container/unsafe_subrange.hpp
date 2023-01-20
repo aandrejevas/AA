@@ -4,7 +4,7 @@
 #include "../metaprogramming/range.hpp"
 #include <iterator> // input_or_output_iterator, sentinel_for, next, prev, bidirectional_iterator, random_access_iterator, contiguous_iterator, sized_sentinel_for, iter_difference_t, iter_reference_t
 #include <ranges> // view_interface, iterator_t, sentinel_t, begin, borrowed_range
-#include <type_traits> // make_unsigned_t, add_pointer_t, type_identity
+#include <type_traits> // add_pointer_t, type_identity
 #include <utility> // forward, tuple_size, tuple_element
 #include <memory> // to_address
 #include <concepts> // convertible_to
@@ -19,6 +19,7 @@ namespace aa {
 	protected:
 		using b = pair<I, S>;
 	public:
+		using std::ranges::view_interface<unsafe_subrange>::data;
 
 
 
@@ -31,7 +32,7 @@ namespace aa {
 		AA_CONSTEXPR I rend() const requires (std::bidirectional_iterator<I>) { return std::ranges::prev(begin()); }
 
 		AA_CONSTEXPR std::iter_difference_t<I> ssize() const requires (std::sized_sentinel_for<S, I>) { return (rbegin() - begin()) + 1; }
-		AA_CONSTEXPR std::make_unsigned_t<std::iter_difference_t<I>> size() const requires (std::sized_sentinel_for<S, I>) { return unsign(ssize()); }
+		AA_CONSTEXPR aa::iter_size_t<I> size() const requires (std::sized_sentinel_for<S, I>) { return unsign(ssize()); }
 
 		static AA_CONSTEVAL bool empty() { return false; }
 
@@ -43,6 +44,15 @@ namespace aa {
 
 		AA_CONSTEXPR std::iter_reference_t<I> elem(const std::iter_difference_t<I> n) const requires (std::random_access_iterator<I>) { return *begin(n); }
 		AA_CONSTEXPR std::iter_reference_t<S> relem(const std::iter_difference_t<S> n) const requires (std::random_access_iterator<S>) { return *rbegin(n); }
+
+
+		AA_CONSTEXPR std::iter_reference_t<I> operator[](const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return elem(n); }
+
+		AA_CONSTEXPR std::iter_reference_t<I> elem(const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return *(data() + n); }
+		AA_CONSTEXPR std::iter_reference_t<S> relem(const aa::iter_size_t<S> n) const requires (std::contiguous_iterator<S>) { return *(rdata() - n); }
+
+		// Neturime atitinkamų begin užklojimų, nes begin tada turėtų gražinti rodyklės tipo
+		// kintamąjį, bet tokia realizacija būtų nesuderinama su jau egzistuojančiais užklojimais.
 
 
 

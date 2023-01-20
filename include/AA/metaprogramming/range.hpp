@@ -1,7 +1,7 @@
 #pragma once
 
 #include "general.hpp"
-#include <type_traits> // type_identity
+#include <type_traits> // type_identity, make_unsigned_t
 #include <concepts> // convertible_to, same_as
 #include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, next, prev, distance
 #include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, iterator_t, sentinel_t, range_value_t, begin, end, rbegin, size, data, range
@@ -28,6 +28,11 @@ namespace aa {
 			return std::ranges::next(std::ranges::begin(r), std::ranges::distance(r) - 1);
 		}
 	}
+
+
+
+	template<class I>
+	using iter_size_t = std::make_unsigned_t<std::iter_difference_t<I>>;
 
 
 
