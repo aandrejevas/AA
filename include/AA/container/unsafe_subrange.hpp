@@ -4,7 +4,7 @@
 #include "../metaprogramming/range.hpp"
 #include <iterator> // input_or_output_iterator, sentinel_for, next, prev, bidirectional_iterator, random_access_iterator, contiguous_iterator, sized_sentinel_for, iter_difference_t, iter_reference_t
 #include <ranges> // view_interface, iterator_t, sentinel_t, begin, borrowed_range
-#include <type_traits> // add_pointer_t, type_identity
+#include <type_traits> // type_identity
 #include <utility> // forward, tuple_size, tuple_element
 #include <memory> // to_address
 #include <concepts> // convertible_to
@@ -37,7 +37,7 @@ namespace aa {
 		static AA_CONSTEVAL bool empty() { return false; }
 
 		AA_CONSTEXPR std::iter_reference_t<S> back() const requires (std::input_or_output_iterator<S>) { return *rbegin(); }
-		AA_CONSTEXPR std::add_pointer_t<std::iter_reference_t<S>> rdata() const requires (std::contiguous_iterator<S>) { return std::to_address(rbegin()); }
+		AA_CONSTEXPR aa::iter_pointer_t<S> rdata() const requires (std::contiguous_iterator<S>) { return std::to_address(rbegin()); }
 
 		AA_CONSTEXPR I begin(const std::iter_difference_t<I> n) const requires (std::random_access_iterator<I>) { return begin() + n; }
 		AA_CONSTEXPR S rbegin(const std::iter_difference_t<S> n) const requires (std::random_access_iterator<S>) { return rbegin() - n; }
@@ -48,11 +48,11 @@ namespace aa {
 
 		AA_CONSTEXPR std::iter_reference_t<I> operator[](const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return elem(n); }
 
-		AA_CONSTEXPR std::iter_reference_t<I> elem(const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return *(data() + n); }
-		AA_CONSTEXPR std::iter_reference_t<S> relem(const aa::iter_size_t<S> n) const requires (std::contiguous_iterator<S>) { return *(rdata() - n); }
+		AA_CONSTEXPR std::iter_reference_t<I> elem(const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return *data(n); }
+		AA_CONSTEXPR std::iter_reference_t<S> relem(const aa::iter_size_t<S> n) const requires (std::contiguous_iterator<S>) { return *rdata(n); }
 
-		// Neturime atitinkamų begin užklojimų, nes begin tada turėtų gražinti rodyklės tipo
-		// kintamąjį, bet tokia realizacija būtų nesuderinama su jau egzistuojančiais užklojimais.
+		AA_CONSTEXPR aa::iter_pointer_t<I> data(const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return data() + n; }
+		AA_CONSTEXPR aa::iter_pointer_t<S> rdata(const aa::iter_size_t<S> n) const requires (std::contiguous_iterator<S>) { return rdata() - n; }
 
 
 
