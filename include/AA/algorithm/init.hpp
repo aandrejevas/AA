@@ -13,7 +13,7 @@
 
 namespace aa {
 
-	template<not_const_default_initializable D, std::invocable<std::remove_const_t<D> &> F>
+	template<wo_const_default_initializable D, std::invocable<std::remove_const_t<D> &> F>
 	AA_CONSTEXPR std::remove_const_t<D> create_with_invocable(F &&f) {
 		std::remove_const_t<D> d;
 		std::invoke(std::forward<F>(f), d);

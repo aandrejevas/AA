@@ -74,10 +74,10 @@ int main() {
 
 		unsafe_for_each(std::views::iota(1uz, 5001uz), [&](const size_t i) -> void {
 			++m[int_distribution<int>(g, static_cast<size_t>(-5), 10)];
-			linear_congruential_generator copy_g = initial_g;
-			copy_g.jump(i);
-			const size_t d = initial_g.dist(copy_g);
-			AA_TRACE_ASSERT(copy_g.curr() == g.curr() && i == d, i, ' ', d);
+		linear_congruential_generator copy_g = initial_g;
+		copy_g.jump(i);
+		const size_t d = initial_g.dist(copy_g);
+		AA_TRACE_ASSERT(copy_g.curr() == g.curr() && i == d, i, ' ', d);
 		});
 		printl(range_writer{m, tuple_inserter{}});
 
@@ -93,8 +93,8 @@ int main() {
 		//}
 	}
 	{
-		const auto a = parse<tuple<std::string, double, prev_unsigned_t<size_t>>,
-			constant<m_string_perfect_hash<"TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs>>()>(pathed_ifstream{"params.txt"}.get());
+		const auto a = safe_parse<tuple<std::string, double, prev_unsigned_t<size_t>>,
+			constant<string_perfect_hash<"TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs>>()>(pathed_ifstream{"params.txt"}.get());
 
 		AA_TRACE_ASSERT(a.get<0>() == "text");
 		AA_TRACE_ASSERT(std::bit_cast<size_t>(a.get<1>()) == std::bit_cast<size_t>(22.5));
@@ -106,14 +106,14 @@ int main() {
 
 		repeat(100, [&]() {
 			shuffle(a, g);
-			AA_TRACE_ASSERT(std::ranges::is_permutation(a, b));
-			counting_sort(a, s.data());
-			AA_TRACE_ASSERT(std::ranges::is_sorted(a));
+		AA_TRACE_ASSERT(std::ranges::is_permutation(a, b));
+		counting_sort(a, s.data());
+		AA_TRACE_ASSERT(std::ranges::is_sorted(a));
 		});
 
 		repeat(100, [&]() {
 			partial_shuffle_counting_sort(a, a.data() + 4, g, s.data());
-			AA_TRACE_ASSERT(std::ranges::is_sorted(a.data(), a.data() + 5));
+		AA_TRACE_ASSERT(std::ranges::is_sorted(a.data(), a.data() + 5));
 		});
 
 		counting_sort(a, s.data());
@@ -129,7 +129,7 @@ int main() {
 
 		repeat(100, [&]() {
 			a.insert(g());
-			AA_TRACE_ASSERT(std::ranges::is_sorted(a));
+		AA_TRACE_ASSERT(std::ranges::is_sorted(a));
 		});
 
 		do {
@@ -147,8 +147,8 @@ int main() {
 		// Insert test
 		repeat(100'000, [&]() {
 			const size_t c = int_distribution(g, a.max_size());
-			b.insert(c);
-			a.insert(c);
+		b.insert(c);
+		a.insert(c);
 		});
 		AA_TRACE_ASSERT(b.size() == a.size());
 
@@ -219,7 +219,7 @@ int main() {
 			repeat(tree.max_size(), [&]() {
 				positions.emplace_back(grid_type::value_type{real_distribution<double>(g, 25.),
 					norm_map<0>(real_distribution<double>(g, 50., 10.), 50., 10., 25.)});
-				tree.insert(positions.back());
+			tree.insert(positions.back());
 			});
 			size_t sum = 0;
 			tree.query_range({-25, -25}, {25, 25}, [&](const grid_type::value_type &) { ++sum; });
@@ -228,7 +228,7 @@ int main() {
 		{
 			repeat(tree.max_size() >> 1, [&]() {
 				tree.erase(positions.back());
-				positions.pop_back();
+			positions.pop_back();
 			});
 			size_t sum = 0;
 			tree.query_range({-25, -25}, {25, 25}, [&](const grid_type::value_type &) { ++sum; });

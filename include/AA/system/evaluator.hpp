@@ -10,14 +10,15 @@
 
 namespace aa {
 
-	template<class>
+	template<not_const>
 	struct evaluator;
 
 	// Nėra kreipiama dėmesio į evaluat'inimo procesu įvykusias klaidas standartiniuose evaluator'iuose,
 	// nes daroma prielaida, kad naudotojas nenori, kad būtų sustabdyta programa jei buvo tokios klados aptiktos.
-	template<arithmetic T>
+	template<not_const_arithmetic T>
 	struct evaluator<T> {
-		AA_CONSTEXPR void operator()(T &t, const size_t, const std::string_view &token) const {
+		template<size_t = 0>
+		AA_CONSTEXPR void operator()(T &t, const std::string_view &token) const {
 			// Reikia inicializuoti kintamąjį, nes from_chars nebūtinai jį modifikuos.
 			t = numeric_max;
 			std::from_chars(token.data(), token.data() + token.length(), t);
@@ -27,7 +28,8 @@ namespace aa {
 	// Negalime turėti evaluator<std::string_view>, nes atmintis į kurią rodo token pasikeis.
 	template<>
 	struct evaluator<std::string> {
-		AA_CONSTEXPR void operator()(std::string &t, const size_t, const std::string_view &token) const {
+		template<size_t = 0>
+		AA_CONSTEXPR void operator()(std::string &t, const std::string_view &token) const {
 			t = token;
 		}
 	};
@@ -36,9 +38,9 @@ namespace aa {
 
 	template<template<class> class E = evaluator>
 	struct generic_evaluator {
-		template<evaluable_by_template<E> T>
-		AA_CONSTEXPR void operator()(T &t, const size_t i, const std::string_view &token) const {
-			E<T>{}(t, i, token);
+		template<size_t I = 0, argument_for_tdc_template<E> T>
+		AA_CONSTEXPR void operator()(T &t, const std::string_view &token) const {
+			invoke<I>(E<T>{}, t, token);
 		}
 	};
 

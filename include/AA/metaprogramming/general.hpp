@@ -4,7 +4,6 @@
 // sklandžiai programuoti naudojantis esminėmis C++ kalbos savybėmis. Tie failai yra ir jų įterpimo priežastys:
 // • <cstddef> ir <cstdint>, failai įterpti, kad nereiktų naudoti daug raktažodžių, kad aprašyti pamatinius tipus.
 // • <array> (<compare>, <initializer_list>), failas įterptas, kad nereiktų naudoti C stiliaus masyvų.
-// • <string_view> (<compare>), failas įterptas, kad nereiktų naudoti C stiliaus teksto eilučių.
 // • <type_traits> ir <concepts>, failai įterpti, kad išeitų lengvai protauti apie tipus.
 // • <utility> (<compare>, <initializer_list>), failas įterptas, kad išeitų lengvai protauti apie išraiškas.
 // • <limits>, failas įterptas, kad išeitų lengvai nautotis pamatinių tipų savybėmis.
@@ -18,7 +17,6 @@
 #include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t, is_invocable_r_v
 #include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, assignable_from, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
-#include <string_view> // string_view
 #include <array> // array
 #include <bit> // has_single_bit, bit_cast
 #include <utility> // declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence, index_sequence_for
@@ -124,6 +122,9 @@ namespace aa {
 	template<class T, template<class...> class U>
 	concept not_instantiation_of = !instantiation_of<T, U>;
 
+	template<class T>
+	concept not_const = !std::is_const_v<T>;
+
 	template<class T, class... A>
 	concept same_as_any = (... || std::same_as<T, A>);
 
@@ -140,6 +141,9 @@ namespace aa {
 	concept arithmetic = std::is_arithmetic_v<T>;
 
 	template<class T>
+	concept not_const_arithmetic = not_const<T> && arithmetic<T>;
+
+	template<class T>
 	concept uniquely_representable = std::has_unique_object_representations_v<T>;
 
 	template<class T>
@@ -152,13 +156,13 @@ namespace aa {
 	concept trivially_default_constructible = std::is_trivially_default_constructible_v<T>;
 
 	template<class T>
-	concept not_const_default_initializable = std::default_initializable<std::remove_const_t<T>>;
+	concept wo_const_default_initializable = std::default_initializable<std::remove_const_t<T>>;
 
 	template<class L, class R>
-	concept not_ref_derived_from = std::derived_from<std::remove_reference_t<L>, R>;
+	concept wo_ref_derived_from = std::derived_from<std::remove_reference_t<L>, R>;
 
 	template<class L, class R>
-	concept not_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
+	concept wo_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
 
 	template<class T>
 	concept regular_unsigned_integral = std::unsigned_integral<T> && std::has_single_bit(unsign(std::numeric_limits<T>::digits));
@@ -200,21 +204,21 @@ namespace aa {
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
 	template<class T, size_t I>
 	concept member_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(std::remove_cvref_t<T> &t) {
-		{ t.template get<I>() } -> not_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
-		{ std::as_const(t).template get<I>() } -> not_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
+		{ t.template get<I>() } -> wo_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
+		{ std::as_const(t).template get<I>() } -> wo_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
 	};
 
 	template<class T, size_t I>
 	concept adl_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(std::remove_cvref_t<T> &t) {
-		{ get<I>(t) } -> not_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
-		{ get<I>(std::as_const(t)) } -> not_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
+		{ get<I>(t) } -> wo_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
+		{ get<I>(std::as_const(t)) } -> wo_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
 	};
 
 	template<class T, size_t I>
 	concept gettable = member_get<T, I> || adl_get<T, I>;
 
 	// declval viduje reference, nes getter taip veikia, o getter taip veikia, nes iš standarto imiau pavyzdį.
-	template<size_t, class>
+	template<size_t I, gettable<I>>
 	struct get_result;
 
 	template<size_t I, member_get<I> T>
@@ -223,7 +227,7 @@ namespace aa {
 	template<size_t I, adl_get<I> T>
 	struct get_result<I, T> : std::type_identity<decltype(get<I>(std::declval<T &>()))> {};
 
-	template<size_t I, gettable<I> T>
+	template<size_t I, class T>
 	using get_result_t = typename get_result<I, T>::type;
 
 	template<size_t I>
@@ -302,30 +306,26 @@ namespace aa {
 	template<class T, size_t N>
 	concept vectorN_like = vector_like<T> && (std::tuple_size_v<T> == N);
 
+
+
 	template<class T, class F, class R = void>
-	concept visitable_tuple = tuple_like<T>
-		&& apply<T>([]<size_t... I>() -> bool { return (... && invocable_r<F, R, get_result_t<I, T>>); });
-
-
-
-	template<class R, class F, visitable_tuple<F, R> T>
 	AA_CONSTEXPR const auto tuple_getter_table = apply<T>([]<size_t... I>() ->
 			std::array<R(*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
-	{ return {([](F &&f, T &&t) -> R { return std::invoke(std::forward<F>(f), getter<I>{}(t)); })...}; });
+	{ return {([](F &&f, T &&t) -> R { return invoke<I>(std::forward<F>(f), getter<I>{}(t)); })...}; });
 
-	template<class R = void, class F, class T>
+	template<class R = void, class T, class F>
 	AA_CONSTEXPR R visit(const size_t i, F &&f, T &&t) {
-		return tuple_getter_table<R, F, T &>[i](std::forward<F>(f), t);
+		return tuple_getter_table<T &, F, R>[i](std::forward<F>(f), t);
 	}
 
-	template<class T, class R, class F>
+	template<class T, class F, class R = void>
 	AA_CONSTEXPR const auto pack_getter_table = apply<T>([]<size_t... I>() ->
 			std::array<R(*)(F &&), std::tuple_size_v<T>>
-	{ return {([](F &&f) -> R { return invoke<T::template get<I>()>(std::forward<F>(f)); })...}; });
+	{ return {([](F &&f) -> R { return invoke<I, T::template get<I>()>(std::forward<F>(f)); })...}; });
 
-	template<class T, class R = void, class F>
+	template<class R = void, class T, class F>
 	AA_CONSTEXPR R visit(const size_t i, F &&f) {
-		return pack_getter_table<T, R, F>[i](std::forward<F>(f));
+		return pack_getter_table<T, F, R>[i](std::forward<F>(f));
 	}
 
 
@@ -356,6 +356,9 @@ namespace aa {
 	template<class T, class U, class V = U>
 	concept storable_relation_for = in_relation_with<U, V, const T &> && storable<T>;
 
+	template<class U, template<class> class T>
+	concept argument_for_tdc_template = trivially_default_constructible<T<U>>;
+
 	template<class U, class T>
 	concept hashable_by = invocable_r<T, size_t, const U &>;
 
@@ -367,12 +370,6 @@ namespace aa {
 
 	template<class T, class U>
 	concept char_traits_for = char_traits_like<T> && std::same_as<typename T::char_type, U>;
-
-	template<class U, class T>
-	concept evaluable_by = !std::is_const_v<U> && std::invocable<T, U &, size_t, std::string_view>;
-
-	template<class U, template<class> class T>
-	concept evaluable_by_template = evaluable_by<U, T<U>> && trivially_default_constructible<T<U>>;
 
 	template<class T, class U>
 	concept storable_vector2_getter = storable<T>
@@ -438,7 +435,6 @@ namespace aa {
 	struct first : std::type_identity<A1> {};
 
 	template<class... A>
-		requires (!!sizeof...(A))
 	using first_t = typename first<A...>::type;
 
 
@@ -857,7 +853,7 @@ namespace aa {
 		static AA_CONSTEVAL value_type<I> get() { return unit_type<I>::value; }
 
 		template<class R = void, class F>
-		static AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<pack, R>(i, std::forward<F>(f)); }
+		static AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<R, pack>(i, std::forward<F>(f)); }
 	};
 
 }

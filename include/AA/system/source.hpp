@@ -51,11 +51,13 @@ namespace aa {
 		}
 	};
 
-	source_data(void)->source_data<0, 0, "", "">;
+	// Jeigu neturime deduction guides tai metamas warning, todėl privalome turėti šį deduction guide.
+	// Bet išties guide tokio nereikia šiai klasei, sprendimas: dėl incomplete type guide yra nesvarstomas.
+	source_data(int[])->source_data<0, 0, "", "">;
 
 
 
-	template<source_data D, not_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
+	template<source_data D, wo_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
 	AA_CONSTEXPR void log(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		printl(s, D, ": ", args...);
 		else							log<D>(s, "Info logged.");
@@ -67,7 +69,7 @@ namespace aa {
 		log<D>(std::clog, args...);
 	}
 
-	template<source_data D, not_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
+	template<source_data D, wo_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
 	[[noreturn]] AA_CONSTEXPR void abort(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		log<D>(s, args...);
 		else							log<D>(s, "Program aborted.");
@@ -91,7 +93,7 @@ namespace aa {
 	}
 
 	// Dėl atributo, naudoti šią funkciją turėtų būti tas pats kaip naudoti macro greitaveikos atžvilgiu.
-	template<source_data D, bool T = true, not_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
+	template<source_data D, bool T = true, wo_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
 	AA_CONSTEXPR void assert(const bool condition, S &&s, const A&... args) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {

@@ -44,8 +44,8 @@ namespace aa {
 
 
 	// MAX negali rodyti į kažkurį iš argumentų, nes MAX represents a failure state kai nerandamas nei vienas iš template parametrų.
-	template<size_t MAX, auto... A>
-		requires ((sizeof...(A) <= MAX) && are_same_v<range_char_traits_t<decltype(A)>...>)
+	template<auto... A>
+		requires (are_same_v<range_char_traits_t<decltype(A)>...>)
 	struct string_perfect_hash {
 		using is_transparent = void;
 		using traits_type = first_or_void_t<range_char_traits_t<decltype(A)>...>;
@@ -66,22 +66,16 @@ namespace aa {
 		template<class T>
 		AA_CONSTEXPR size_t operator()(const T &t) const {
 			if constexpr (same_range_char_traits_as<T, traits_type>) {
-				size_t h = MAX;
+				size_t h = max();
 				(trie<0, A>(t, h, std::ranges::size(t) == std::ranges::size(A)), ...);
 				return h;
-			} else return MAX;
+			} else return max();
 		}
 
 		static AA_CONSTEVAL size_t min() { return 0; }
-		static AA_CONSTEVAL size_t max() { return MAX; }
+		static AA_CONSTEVAL size_t max() { return sizeof...(A); }
 	};
 
-	string_perfect_hash(void)->string_perfect_hash<0>;
-
-	template<auto... A>
-	using s_string_perfect_hash = string_perfect_hash<sizeof...(A), A...>;
-
-	template<auto... A>
-	using m_string_perfect_hash = string_perfect_hash<numeric_max, A...>;
+	string_perfect_hash(int[])->string_perfect_hash<>;
 
 }
