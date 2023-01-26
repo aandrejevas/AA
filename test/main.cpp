@@ -72,13 +72,13 @@ int main() {
 		const linear_congruential_generator initial_g = g;
 		std::map<int, size_t> m;
 
-		unsafe_for_each(std::views::iota(1uz, 5001uz), [&](const size_t i) -> void {
-			++m[int_distribution<int>(g, static_cast<size_t>(-5), 10)];
-		linear_congruential_generator copy_g = initial_g;
-		copy_g.jump(i);
-		const size_t d = initial_g.dist(copy_g);
-		AA_TRACE_ASSERT(copy_g.curr() == g.curr() && i == d, i, ' ', d);
-		});
+		unsafe_for_each(std::views::iota(1uz, 5001uz), [&](const size_t i) -> void { {
+				++m[int_distribution<int>(g, static_cast<size_t>(-5), 10)];
+				linear_congruential_generator copy_g = initial_g;
+				copy_g.jump(i);
+				const size_t d = initial_g.dist(copy_g);
+				AA_TRACE_ASSERT(copy_g.curr() == g.curr() && i == d, i, ' ', d);
+			}});
 		printl(range_writer{m, tuple_inserter{}});
 
 		repeat(5000, [&]() {
@@ -104,17 +104,17 @@ int main() {
 		array_t<int, 10> a = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, b = a;
 		array_t<bool, 10> s = {};
 
-		repeat(100, [&]() {
-			shuffle(a, g);
-		AA_TRACE_ASSERT(std::ranges::is_permutation(a, b));
-		counting_sort(a, s.data());
-		AA_TRACE_ASSERT(std::ranges::is_sorted(a));
-		});
+		repeat(100, [&]() { {
+				shuffle(a, g);
+				AA_TRACE_ASSERT(std::ranges::is_permutation(a, b));
+				counting_sort(a, s.data());
+				AA_TRACE_ASSERT(std::ranges::is_sorted(a));
+			}});
 
-		repeat(100, [&]() {
-			partial_shuffle_counting_sort(a, a.data() + 4, g, s.data());
-		AA_TRACE_ASSERT(std::ranges::is_sorted(a.data(), a.data() + 5));
-		});
+		repeat(100, [&]() { {
+				partial_shuffle_counting_sort(a, a.data() + 4, g, s.data());
+				AA_TRACE_ASSERT(std::ranges::is_sorted(a.data(), a.data() + 5));
+			}});
 
 		counting_sort(a, s.data());
 		cshift_right(a, b);
@@ -127,10 +127,10 @@ int main() {
 	{
 		fixed_flat_multiset<size_t, 500> a;
 
-		repeat(100, [&]() {
-			a.insert(g());
-		AA_TRACE_ASSERT(std::ranges::is_sorted(a));
-		});
+		repeat(100, [&]() { {
+				a.insert(g());
+				AA_TRACE_ASSERT(std::ranges::is_sorted(a));
+			}});
 
 		do {
 			a.erase(a[int_distribution(g, a.size())]);
@@ -145,11 +145,11 @@ int main() {
 		printl(a.max_bucket_count(), ' ', a.bucket_max_size(), ' ', a.max_size());
 
 		// Insert test
-		repeat(100'000, [&]() {
-			const size_t c = int_distribution(g, a.max_size());
-		b.insert(c);
-		a.insert(c);
-		});
+		repeat(100'000, [&]() { {
+				const size_t c = int_distribution(g, a.max_size());
+				b.insert(c);
+				a.insert(c);
+			}});
 		AA_TRACE_ASSERT(b.size() == a.size());
 
 		// Iterator test
@@ -216,20 +216,20 @@ int main() {
 		fixed_vector<grid_type::value_type, tree.max_size()> positions;
 
 		{
-			repeat(tree.max_size(), [&]() {
-				positions.emplace_back(grid_type::value_type{real_distribution<double>(g, 25.),
-					norm_map<0>(real_distribution<double>(g, 50., 10.), 50., 10., 25.)});
-			tree.insert(positions.back());
-			});
+			repeat(tree.max_size(), [&]() { {
+					positions.emplace_back(grid_type::value_type{real_distribution<double>(g, 25.),
+						norm_map<0>(real_distribution<double>(g, 50., 10.), 50., 10., 25.)});
+					tree.insert(positions.back());
+				}});
 			size_t sum = 0;
 			tree.query_range({-25, -25}, {25, 25}, [&](const grid_type::value_type &) { ++sum; });
 			AA_TRACE_ASSERT(tree.max_size() == sum);
 		}
 		{
-			repeat(tree.max_size() >> 1, [&]() {
-				tree.erase(positions.back());
-			positions.pop_back();
-			});
+			repeat(tree.max_size() >> 1, [&]() { {
+					tree.erase(positions.back());
+					positions.pop_back();
+				}});
 			size_t sum = 0;
 			tree.query_range({-25, -25}, {25, 25}, [&](const grid_type::value_type &) { ++sum; });
 			AA_TRACE_ASSERT((tree.max_size() >> 1) == sum);

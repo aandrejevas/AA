@@ -313,6 +313,7 @@ namespace aa {
 			std::array<R(*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
 	{ return {([](F &&f, T &&t) -> R { return invoke<I>(std::forward<F>(f), getter<I>{}(t)); })...}; });
 
+	// visit funkcijų reikia, nes visoms tuple klasėms tiesiogiai nepatogu dirbti su funkcijų masyvais.
 	template<class R = void, class T, class F>
 	AA_CONSTEXPR R visit(const size_t i, F &&f, T &&t) {
 		return tuple_getter_table<T &, F, R>[i](std::forward<F>(f), t);

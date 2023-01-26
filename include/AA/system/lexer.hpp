@@ -5,18 +5,134 @@
 #include "../algorithm/hash.hpp"
 #include <cstddef> // size_t
 #include <string> // string
-#include <functional> // invoke
-#include <utility> // unreachable, as_const
+#include <utility> // unreachable
 #include <type_traits> // remove_reference_t
 
 
 
 namespace aa {
 
+	// Lexing parameters
+	// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
+	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
+	template<string_perfect_hash H, class C, size_t R = 50>
+	struct lexer {
+		// Special member functions
+		AA_CONSTEXPR lexer(C &c) : consumer{c} {
+			if constexpr (R) {
+				token.reserve(R);
+				whitespace.reserve(R);
+			}
+		}
+
+
+
+	protected:
+		// Member objects
+		C &consumer;
+		enum struct lexing_state : size_t {
+			BEFORE_KEY, KEY, KEY_SPACE,
+			VALUE, SKIP_VALUE
+		} state = lexing_state::BEFORE_KEY;
+		void(lexer:: *supplier)() const;
+		std::string token, whitespace;
+
+
+
+		// Member functions
+		template<size_t I>
+		AA_CONSTEXPR void supply() const {
+			// Negalime išsisaugoti C::operator() funkcijos rodyklės, nes ta funkcija gali turėti įvairias formas.
+			invoke<I>(consumer, token);
+		}
+
+		AA_CONSTEXPR void init_key() {
+			H(token, [&]<size_t I>() -> void {
+				if constexpr (I != H.max()) {
+					supplier = &lexer::supply<I>;
+					state = lexing_state::VALUE;
+				} else
+					state = lexing_state::SKIP_VALUE;
+			});
+		}
+
+	public:
+		AA_CONSTEXPR void operator()(const int character) {
+			switch (state) {
+				case lexing_state::BEFORE_KEY:
+					switch (character) {
+						case '=': init_key();
+						case ' ': case '\t': case '\n': case '\r': return;
+						default:
+							state = lexing_state::KEY;
+							// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
+							token.push_back(static_cast<char>(character));
+							return;
+					}
+
+				case lexing_state::KEY:
+					switch (character) {
+						default:
+							token.push_back(static_cast<char>(character));
+							return;
+						case ' ': case '\t':
+							state = lexing_state::KEY_SPACE;
+							whitespace.push_back(static_cast<char>(character));
+							return;
+						case '=':
+							init_key();
+							token.clear();
+							return;
+					}
+
+				case lexing_state::KEY_SPACE:
+					switch (character) {
+						default:
+							state = lexing_state::KEY;
+							token.append(whitespace).push_back(static_cast<char>(character));
+							whitespace.clear();
+							return;
+						case ' ': case '\t':
+							whitespace.push_back(static_cast<char>(character));
+							return;
+						case '=':
+							init_key();
+							token.clear();
+							whitespace.clear();
+							return;
+					}
+
+				case lexing_state::VALUE:
+					switch (character) {
+						default:
+							token.push_back(static_cast<char>(character));
+							return;
+						case '\n':
+							state = lexing_state::BEFORE_KEY;
+							(this->*supplier)();
+							token.clear();
+							return;
+					}
+
+				case lexing_state::SKIP_VALUE:
+					switch (character) {
+						default:
+							return;
+						case '\n':
+							state = lexing_state::BEFORE_KEY;
+							return;
+					}
+
+				default:
+					std::unreachable();
+			}
+		}
+	};
+
 	// https://en.wikipedia.org/wiki/Lexical_analysis
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<string_perfect_hash H, size_t R = 50, invocable_ref<size_t, const std::string &> C, input_stream FILE>
+	template<string_perfect_hash H, size_t R = 50, class C, input_stream FILE>
 	AA_CONSTEXPR void lex(FILE &&file, C &&consumer = {}) {
 		using traits_type = typename std::remove_reference_t<FILE>::traits_type;
 
@@ -24,111 +140,7 @@ namespace aa {
 		if (file.peek() == traits_type::eof())
 			return;
 
-		// Lexing parameters
-		// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
-		// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
-		struct lexer {
-			// Special member functions
-			AA_CONSTEXPR lexer(C &c) : consumer{c} {
-				if constexpr (R) {
-					token.reserve(R);
-					whitespace.reserve(R);
-				}
-			}
-
-
-
-		protected:
-			// Member objects
-			C &consumer;
-			enum struct lexing_state : size_t {
-				BEFORE_KEY, KEY, KEY_SPACE,
-				VALUE, SKIP_VALUE
-			} state = lexing_state::BEFORE_KEY;
-			size_t index;
-			std::string token, whitespace;
-
-
-
-			// Member functions
-			AA_CONSTEXPR void init_key() {
-				index = H(token);
-				if (index != H.max())	state = lexing_state::VALUE;
-				else					state = lexing_state::SKIP_VALUE;
-			}
-
-		public:
-			AA_CONSTEXPR void operator()(const int character) {
-				switch (state) {
-					case lexing_state::BEFORE_KEY:
-						switch (character) {
-							case '=': init_key();
-							case ' ': case '\t': case '\n': case '\r': return;
-							default:
-								state = lexing_state::KEY;
-								// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
-								token.push_back(static_cast<char>(character));
-								return;
-						}
-
-					case lexing_state::KEY:
-						switch (character) {
-							default:
-								token.push_back(static_cast<char>(character));
-								return;
-							case ' ': case '\t':
-								state = lexing_state::KEY_SPACE;
-								whitespace.push_back(static_cast<char>(character));
-								return;
-							case '=':
-								init_key();
-								token.clear();
-								return;
-						}
-
-					case lexing_state::KEY_SPACE:
-						switch (character) {
-							default:
-								state = lexing_state::KEY;
-								token.append(whitespace).push_back(static_cast<char>(character));
-								whitespace.clear();
-								return;
-							case ' ': case '\t':
-								whitespace.push_back(static_cast<char>(character));
-								return;
-							case '=':
-								init_key();
-								token.clear();
-								whitespace.clear();
-								return;
-						}
-
-					case lexing_state::VALUE:
-						switch (character) {
-							default:
-								token.push_back(static_cast<char>(character));
-								return;
-							case '\n':
-								state = lexing_state::BEFORE_KEY;
-								std::invoke(consumer, std::as_const(index), std::as_const(token));
-								token.clear();
-								return;
-						}
-
-					case lexing_state::SKIP_VALUE:
-						switch (character) {
-							default:
-								return;
-							case '\n':
-								state = lexing_state::BEFORE_KEY;
-								return;
-						}
-
-					default:
-						std::unreachable();
-				}
-			}
-		} p_lexer = {consumer};
+		lexer<H, C, R> p_lexer = {consumer};
 
 		// Lexing comments
 		enum struct lexing_state : size_t {
@@ -203,6 +215,9 @@ namespace aa {
 					std::unreachable();
 			}
 		} while (file.peek() != traits_type::eof());
+		// Parametro apibrėžimo forma: PARAMETRO_VARDAS =PARAMETRO_REIKŠMĖ'\n'
+		// Svarbu nepamiršti, kad jei parametrą bandoma apibrėžti failo pabaigoje,
+		// tai failo paskutinis simbolis turės būti '\n', kitaip parametras nebus apibrėžtas.
 	}
 
 }

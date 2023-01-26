@@ -11,9 +11,7 @@
 #include <cstddef> // size_t
 #include <string> // string
 #include <string_view> // string_view
-#include <functional> // invoke
 #include <type_traits> // remove_const_t
-#include <utility> // tuple_size_v
 #include <limits> // numeric_limits
 #include <bit> // countr_one
 
@@ -42,7 +40,8 @@ namespace aa {
 					invoke<I>(eval, value, token.operator std::string_view());
 				});
 			}});
-		AA_TRACE_ASSERT(std::countr_one(bitset) == H.max());
+		AA_TRACE_ASSERT(std::countr_one(bitset) == H.max()/*,
+			"Parameter `", type_name<T>(), " - ", name, "` not found."*/);
 	}
 
 	template<instantiation_of<tuple> TUPLE, string_perfect_hash H, size_t R = 50, class EVAL = generic_evaluator<>, input_stream FILE>
