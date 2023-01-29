@@ -51,39 +51,35 @@ namespace aa {
 		}
 	};
 
-	// Jeigu neturime deduction guides tai metamas warning, todėl privalome turėti šį deduction guide.
-	// Bet išties guide tokio nereikia šiai klasei, sprendimas: dėl incomplete type guide yra nesvarstomas.
-	source_data(int[])->source_data<0, 0, "", "">;
 
 
-
-	template<source_data D, wo_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
+	template<instance_of_twntp<source_data> D, wo_ref_same_as<typename D::ostream_type> S, class... A>
 	AA_CONSTEXPR void log(S &&s, const A&... args) {
-		if constexpr (sizeof...(A))		printl(s, D, ": ", args...);
+		if constexpr (sizeof...(A))		printl(s, constant<D>(), ": ", args...);
 		else							log<D>(s, "Info logged.");
 	}
 
-	template<source_data D, class... A>
-		requires ((!output_stream<first_or_void_t<A...>>) && std::same_as<typename decltype(D)::ostream_type, std::ostream>)
+	template<instance_of_twntp<source_data> D, class... A>
+		requires ((!output_stream<first_or_void_t<A...>>) && std::same_as<typename D::ostream_type, std::ostream>)
 	AA_CONSTEXPR void log(const A&... args) {
 		log<D>(std::clog, args...);
 	}
 
-	template<source_data D, wo_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
+	template<instance_of_twntp<source_data> D, wo_ref_same_as<typename D::ostream_type> S, class... A>
 	[[noreturn]] AA_CONSTEXPR void abort(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		log<D>(s, args...);
 		else							log<D>(s, "Program aborted.");
 		std::abort();
 	}
 
-	template<source_data D, class... A>
-		requires ((!output_stream<first_or_void_t<A...>>) && std::same_as<typename decltype(D)::ostream_type, std::ostream>)
+	template<instance_of_twntp<source_data> D, class... A>
+		requires ((!output_stream<first_or_void_t<A...>>) && std::same_as<typename D::ostream_type, std::ostream>)
 	[[noreturn]] AA_CONSTEXPR void abort(const A&... args) {
 		abort<D>(std::cerr, args...);
 	}
 
 	// TODO: Su C++23 čia galima bus naudoti static operator().
-	template<source_data D, bool T = true, class F>
+	template<instance_of_twntp<source_data> D, bool T = true, class F>
 	AA_CONSTEXPR void trace(const bool condition, F &&f) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {
@@ -93,7 +89,7 @@ namespace aa {
 	}
 
 	// Dėl atributo, naudoti šią funkciją turėtų būti tas pats kaip naudoti macro greitaveikos atžvilgiu.
-	template<source_data D, bool T = true, wo_ref_same_as<typename decltype(D)::ostream_type> S, class... A>
+	template<instance_of_twntp<source_data> D, bool T = true, wo_ref_same_as<typename D::ostream_type> S, class... A>
 	AA_CONSTEXPR void assert(const bool condition, S &&s, const A&... args) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {
@@ -103,8 +99,8 @@ namespace aa {
 		}
 	}
 
-	template<source_data D, bool T = true, class... A>
-		requires ((!output_stream<first_or_void_t<A...>>) && std::same_as<typename decltype(D)::ostream_type, std::ostream>)
+	template<instance_of_twntp<source_data> D, bool T = true, class... A>
+		requires ((!output_stream<first_or_void_t<A...>>) && std::same_as<typename D::ostream_type, std::ostream>)
 	AA_CONSTEXPR void assert(const bool condition, const A&... args) {
 		assert<D, T>(condition, std::cerr, args...);
 	}

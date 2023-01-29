@@ -15,7 +15,7 @@
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 #include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, is_function_v, make_unsigned_t, is_invocable_r_v
-#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, assignable_from, signed_integral, unsigned_integral
+#include <concepts> // convertible_to, same_as, default_initializable, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, assignable_from, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <array> // array
 #include <bit> // has_single_bit, bit_cast
@@ -103,27 +103,52 @@ namespace aa {
 	template<class... A>
 	AA_CONSTEXPR const bool are_same_v = are_same<A...>::value;
 
-
-
-	template<class, template<class...> class>
-	struct is_instantiation_of : false_identity {};
+	template<class>
+	struct is_template : false_identity {};
 
 	template<template<class...> class T, class... A>
-	struct is_instantiation_of<T<A...>, T> : true_identity {};
+	struct is_template<T<A...>> : true_identity {};
+
+	template<template<auto...> class T, auto... A>
+	struct is_template<T<A...>> : true_identity {};
+
+	template<class T>
+	AA_CONSTEXPR const bool is_template_v = is_template<T>::value;
+
+	template<class, template<class...> class>
+	struct is_instance_of_twtp : false_identity {};
+
+	template<template<class...> class T, class... A>
+	struct is_instance_of_twtp<T<A...>, T> : true_identity {};
 
 	template<class T, template<class...> class U>
-	AA_CONSTEXPR const bool is_instantiation_of_v = is_instantiation_of<T, U>::value;
+	AA_CONSTEXPR const bool is_instance_of_twtp_v = is_instance_of_twtp<T, U>::value;
+
+	template<class, template<auto...> class>
+	struct is_instance_of_twntp : false_identity {};
+
+	template<template<auto...> class T, auto... A>
+	struct is_instance_of_twntp<T<A...>, T> : true_identity {};
+
+	template<class T, template<auto...> class U>
+	AA_CONSTEXPR const bool is_instance_of_twntp_v = is_instance_of_twntp<T, U>::value;
 
 
-
-	template<class T, template<class...> class U>
-	concept instantiation_of = is_instantiation_of_v<std::remove_cvref_t<T>, U>;
-
-	template<class T, template<class...> class U>
-	concept not_instantiation_of = !instantiation_of<T, U>;
 
 	template<class T>
 	concept not_const = !std::is_const_v<T>;
+
+	template<class T, template<auto...> class U>
+	concept instance_of_twntp = is_instance_of_twntp_v<T, U>;
+
+	template<class T, template<class...> class U>
+	concept instance_of_twtp = is_instance_of_twtp_v<std::remove_cvref_t<T>, U>;
+
+	template<class T, template<class...> class U>
+	concept not_const_instance_of_twtp = not_const<T> && instance_of_twtp<T, U>;
+
+	template<class T, template<class...> class U>
+	concept not_instance_of_twtp = !instance_of_twtp<T, U>;
 
 	template<class T, class... A>
 	concept same_as_any = (... || std::same_as<T, A>);
@@ -201,6 +226,22 @@ namespace aa {
 
 
 
+	// C yra objektas, galėtume jį padavinėti per const&, o ne per value, bet nusprendžiau, kad kompiliavimo
+	// metu nėra skirtumo kaip tas objektas bus padavinėjamas, net jei jis būtų labai didelis.
+	//
+	// Negali šitos funkcijos būti paverstos į konstantas, nes neegzistuoja konstantų užklojimas ir dalinė specializacija nesikompiliuoja.
+	// Taip pat funkcijos geriau atspindi kas vyksta, tai yra tą faktą, kad reikšmės gaunamos ne iš kažkokios klasės (pvz. integral_constant).
+	template<class T, T C>
+	AA_CONSTEVAL T constant() { return C; }
+
+	template<std::default_initializable T>
+	AA_CONSTEVAL T constant() { return T{}; }
+
+	template<auto C>
+	AA_CONSTEVAL decltype(C) constant() { return C; }
+
+
+
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
 	template<class T, size_t I>
 	concept member_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(std::remove_cvref_t<T> &t) {
@@ -260,7 +301,7 @@ namespace aa {
 
 	template<size_t N, class F>
 	AA_CONSTEXPR decltype(auto) apply(F &&f) {
-		return aa::apply(std::forward<F>(f), std::make_index_sequence<N>{});
+		return aa::apply(std::forward<F>(f), constant<std::make_index_sequence<N>>());
 	}
 
 	template<class T, class F>
@@ -311,7 +352,7 @@ namespace aa {
 	template<class T, class F, class R = void>
 	AA_CONSTEXPR const auto tuple_getter_table = apply<T>([]<size_t... I>() ->
 			std::array<R(*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
-	{ return {([](F &&f, T &&t) -> R { return invoke<I>(std::forward<F>(f), getter<I>{}(t)); })...}; });
+	{ return {([](F &&f, T &&t) -> R { return invoke<I>(std::forward<F>(f), constant<getter<I>>()(t)); })...}; });
 
 	// visit funkcijų reikia, nes visoms tuple klasėms tiesiogiai nepatogu dirbti su funkcijų masyvais.
 	template<class R = void, class T, class F>
@@ -348,14 +389,11 @@ namespace aa {
 
 
 
-	template<class T>
-	concept storable = std::default_initializable<std::remove_reference_t<T>> && std::copy_constructible<T>;
-
 	template<class U, class V, class T>
 	concept in_relation_with = std::relation<T, const U &, const V &>;
 
 	template<class T, class U, class V = U>
-	concept storable_relation_for = in_relation_with<U, V, const T &> && storable<T>;
+	concept relation_for = in_relation_with<U, V, const T &>;
 
 	template<class U, template<class> class T>
 	concept argument_for_tdc_template = trivially_default_constructible<T<U>>;
@@ -367,16 +405,16 @@ namespace aa {
 	concept hashable_by_template = hashable_by<U, T<U>> && trivially_default_constructible<T<U>>;
 
 	template<class T, class... U>
-	concept storable_hasher_for = (... && hashable_by<U, const T &>) && storable<T>;
+	concept hasher_for = (... && hashable_by<U, const T &>);
 
 	template<class T, class U>
 	concept char_traits_for = char_traits_like<T> && std::same_as<typename T::char_type, U>;
 
 	template<class T, class U>
-	concept storable_vector2_getter = storable<T>
-		&& std::invocable<const T &, const U &> && vectorN_like<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>, 2>;
+	concept vector2_getter =
+		std::invocable<const T &, const U &> && vectorN_like<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>, 2>;
 
-	template<class U, storable_vector2_getter<U> T>
+	template<class U, vector2_getter<U> T>
 	struct vector2_getter_result : std::remove_cvref<std::invoke_result_t<const T &, const U &>> {};
 
 	template<class U, class T>
@@ -445,22 +483,6 @@ namespace aa {
 
 	template<class... A>
 	using first_or_void_t = typename first_or_void<A...>::type;
-
-
-
-	// C yra objektas, galėtume jį padavinėti per const&, o ne per value, bet nusprendžiau, kad kompiliavimo
-	// metu nėra skirtumo kaip tas objektas bus padavinėjamas, net jei jis būtų labai didelis.
-	//
-	// Negali šitos funkcijos būti paverstos į konstantas, nes neegzistuoja konstantų užklojimas ir dalinė specializacija nesikompiliuoja.
-	// Taip pat funkcijos geriau atspindi kas vyksta, tai yra tą faktą, kad reikšmės gaunamos ne iš kažkokios klasės (pvz. integral_constant).
-	template<class T, T C>
-	AA_CONSTEVAL T constant() { return C; }
-
-	template<std::default_initializable T>
-	AA_CONSTEVAL T constant() { return T{}; }
-
-	template<auto C>
-	AA_CONSTEVAL decltype(C) constant() { return C; }
 
 
 

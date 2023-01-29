@@ -18,7 +18,7 @@ namespace aa {
 
 	// https://stackoverflow.com/questions/41946007/efficient-and-well-explained-implementation-of-a-quadtree-for-2d-collision-det
 	// Klasė neturi iteratorių, nes ji pati savyje nelaiko elementų, reiktų iteruoti struktūrą, kuri juos laiko.
-	template<class T, size_t W, size_t H, size_t N, storable_vector2_getter<T> L = std::identity, bool ERASABLE = false>
+	template<class T, size_t W, size_t H, size_t N, vector2_getter<T> L = std::identity, bool ERASABLE = false>
 	struct fixed_grid {
 		// Member types
 		using value_type = T;
@@ -233,11 +233,11 @@ namespace aa {
 
 
 		// Special member functions
-		template<class U = locator_type, vector2_similar_to<pair_type> P = pair_type>
+		template<constructible_to<locator_type> U = locator_type, vector2_similar_to<pair_type> P = pair_type>
 		AA_CONSTEXPR fixed_grid(const P &size, U &&u = {})
 			: fixed_grid{size, {product<W>(get_w(size)) - 1, product<H>(get_h(size)) - 1}, std::forward<U>(u)} {}
 
-		template<class U = locator_type, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
+		template<constructible_to<locator_type> U = locator_type, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
 		AA_CONSTEXPR fixed_grid(const P1 &size, const P2 &l, U &&u = {})
 			: leaf_size{get_w(size), get_h(size)}, max_loc{get_x(l), get_y(l)}, locator{std::forward<U>(u)} {}
 

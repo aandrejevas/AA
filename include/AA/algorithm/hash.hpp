@@ -44,6 +44,8 @@ namespace aa {
 
 
 
+	// Rekomenduojama naudoti su templates šią klasę kaip tipo parametrą.
+	//
 	// MAX negali rodyti į kažkurį iš argumentų, nes MAX represents a failure state kai nerandamas nei vienas iš template parametrų.
 	template<auto... A>
 		requires (are_same_v<range_char_traits_t<decltype(A)>...>)
@@ -77,7 +79,5 @@ namespace aa {
 		static AA_CONSTEVAL size_t min() { return 0; }
 		static AA_CONSTEVAL size_t max() { return sizeof...(A); }
 	};
-
-	string_perfect_hash(int[])->string_perfect_hash<>;
 
 }

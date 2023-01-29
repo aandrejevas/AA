@@ -18,6 +18,7 @@ namespace aa {
 		// Member types
 	protected:
 		using b = pair<I, S>;
+
 	public:
 		using std::ranges::view_interface<unsafe_subrange>::data;
 
@@ -60,6 +61,8 @@ namespace aa {
 		// Reikia konstruktorių, nes kitaip metami warnings -Wmissing-field-initializers.
 		AA_CONSTEXPR unsafe_subrange() = default;
 
+		// convertible_to, nes std::ranges::subrange klasė taip pat realizuota.
+		// convertible constraint yra griežtesnis negu constructable constraint.
 		template<std::convertible_to<I> T1 = I, std::convertible_to<S> T2 = S>
 		AA_CONSTEXPR unsafe_subrange(T1 &&t1, T2 &&t2) : b{std::forward<T1>(t1), std::forward<T2>(t2)} {}
 

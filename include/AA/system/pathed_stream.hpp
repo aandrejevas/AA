@@ -4,10 +4,13 @@
 #include "../metaprogramming/io.hpp"
 #include "../preprocessor/assert.hpp"
 #include "source.hpp"
-#include <concepts> // constructible_from
+#include <concepts> // constructible_from, invocable
 #include <utility> // forward
 #include <fstream> // ofstream, ifstream
 #include <ostream> // basic_ostream, ostream
+#include <functional> // invoke
+#include <type_traits> // invoke_result_t
+#include <ios> // openmode, out, in
 
 
 
@@ -50,11 +53,9 @@ namespace aa {
 
 
 		// Special member functions
-		// Kad sukonstruoti path, nesuteikiame galimybės paduoti parameter pack, nes įmanoma tiesiog paduoti path_type
-		// argumentą, kuris bus nukopijuotas. To negalime padaryti su stream. Tokia realizacija kai kuriais atvejais gal lėta.
-		template<constructible_to<path_type> T, class... U>
-			requires (std::constructible_from<stream_type, path_type &, U...>)
-		AA_CONSTEXPR pathed_stream(T &&t, U&&... args) : path{std::forward<T>(t)}, stream{path, std::forward<U>(args)...} {
+		template<constructible_to<path_type> T, std::invocable<const path_type &> F>
+			requires (std::constructible_from<stream_type, std::invoke_result_t<F, const path_type &>>)
+		AA_CONSTEXPR pathed_stream(T &&t, F &&f) : path{std::forward<T>(t)}, stream{std::invoke(std::forward<F>(f), path)} {
 			if constexpr (insertable_into<path_type &, std::ostream>) {
 				AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " (", path, ") in fail state after construction.");
 			} else {
@@ -73,28 +74,25 @@ namespace aa {
 
 
 		// Member objects
-		path_type path;
-		stream_type stream;
+		// path kintamasis laiko kelią, su kuriuo stream buvo sukonstruotas.
+		// Todėl path gali būti const nors ir stream vėliau gali savo kelią pakeisti.
+		[[no_unique_address]] const path_type path;
+		[[no_unique_address]] stream_type stream;
 	};
 
+	template<class T, std::invocable<const T &> F>
+	pathed_stream(T &&, F &&) -> pathed_stream<T, std::invoke_result_t<F, const T &>>;
 
 
-	// Turime sukurti papildomas klases, nes ant originalios klasės neišeina nurodyti gero deduction guide.
-	// Kartojasi deduction guides kodas, bet net jei leistų ant alias daryti guides, vis tiek kodas turėtų kartotis.
-	template<class P>
-	struct pathed_ofstream : pathed_stream<P, std::ofstream> {
-		using pathed_stream<P, std::ofstream>::pathed_stream;
-	};
 
-	template<class P, class... U>
-	pathed_ofstream(P &&, U&&...) -> pathed_ofstream<P>;
+	template<std::ios_base::openmode MODE = std::ios_base::out, class T>
+	AA_CONSTEXPR pathed_stream<T, std::ofstream> make_p_ofstream(T &&t) {
+		return {std::forward<T>(t), [](const T &p) { return std::ofstream{p, MODE}; }};
+	}
 
-	template<class P>
-	struct pathed_ifstream : pathed_stream<P, std::ifstream> {
-		using pathed_stream<P, std::ifstream>::pathed_stream;
-	};
-
-	template<class P, class... U>
-	pathed_ifstream(P &&, U&&...) -> pathed_ifstream<P>;
+	template<std::ios_base::openmode MODE = std::ios_base::in, class T>
+	AA_CONSTEXPR pathed_stream<T, std::ifstream> make_p_ifstream(T &&t) {
+		return {std::forward<T>(t), [](const T &p) { return std::ifstream{p, MODE}; }};
+	}
 
 }

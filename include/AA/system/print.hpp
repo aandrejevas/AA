@@ -37,7 +37,7 @@ namespace aa {
 
 	template<class T, class S>
 	AA_CONSTEXPR std::remove_const_t<T> read(S &&s) {
-		return create_with_invocable<T>([&](std::remove_const_t<T> &t) -> void { read(s, t); });
+		return make_with_invocable<T>([&](std::remove_const_t<T> &t) -> void { read(s, t); });
 	}
 
 

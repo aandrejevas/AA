@@ -169,7 +169,7 @@ namespace std {
 	template<size_t N>
 	struct hash<aa::fixed_string<N>> {
 		AA_CONSTEXPR size_t operator()(const aa::fixed_string<N> &string) const {
-			return std::hash<std::string_view>{}(string);
+			return aa::constant<std::hash<std::string_view>>()(string);
 		}
 	};
 

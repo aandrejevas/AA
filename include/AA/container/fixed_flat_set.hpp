@@ -13,7 +13,7 @@
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Set_(abstract_data_type)
-	template<trivially_copyable T, size_t N, storable_relation_for<T> C = std::ranges::less, bool MULTISET = false>
+	template<trivially_copyable T, size_t N, relation_for<T> C = std::ranges::less, bool MULTISET = false>
 	struct fixed_flat_set {
 		// Member types
 		using value_type = T;
@@ -162,10 +162,10 @@ namespace aa {
 		// Nėra esmės turėti default konstruktoriaus, nes comparer vis tiek reikėtų inicializuoti,
 		// nes comparer tipas yra const. Perfect forwarding naudojame, kad palaikyti move semantics
 		// ir pass by reference, jei parametras būtų const& tai neišeitų palaikyti move semantics.
-		template<class U = comparer_type>
+		template<constructible_to<comparer_type> U = comparer_type>
 		AA_CONSTEXPR fixed_flat_set(U &&c = {}) : comparer{std::forward<U>(c)} {}
 
-		template<assignable_to<reference> V, class U = comparer_type>
+		template<assignable_to<reference> V, constructible_to<comparer_type> U = comparer_type>
 		AA_CONSTEXPR fixed_flat_set(V &&value, U &&c = {})
 			: elements{elements.begin()}, comparer{std::forward<U>(c)} { elements.back() = std::forward<V>(value); }
 

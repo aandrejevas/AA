@@ -15,41 +15,46 @@ namespace aa {
 	// Lexing parameters
 	// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
 	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
-	template<string_perfect_hash H, class C, size_t R = 50>
-	struct lexer {
+	template<instance_of_twntp<string_perfect_hash> H>
+	struct param_lexer {
 		// Special member functions
-		AA_CONSTEXPR lexer(C &c) : consumer{c} {
-			if constexpr (R) {
-				token.reserve(R);
-				whitespace.reserve(R);
-			}
+		AA_CONSTEXPR param_lexer(const size_t r1 = 50, const size_t r2 = 50) {
+			token.reserve(r1);
+			whitespace.reserve(r2);
 		}
 
 
 
+		// Member types
+		using hasher_type = H;
+
 	protected:
+		template<class C>
+		using supplier_type = void(param_lexer:: *)(C &) const;
+
+
+
 		// Member objects
-		C &consumer;
 		enum struct lexing_state : size_t {
 			BEFORE_KEY, KEY, KEY_SPACE,
 			VALUE, SKIP_VALUE
 		} state = lexing_state::BEFORE_KEY;
-		void(lexer:: *supplier)() const;
 		std::string token, whitespace;
 
 
 
 		// Member functions
-		template<size_t I>
-		AA_CONSTEXPR void supply() const {
+		template<size_t I, class C>
+		AA_CONSTEXPR void supply(C &consumer) const {
 			// Negalime išsisaugoti C::operator() funkcijos rodyklės, nes ta funkcija gali turėti įvairias formas.
 			invoke<I>(consumer, token);
 		}
 
-		AA_CONSTEXPR void init_key() {
-			H(token, [&]<size_t I>() -> void {
-				if constexpr (I != H.max()) {
-					supplier = &lexer::supply<I>;
+		template<class C>
+		AA_CONSTEXPR void init_key(supplier_type<C> &supplier) {
+			constant<hasher_type>()(token, [&]<size_t I>() -> void {
+				if constexpr (I != hasher_type::max()) {
+					supplier = &param_lexer::supply<I, C>;
 					state = lexing_state::VALUE;
 				} else
 					state = lexing_state::SKIP_VALUE;
@@ -57,11 +62,14 @@ namespace aa {
 		}
 
 	public:
-		AA_CONSTEXPR void operator()(const int character) {
+		template<class C>
+		AA_CONSTEXPR void operator()(const int character, C &&consumer) {
+			static constinit supplier_type<C> supplier;
+
 			switch (state) {
 				case lexing_state::BEFORE_KEY:
 					switch (character) {
-						case '=': init_key();
+						case '=': init_key(supplier);
 						case ' ': case '\t': case '\n': case '\r': return;
 						default:
 							state = lexing_state::KEY;
@@ -80,7 +88,7 @@ namespace aa {
 							whitespace.push_back(static_cast<char>(character));
 							return;
 						case '=':
-							init_key();
+							init_key(supplier);
 							token.clear();
 							return;
 					}
@@ -96,7 +104,7 @@ namespace aa {
 							whitespace.push_back(static_cast<char>(character));
 							return;
 						case '=':
-							init_key();
+							init_key(supplier);
 							token.clear();
 							whitespace.clear();
 							return;
@@ -109,7 +117,7 @@ namespace aa {
 							return;
 						case '\n':
 							state = lexing_state::BEFORE_KEY;
-							(this->*supplier)();
+							(this->*supplier)(consumer);
 							token.clear();
 							return;
 					}
@@ -132,15 +140,13 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Lexical_analysis
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<string_perfect_hash H, size_t R = 50, class C, input_stream FILE>
-	AA_CONSTEXPR void lex(FILE &&file, C &&consumer = {}) {
+	template<class C, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE>
+	AA_CONSTEXPR void lex(FILE &&file, LEXER &&lexer, C &&consumer = {}) {
 		using traits_type = typename std::remove_reference_t<FILE>::traits_type;
 
 		// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
 		if (file.peek() == traits_type::eof())
 			return;
-
-		lexer<H, C, R> p_lexer = {consumer};
 
 		// Lexing comments
 		enum struct lexing_state : size_t {
@@ -161,7 +167,7 @@ namespace aa {
 							state = lexing_state::CHECK;
 							continue;
 						default:
-							p_lexer(character);
+							lexer(character, consumer);
 							continue;
 					}
 
@@ -175,8 +181,8 @@ namespace aa {
 							continue;
 						default:
 							state = lexing_state::NONE;
-							p_lexer('/');
-							p_lexer(character);
+							lexer('/', consumer);
+							lexer(character, consumer);
 							continue;
 					}
 
@@ -186,7 +192,7 @@ namespace aa {
 							state = lexing_state::NONE;
 							// Pasibaigus paprastam komentarui vis tiek į lekserį turime nusiųsti '\n' simbolį,
 							// nes kitaip gali lekseris nepastebėti, kad pasibaigė parametro reikšmės leksema.
-							p_lexer('\n');
+							lexer('\n', consumer);
 							continue;
 						default:
 							continue;

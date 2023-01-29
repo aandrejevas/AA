@@ -6,7 +6,7 @@
 #
 #
 #
-#define AA_SOURCE_DATA (::aa::source_data<::aa::numeric_max, __LINE__, __FILE__, __PRETTY_FUNCTION__>{})
+#define AA_SOURCE_DATA ::aa::source_data<::aa::numeric_max, __LINE__, __FILE__, __PRETTY_FUNCTION__>
 #
 #
 #

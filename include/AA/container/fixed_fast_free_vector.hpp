@@ -30,11 +30,11 @@ namespace aa {
 				value_type element;
 			};
 		};
-	public:
 
 
 
 		// Capacity
+	public:
 		AA_CONSTEXPR bool has_holes() const { return first_hole; }
 
 		AA_CONSTEXPR size_type holes_count() const {

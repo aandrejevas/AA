@@ -18,11 +18,11 @@ namespace aa {
 	protected:
 		using b1 = pair<value_type>;
 		using b2 = pair<value_type *>;
-	public:
 
 
 
 		// Element access
+	public:
 		template<size_t I>
 		AA_CONSTEXPR value_type &get() { return *b2::template get<I>(); }
 

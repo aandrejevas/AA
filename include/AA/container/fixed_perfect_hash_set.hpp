@@ -24,7 +24,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Hash_table
 	// Konteineris laiko savyje maišos kodus.
 	// Neturi klasė iteratoriu, nes nežinome, kurie buckets naudojami, dirty regione taip pat ne visi naudojami.
-	template<regular_unsigned_integral T, size_t N, size_t M = 0, storable H = generic_hash<>>
+	template<regular_unsigned_integral T, size_t N, size_t M = 0, class H = generic_hash<>>
 		requires (N >= M)
 	struct fixed_perfect_hash_set {
 		// Member types
@@ -437,7 +437,7 @@ namespace aa {
 
 
 		// Special member functions
-		template<class U = hasher_type>
+		template<constructible_to<hasher_type> U = hasher_type>
 		AA_CONSTEXPR fixed_perfect_hash_set(U &&h = {}) : hasher{std::forward<U>(h)} {}
 
 

@@ -9,7 +9,7 @@
 #include <concepts> // invocable
 #include <ostream> // basic_ostream
 #include <algorithm> // for_each
-#include <utility> // as_const, tuple_size_v
+#include <utility> // tuple_size_v
 #include <iomanip> // setw
 
 
@@ -50,8 +50,8 @@ namespace aa {
 			if constexpr (std::tuple_size_v<U>) {
 				apply<(std::tuple_size_v<U>) - 1>([&]<size_t... I>() -> void {
 					print('{');
-					(print(s, getter<I>{}(u), ", "), ...);
-					print(s, getter<sizeof...(I)>{}(u), '}');
+					(print(s, constant<getter<I>>()(u), ", "), ...);
+					print(s, constant<getter<sizeof...(I)>>()(u), '}');
 				});
 			} else {
 				print("{}");
@@ -77,8 +77,8 @@ namespace aa {
 	template<std::ranges::input_range R, class F = delim_r_inserter<>>
 	struct range_writer {
 #pragma GCC diagnostic pop
-		[[no_unique_address]] R range;
-		[[no_unique_address]] F fun = {};
+		[[no_unique_address]] const R range;
+		[[no_unique_address]] const F fun = {};
 
 		// Čia writeris galėtų ateiti ir ne const, bet tada reiktų arba kelių užklojimų funkcijos arba pridėti dar vieną
 		// template argumentą, abu sprendimai labai nepatogūs. Na iš principo tai yra keista į spausdinimo funkciją
@@ -103,13 +103,13 @@ namespace aa {
 	template<class E, class F = delim_r_inserter<>>
 	struct writer {
 #pragma GCC diagnostic pop
-		[[no_unique_address]] E element;
-		[[no_unique_address]] F fun = {};
+		[[no_unique_address]] const E element;
+		[[no_unique_address]] const F fun = {};
 
 		template<class C, char_traits_for<C> T>
 			requires (std::invocable<F &, std::basic_ostream<C, T> &, const E &>)
 		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const writer &w) {
-			std::invoke(w.fun, s, std::as_const(w.element));
+			std::invoke(w.fun, s, w.element);
 			return s;
 		}
 	};
@@ -124,7 +124,7 @@ namespace aa {
 	template<class IE, class IF, class F = delim_r_inserter<>>
 	writer(const writer<IE, IF> &&, F && = {}) -> writer<writer<IE, IF>, F>;
 
-	template<not_instantiation_of<writer> E, class F = delim_r_inserter<>>
+	template<not_instance_of_twtp<writer> E, class F = delim_r_inserter<>>
 	writer(E &&, F && = {}) -> writer<E, F>;
 
 }

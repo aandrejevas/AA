@@ -10,8 +10,7 @@
 #include "evaluator.hpp"
 #include <cstddef> // size_t
 #include <string> // string
-#include <string_view> // string_view
-#include <type_traits> // remove_const_t
+#include <type_traits> // remove_const_t, remove_reference_t
 #include <limits> // numeric_limits
 #include <bit> // countr_one
 
@@ -19,42 +18,36 @@
 
 namespace aa {
 
-	template<string_perfect_hash H, size_t R = 50, class EVAL = generic_evaluator<>, input_stream FILE, instantiation_of<tuple> TUPLE>
-	AA_CONSTEXPR void parse(TUPLE &t, FILE &&file, EVAL &&eval = {}) {
-		lex<H, R>(file, [&](const size_t index, const std::string &token) -> void {
-			{
-				t.get(index, [&]<size_t I, class VALUE>(VALUE & value) -> void {
-					invoke<I>(eval, value, token.operator std::string_view());
-				});
-			}});
-	}
-
-	template<string_perfect_hash H, size_t R = 50, class EVAL = generic_evaluator<>, input_stream FILE, instantiation_of<tuple> TUPLE>
-		requires (H.max() <= std::numeric_limits<size_t>::digits)
-	AA_CONSTEXPR void safe_parse(TUPLE &t, FILE &&file, EVAL &&eval = {}) {
-		size_t bitset = 0;
-		lex<H, R>(file, [&](const size_t index, const std::string &token) -> void {
-			{
-				t.get(index, [&]<size_t I, class VALUE>(VALUE & value) -> void {
-					bitset |= constant<int_exp2(I)>();
-					invoke<I>(eval, value, token.operator std::string_view());
-				});
-			}});
-		AA_TRACE_ASSERT(std::countr_one(bitset) == H.max()/*,
-			"Parameter `", type_name<T>(), " - ", name, "` not found."*/);
-	}
-
-	template<instantiation_of<tuple> TUPLE, string_perfect_hash H, size_t R = 50, class EVAL = generic_evaluator<>, input_stream FILE>
-	AA_CONSTEXPR std::remove_const_t<TUPLE> parse(FILE &&file, EVAL &&eval = {}) {
-		return create_with_invocable<TUPLE>([&](std::remove_const_t<TUPLE> &t) -> void {
-			parse<H, R>(t, file, eval);
+	template<class EVAL = generic_evaluator<>, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE, not_const_instance_of_twtp<tuple> TUPLE>
+	AA_CONSTEXPR void parse(TUPLE &t, FILE &&file, LEXER &&lexer, EVAL &&eval = {}) {
+		lex(file, lexer, [&]<size_t I>(const std::string & token) -> void {
+			invoke<I>(eval, t.template get<I>(), token);
 		});
 	}
 
-	template<instantiation_of<tuple> TUPLE, string_perfect_hash H, size_t R = 50, class EVAL = generic_evaluator<>, input_stream FILE>
-	AA_CONSTEXPR std::remove_const_t<TUPLE> safe_parse(FILE &&file, EVAL &&eval = {}) {
-		return create_with_invocable<TUPLE>([&](std::remove_const_t<TUPLE> &t) -> void {
-			safe_parse<H, R>(t, file, eval);
+	template<class EVAL = generic_evaluator<>, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE, not_const_instance_of_twtp<tuple> TUPLE>
+		requires (std::remove_reference_t<LEXER>::hasher_type::max() <= std::numeric_limits<size_t>::digits)
+	AA_CONSTEXPR void safe_parse(TUPLE &t, FILE &&file, LEXER &&lexer, EVAL &&eval = {}) {
+		size_t bitset = 0;
+		lex(file, lexer, [&]<size_t I>(const std::string & token) -> void {
+			bitset |= constant<int_exp2(I)>();
+			invoke<I>(eval, t.template get<I>(), token);
+		});
+		AA_TRACE_ASSERT(std::countr_one(bitset) == std::remove_reference_t<LEXER>::hasher_type::max()/*,
+			"Parameter `", type_name<T>(), " - ", name, "` not found."*/);
+	}
+
+	template<instance_of_twtp<tuple> TUPLE, class EVAL = generic_evaluator<>, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE>
+	AA_CONSTEXPR std::remove_const_t<TUPLE> parse(FILE &&file, LEXER &&lexer, EVAL &&eval = {}) {
+		return make_with_invocable<TUPLE>([&](std::remove_const_t<TUPLE> &t) -> void {
+			parse(t, file, lexer, eval);
+		});
+	}
+
+	template<instance_of_twtp<tuple> TUPLE, class EVAL = generic_evaluator<>, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE>
+	AA_CONSTEXPR std::remove_const_t<TUPLE> safe_parse(FILE &&file, LEXER &&lexer, EVAL &&eval = {}) {
+		return make_with_invocable<TUPLE>([&](std::remove_const_t<TUPLE> &t) -> void {
+			safe_parse(t, file, lexer, eval);
 		});
 	}
 

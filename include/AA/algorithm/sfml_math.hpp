@@ -28,7 +28,7 @@ namespace std {
 
 namespace sf {
 
-	template<size_t I, aa::instantiation_of<sf::Vector2> V>
+	template<size_t I, aa::instance_of_twtp<sf::Vector2> V>
 	AA_CONSTEXPR std::tuple_element_t<I, std::remove_reference_t<V>> &get(V &&v) {
 		if constexpr (!I)	return v.x;
 		else				return v.y;
