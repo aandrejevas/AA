@@ -40,7 +40,7 @@ namespace aa {
 	struct generic_evaluator {
 		template<size_t I = 0, argument_for_tdc_template<E> T>
 		AA_CONSTEXPR void operator()(T &t, const std::string_view &token) const {
-			invoke<I>(E<T>{}, t, token);
+			invoke<I>(constant<E<T>>(), t, token);
 		}
 	};
 

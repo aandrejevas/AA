@@ -70,7 +70,7 @@ namespace aa {
 			AA_CONSTEXPR variant_iterator &operator-=(const difference_type n) { ptr -= n; return *this; }
 			friend AA_CONSTEXPR variant_iterator operator+(const difference_type n, const variant_iterator &r) { return {n + r.ptr}; }
 
-			AA_CONSTEXPR variant_iterator() = default;
+			AA_CONSTEVAL variant_iterator() = default;
 
 		protected:
 			friend fixed_free_vector;

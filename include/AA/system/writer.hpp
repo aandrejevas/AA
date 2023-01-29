@@ -78,7 +78,7 @@ namespace aa {
 	struct range_writer {
 #pragma GCC diagnostic pop
 		[[no_unique_address]] const R range;
-		[[no_unique_address]] const F fun = {};
+		[[no_unique_address]] const F fun = constant<F>();
 
 		// Čia writeris galėtų ateiti ir ne const, bet tada reiktų arba kelių užklojimų funkcijos arba pridėti dar vieną
 		// template argumentą, abu sprendimai labai nepatogūs. Na iš principo tai yra keista į spausdinimo funkciją
@@ -104,7 +104,7 @@ namespace aa {
 	struct writer {
 #pragma GCC diagnostic pop
 		[[no_unique_address]] const E element;
-		[[no_unique_address]] const F fun = {};
+		[[no_unique_address]] const F fun = constant<F>();
 
 		template<class C, char_traits_for<C> T>
 			requires (std::invocable<F &, std::basic_ostream<C, T> &, const E &>)

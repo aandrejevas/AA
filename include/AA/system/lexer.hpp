@@ -5,7 +5,7 @@
 #include "../algorithm/hash.hpp"
 #include <cstddef> // size_t
 #include <string> // string
-#include <utility> // unreachable
+#include <utility> // unreachable, tuple_size
 #include <type_traits> // remove_reference_t
 
 
@@ -141,7 +141,7 @@ namespace aa {
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
 	template<class C, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE>
-	AA_CONSTEXPR void lex(FILE &&file, LEXER &&lexer, C &&consumer = {}) {
+	AA_CONSTEXPR void lex(FILE &&file, LEXER &&lexer, C &&consumer = constant<C>()) {
 		using traits_type = typename std::remove_reference_t<FILE>::traits_type;
 
 		// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
@@ -225,5 +225,14 @@ namespace aa {
 		// Svarbu nepamiršti, kad jei parametrą bandoma apibrėžti failo pabaigoje,
 		// tai failo paskutinis simbolis turės būti '\n', kitaip parametras nebus apibrėžtas.
 	}
+
+}
+
+
+
+namespace std {
+
+	template<aa::instance_of_twntp<aa::string_perfect_hash> H>
+	struct tuple_size<aa::param_lexer<H>> : aa::size_t_identity<H::max()> {};
 
 }

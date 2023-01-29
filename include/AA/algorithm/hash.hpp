@@ -6,7 +6,7 @@
 #include <cstddef> // size_t
 #include <functional> // hash
 #include <ranges> // size, data
-#include <utility> // forward
+#include <utility> // forward, tuple_size
 
 
 
@@ -16,7 +16,7 @@ namespace aa {
 	struct generic_hash {
 		template<hashable_by_template<H> T>
 		AA_CONSTEXPR size_t operator()(const T &t) const {
-			return H<T>{}(t);
+			return constant<H<T>>()(t);
 		}
 
 		static AA_CONSTEVAL size_t min() { return numeric_min; }
@@ -33,7 +33,7 @@ namespace aa {
 	struct mod_generic_hash {
 		template<hashable_by_template<H> T>
 		AA_CONSTEXPR size_t operator()(const T &t) const {
-			return remainder<N>(H<T>{}(t));
+			return remainder<N>(constant<H<T>>()(t));
 		}
 
 		static AA_CONSTEVAL size_t min() { return 0; }
@@ -79,5 +79,14 @@ namespace aa {
 		static AA_CONSTEVAL size_t min() { return 0; }
 		static AA_CONSTEVAL size_t max() { return sizeof...(A); }
 	};
+
+}
+
+
+
+namespace std {
+
+	template<auto... A>
+	struct tuple_size<aa::string_perfect_hash<A...>> : aa::size_t_identity<sizeof...(A)> {};
 
 }

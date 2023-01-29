@@ -242,6 +242,34 @@ namespace aa {
 
 
 
+	// Galėtų šios klasės turėti get funkciją, bet sakome, kad naudotojas tegul naudoja numeric_limits, nereikia
+	// turėti dviejų kelių, kad padaryti visiškai tą patį. Kad gauti pakeistą konstantą naudoti constant funkciją.
+	struct numeric_max_t {
+		template<class T>
+		AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::max(); }
+	};
+
+	AA_CONSTEXPR const numeric_max_t numeric_max;
+
+	struct numeric_min_t {
+		template<class T>
+		AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::min(); }
+	};
+
+	AA_CONSTEXPR const numeric_min_t numeric_min;
+
+	template<std::equality_comparable T>
+	AA_CONSTEXPR bool is_numeric_max(const T &x) {
+		return x == std::numeric_limits<T>::max();
+	}
+
+	template<std::equality_comparable T>
+	AA_CONSTEXPR bool is_numeric_min(const T &x) {
+		return x == std::numeric_limits<T>::min();
+	}
+
+
+
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
 	template<class T, size_t I>
 	concept member_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(std::remove_cvref_t<T> &t) {
@@ -322,11 +350,12 @@ namespace aa {
 
 
 
-	template<class T>
-	concept tuple_like = apply<T>([]<size_t... I>() -> bool { return (... && gettable<T, I>); });
+	template<class T, size_t N = numeric_max>
+	concept tuple_like = apply<T>([]<size_t... I>() -> bool { return (... && gettable<T, I>); })
+		&& (is_numeric_max(N) || std::tuple_size_v<std::remove_reference_t<T>> == N);
 
-	template<class T>
-	concept array_like = tuple_like<T> && !!std::tuple_size_v<std::remove_reference_t<T>>
+	template<class T, size_t N = numeric_max>
+	concept array_like = tuple_like<T, N> && !!std::tuple_size_v<std::remove_reference_t<T>>
 		&& apply<T>([]<size_t... I>() -> bool { return are_same_v<get_result_t<I, T>...>; });
 
 	template<array_like T>
@@ -335,17 +364,14 @@ namespace aa {
 	template<array_like T>
 	using array_element_t = typename array_element<T>::type;
 
-	template<class T>
-	concept vector_like = array_like<T> && arithmetic<array_element_t<T>>;
+	template<class T, size_t N = numeric_max>
+	concept arithmetic_array_like = array_like<T, N> && arithmetic<array_element_t<T>>;
 
-	template<class T, size_t N>
-	concept tupleN_like = tuple_like<T> && (std::tuple_size_v<T> == N);
+	template<class T, class U>
+	concept same_tuple_size_as = std::tuple_size_v<std::remove_reference_t<T>> == std::tuple_size_v<std::remove_reference_t<U>>;
 
-	template<class T, size_t N>
-	concept arrayN_like = array_like<T> && (std::tuple_size_v<T> == N);
-
-	template<class T, size_t N>
-	concept vectorN_like = vector_like<T> && (std::tuple_size_v<T> == N);
+	template<class T, class U>
+	concept array_similar_to = std::same_as<array_element_t<T>, array_element_t<U>> && same_tuple_size_as<T, U>;
 
 
 
@@ -410,18 +436,15 @@ namespace aa {
 	template<class T, class U>
 	concept char_traits_for = char_traits_like<T> && std::same_as<typename T::char_type, U>;
 
-	template<class T, class U>
-	concept vector2_getter =
-		std::invocable<const T &, const U &> && vectorN_like<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>, 2>;
+	template<class T, class U, size_t N = numeric_max>
+	concept arithmetic_array_getter = std::invocable<const T &, const U &>
+		&& arithmetic_array_like<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>, N>;
 
-	template<class U, vector2_getter<U> T>
-	struct vector2_getter_result : std::remove_cvref<std::invoke_result_t<const T &, const U &>> {};
+	template<class U, arithmetic_array_getter<U> T>
+	struct arithmetic_array_getter_result : std::remove_cvref<std::invoke_result_t<const T &, const U &>> {};
 
 	template<class U, class T>
-	using vector2_getter_result_t = typename vector2_getter_result<U, T>::type;
-
-	template<class T, class U>
-	concept vector2_similar_to = vectorN_like<T, 2> && std::same_as<array_element_t<T>, array_element_t<U>>;
+	using arithmetic_array_getter_result_t = typename arithmetic_array_getter_result<U, T>::type;
 
 
 
@@ -572,48 +595,6 @@ namespace aa {
 
 	template<class T>
 	AA_CONSTEXPR const size_t representable_values_v = representable_values<T>::value;
-
-
-
-	// Negalime naudoti std::unreachable_sentinel_t, nes jis veikia tik su std::weakly_incrementable tipais.
-	template<bool C>
-	struct universal_sentinel_t {
-		template<class T>
-		AA_CONSTEXPR universal_sentinel_t(const T &) {}
-		AA_CONSTEXPR universal_sentinel_t() = default;
-
-		template<class T>
-		friend AA_CONSTEXPR bool operator==(const universal_sentinel_t &, const T &) { return C; }
-	};
-
-	template<bool C>
-	AA_CONSTEXPR const universal_sentinel_t<C> universal_sentinel;
-
-	// Galėtų šios klasės turėti get funkciją, bet sakome, kad naudotojas tegul naudoja numeric_limits, nereikia
-	// turėti dviejų kelių, kad padaryti visiškai tą patį. Kad gauti pakeistą konstantą naudoti constant funkciją.
-	struct numeric_max_t {
-		template<class T>
-		AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::max(); }
-	};
-
-	AA_CONSTEXPR const numeric_max_t numeric_max;
-
-	struct numeric_min_t {
-		template<class T>
-		AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::min(); }
-	};
-
-	AA_CONSTEXPR const numeric_min_t numeric_min;
-
-	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_numeric_max(const T &x) {
-		return x == std::numeric_limits<T>::max();
-	}
-
-	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_numeric_min(const T &x) {
-		return x == std::numeric_limits<T>::min();
-	}
 
 
 
@@ -901,13 +882,5 @@ namespace std {
 
 	template<size_t I, auto... V>
 	struct tuple_element<I, const aa::pack<V...>> : std::tuple_element<I, aa::pack<V...>> {};
-
-
-
-	template<bool C, class T, template<class> class TQUAL, template<class> class QQUAL>
-	struct basic_common_reference<aa::universal_sentinel_t<C>, T, TQUAL, QQUAL> : std::type_identity<aa::universal_sentinel_t<C>> {};
-
-	template<bool C, class T, template<class> class TQUAL, template<class> class QQUAL>
-	struct basic_common_reference<T, aa::universal_sentinel_t<C>, TQUAL, QQUAL> : std::type_identity<aa::universal_sentinel_t<C>> {};
 
 }

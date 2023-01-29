@@ -18,7 +18,7 @@ namespace aa {
 
 	// https://stackoverflow.com/questions/41946007/efficient-and-well-explained-implementation-of-a-quadtree-for-2d-collision-det
 	// Klasė neturi iteratorių, nes ji pati savyje nelaiko elementų, reiktų iteruoti struktūrą, kuri juos laiko.
-	template<class T, size_t W, size_t H, size_t N, vector2_getter<T> L = std::identity, bool ERASABLE = false>
+	template<class T, size_t W, size_t H, size_t N, arithmetic_array_getter<T, 2> L = std::identity, bool ERASABLE = false>
 	struct fixed_grid {
 		// Member types
 		using value_type = T;
@@ -29,7 +29,7 @@ namespace aa {
 		using const_reference = const value_type &;
 		using pointer = value_type *;
 		using const_pointer = const value_type *;
-		using position_type = vector2_getter_result_t<value_type, locator_type>;
+		using position_type = arithmetic_array_getter_result_t<value_type, locator_type>;
 		using pair_type = pair<array_element_t<position_type>>;
 
 		// Member constants
@@ -87,7 +87,7 @@ namespace aa {
 
 
 			// Lookup
-			template<invocable_ref<reference> F, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
+			template<invocable_ref<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
 			AA_CONSTEXPR void query_range(const P1 &tl, const P2 &br, F &&f, const fixed_grid &t) const {
 				if (!empty(t)) {
 					const node_type *iter = first;
@@ -120,7 +120,7 @@ namespace aa {
 
 
 			// Special member functions
-			AA_CONSTEXPR leaf() = default;
+			AA_CONSTEVAL leaf() = default;
 
 
 
@@ -157,25 +157,25 @@ namespace aa {
 
 
 		// Lookup
-		template<vector2_similar_to<pair_type> P = pair_type>
+		template<array_similar_to<pair_type> P = pair_type>
 		AA_CONSTEXPR leaf &find_leaf(const P &pos) {
 			return const_cast<leaf &>(std::as_const(*this).find_leaf(pos));
 		}
 
-		template<vector2_similar_to<pair_type> P = pair_type>
+		template<array_similar_to<pair_type> P = pair_type>
 		AA_CONSTEXPR const leaf &find_leaf(const P &pos) const {
 			return
 				leaves[unsign_cast<size_type>(get_y(pos) / get_h(leaf_size))][unsign_cast<size_type>(get_x(pos) / get_w(leaf_size))];
 		}
 
-		template<invocable_ref<leaf &> F, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
+		template<invocable_ref<leaf &> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
 		AA_CONSTEXPR void find_leaves(const P1 &tl, const P2 &br, F &&f) {
 			std::as_const(*this).find_leaves(tl, br, [&](const leaf &l) -> void {
 				std::invoke(f, const_cast<leaf &>(l));
 			});
 		}
 
-		template<invocable_ref<const leaf &> F, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
+		template<invocable_ref<const leaf &> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
 		AA_CONSTEXPR void find_leaves(const P1 &tl, const P2 &br, F &&f) const {
 			if (get_x(br) < min_loc || get_y(br) < min_loc || get_x(max_loc) < get_x(tl) || get_y(max_loc) < get_y(tl)) return;
 
@@ -200,14 +200,14 @@ namespace aa {
 			});
 		}
 
-		template<invocable_ref<reference> F, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
+		template<invocable_ref<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
 		AA_CONSTEXPR void query_range(const P1 &tl, const P2 &br, F &&f) const {
 			find_leaves(tl, br, [&](const leaf &l) -> void {
 				l.query_range(tl, br, f, *this);
 			});
 		}
 
-		template<invocable_ref<reference> F, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
+		template<invocable_ref<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
 		AA_CONSTEXPR void query_loose_range(const P1 &tl, const P2 &br, F &&f) const {
 			find_leaves(tl, br, [&](const leaf &l) -> void {
 				l.query(f, *this);
@@ -233,12 +233,12 @@ namespace aa {
 
 
 		// Special member functions
-		template<constructible_to<locator_type> U = locator_type, vector2_similar_to<pair_type> P = pair_type>
-		AA_CONSTEXPR fixed_grid(const P &size, U &&u = {})
+		template<constructible_to<locator_type> U = locator_type, array_similar_to<pair_type> P = pair_type>
+		AA_CONSTEXPR fixed_grid(const P &size, U &&u = constant<U>())
 			: fixed_grid{size, {product<W>(get_w(size)) - 1, product<H>(get_h(size)) - 1}, std::forward<U>(u)} {}
 
-		template<constructible_to<locator_type> U = locator_type, vector2_similar_to<pair_type> P1 = pair_type, vector2_similar_to<pair_type> P2 = pair_type>
-		AA_CONSTEXPR fixed_grid(const P1 &size, const P2 &l, U &&u = {})
+		template<constructible_to<locator_type> U = locator_type, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
+		AA_CONSTEXPR fixed_grid(const P1 &size, const P2 &l, U &&u = constant<U>())
 			: leaf_size{get_w(size), get_h(size)}, max_loc{get_x(l), get_y(l)}, locator{std::forward<U>(u)} {}
 
 
