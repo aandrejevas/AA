@@ -7,7 +7,7 @@
 #include <cstddef> // size_t
 #include <functional> // hash
 #include <ranges> // size, data
-#include <utility> // forward, tuple_size, tuple_size_v
+#include <utility> // forward, tuple_size, tuple_size_v, tuple_element
 
 
 
@@ -50,7 +50,7 @@ namespace aa {
 	// MAX negali rodyti į kažkurį iš argumentų, nes MAX represents a failure state kai nerandamas nei vienas iš template parametrų.
 	template<auto... A>
 		requires (are_same_v<range_char_traits_t<fixed_string_for<A>>...>)
-	struct string_perfect_hash {
+	struct string_perfect_hash : pack<to_fixed_string<A>()...> {
 		using is_transparent = void;
 		using traits_type = first_or_void_t<range_char_traits_t<fixed_string_for<A>>...>;
 
@@ -90,5 +90,8 @@ namespace std {
 
 	template<auto... A>
 	struct tuple_size<aa::string_perfect_hash<A...>> : aa::size_t_identity<sizeof...(A)> {};
+
+	template<size_t I, auto... A>
+	struct tuple_element<I, aa::string_perfect_hash<A...>> : aa::pack_element<I, aa::to_fixed_string<A>()...> {};
 
 }

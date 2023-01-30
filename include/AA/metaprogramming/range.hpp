@@ -1,6 +1,7 @@
 #pragma once
 
 #include "general.hpp"
+#include <cstddef> // size_t
 #include <type_traits> // type_identity, make_unsigned_t, add_pointer_t
 #include <concepts> // convertible_to, same_as
 #include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, next, prev, distance, iter_reference_t

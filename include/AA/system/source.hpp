@@ -62,9 +62,9 @@ namespace aa {
 
 
 
-	// Nereikia constraints S tipui, nes printl viskuo pasirūpina.
+	// S constrained, nes kitaip gali būti paduotas ne stream tipas.
 	// D tipas ne bet koks, nes funkcija buvo sukurta dirbti su source_data tipu.
-	template<instance_of_twntp<source_data> D, class S, class... A>
+	template<instance_of_twntp<source_data> D, output_stream S, class... A>
 	AA_CONSTEXPR void log(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		printl(s, constant<D>(), ": ", args...);
 		else							log<D>(s, "Info logged.");
@@ -76,7 +76,7 @@ namespace aa {
 		log<D>(std::clog, args...);
 	}
 
-	template<instance_of_twntp<source_data> D, class S, class... A>
+	template<instance_of_twntp<source_data> D, output_stream S, class... A>
 	[[noreturn]] AA_CONSTEXPR void abort(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		log<D>(s, args...);
 		else							log<D>(s, "Program aborted.");
@@ -100,7 +100,7 @@ namespace aa {
 	}
 
 	// Dėl atributo, naudoti šią funkciją turėtų būti tas pats kaip naudoti macro greitaveikos atžvilgiu.
-	template<instance_of_twntp<source_data> D, bool T = true, class S, class... A>
+	template<instance_of_twntp<source_data> D, bool T = true, output_stream S, class... A>
 	AA_CONSTEXPR void assert(const bool condition, S &&s, const A&... args) {
 		if constexpr (T || !AA_ISDEF_NDEBUG) {
 			if (!condition) {

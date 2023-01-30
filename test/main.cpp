@@ -38,6 +38,8 @@ using namespace aa;
 
 
 
+enum : size_t { TEST_1, TEST_2 };
+
 int main() {
 	// Galima būtų naudoti funkcijų atributus (pvz. const, pure) ir restricted kvalifikatorių, bet visą tai yra compiler extensions.
 	// Sakykime nenaudojimas minėtų galimybių skatina ieškoti kitų būdų kaip gauti tokį patį performance.
@@ -95,7 +97,7 @@ int main() {
 	}
 	{
 		const auto a = safe_parse<tuple<std::string, double, prev_unsigned_t<size_t>>>
-			(make_p_ifstream("params.txt").get(), param_lexer<string_perfect_hash<"TEST_1"_fs, "TEST_2"_fs, "TEST_3"_fs>>{});
+			(make_p_ifstream("params.txt").get(), param_lexer<string_perfect_hash<TEST_1, TEST_2, "TEST_3"_fs>>{});
 
 		AA_TRACE_ASSERT(a.get<0>() == "text");
 		AA_TRACE_ASSERT(std::bit_cast<size_t>(a.get<1>()) == std::bit_cast<size_t>(22.5));

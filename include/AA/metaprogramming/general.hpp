@@ -322,6 +322,12 @@ namespace aa {
 		return std::forward<F>(f).template AA_CALL_OPERATOR<A...>(std::forward<T>(t)...);
 	}
 
+	template<class... A, class F, class... T>
+		requires (requires(F &&f, T&&... t) { std::forward<F>(f).template AA_CALL_OPERATOR<A...>(std::forward<T>(t)...); })
+	AA_CONSTEXPR decltype(auto) invoke(F &&f, T&&... t) {
+		return std::forward<F>(f).template AA_CALL_OPERATOR<A...>(std::forward<T>(t)...);
+	}
+
 	template<class F, size_t... I>
 	AA_CONSTEXPR decltype(auto) apply(F &&f, const std::index_sequence<I...> &&) {
 		return invoke<I...>(std::forward<F>(f));
