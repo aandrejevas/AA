@@ -43,14 +43,14 @@ namespace aa {
 		AA_CONSTEXPR I begin(const std::iter_difference_t<I> n) const requires (std::random_access_iterator<I>) { return begin() + n; }
 		AA_CONSTEXPR S rbegin(const std::iter_difference_t<S> n) const requires (std::random_access_iterator<S>) { return rbegin() - n; }
 
-		AA_CONSTEXPR std::iter_reference_t<I> elem(const std::iter_difference_t<I> n) const requires (std::random_access_iterator<I>) { return *begin(n); }
-		AA_CONSTEXPR std::iter_reference_t<S> relem(const std::iter_difference_t<S> n) const requires (std::random_access_iterator<S>) { return *rbegin(n); }
+		AA_CONSTEXPR std::iter_reference_t<I> get(const std::iter_difference_t<I> n) const requires (std::random_access_iterator<I>) { return *begin(n); }
+		AA_CONSTEXPR std::iter_reference_t<S> rget(const std::iter_difference_t<S> n) const requires (std::random_access_iterator<S>) { return *rbegin(n); }
 
 
-		AA_CONSTEXPR std::iter_reference_t<I> operator[](const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return elem(n); }
+		AA_CONSTEXPR std::iter_reference_t<I> operator[](const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return get(n); }
 
-		AA_CONSTEXPR std::iter_reference_t<I> elem(const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return *data(n); }
-		AA_CONSTEXPR std::iter_reference_t<S> relem(const aa::iter_size_t<S> n) const requires (std::contiguous_iterator<S>) { return *rdata(n); }
+		AA_CONSTEXPR std::iter_reference_t<I> get(const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return *data(n); }
+		AA_CONSTEXPR std::iter_reference_t<S> rget(const aa::iter_size_t<S> n) const requires (std::contiguous_iterator<S>) { return *rdata(n); }
 
 		AA_CONSTEXPR aa::iter_pointer_t<I> data(const aa::iter_size_t<I> n) const requires (std::contiguous_iterator<I>) { return data() + n; }
 		AA_CONSTEXPR aa::iter_pointer_t<S> rdata(const aa::iter_size_t<S> n) const requires (std::contiguous_iterator<S>) { return rdata() - n; }

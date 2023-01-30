@@ -2,11 +2,12 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
+#include "../system/source.hpp"
 #include "arithmetic.hpp"
 #include <cstddef> // size_t
 #include <functional> // hash
 #include <ranges> // size, data
-#include <utility> // forward, tuple_size
+#include <utility> // forward, tuple_size, tuple_size_v
 
 
 
@@ -48,20 +49,21 @@ namespace aa {
 	//
 	// MAX negali rodyti į kažkurį iš argumentų, nes MAX represents a failure state kai nerandamas nei vienas iš template parametrų.
 	template<auto... A>
-		requires (are_same_v<range_char_traits_t<decltype(A)>...>)
+		requires (are_same_v<range_char_traits_t<fixed_string_for<A>>...>)
 	struct string_perfect_hash {
 		using is_transparent = void;
-		using traits_type = first_or_void_t<range_char_traits_t<decltype(A)>...>;
+		using traits_type = first_or_void_t<range_char_traits_t<fixed_string_for<A>>...>;
 
 	protected:
 		template<size_t I, auto V, class T, class F>
 		static AA_CONSTEXPR bool trie(const T &t, F &&f, const bool c) {
 			if (c) {
-				if constexpr (I == std::ranges::size(V)) {
+				if constexpr (I == std::tuple_size_v<fixed_string_for<V>>) {
 					invoke<pack_index_v<V, A...>>(std::forward<F>(f));
 					return true;
 				} else {
-					return trie<I + 1, V>(t, std::forward<F>(f), traits_type::eq(std::ranges::data(t)[I], std::ranges::data(V)[I]));
+					return trie<I + 1, V>(t, std::forward<F>(f),
+						traits_type::eq(std::ranges::data(t)[I], constant<constant<getter<I>>()(to_fixed_string<V>())>()));
 				}
 			} else return false;
 		}
@@ -70,7 +72,7 @@ namespace aa {
 		template<class T, class F>
 		AA_CONSTEXPR void operator()(const T &t, F &&f) const {
 			if constexpr (same_range_char_traits_as<T, traits_type>) {
-				if ((... || trie<0, A>(t, std::forward<F>(f), std::ranges::size(t) == std::ranges::size(A))))
+				if ((... || trie<0, A>(t, std::forward<F>(f), std::ranges::size(t) == std::tuple_size_v<fixed_string_for<A>>)))
 					return;
 			}
 			invoke<max()>(std::forward<F>(f));

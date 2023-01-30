@@ -1,4 +1,5 @@
 #include <AA/container/fixed_string.hpp>
+#include <AA/container/fixed_array.hpp>
 #include <AA/container/fixed_grid.hpp>
 #include <AA/container/fixed_free_vector.hpp>
 #include <AA/container/fixed_perfect_hash_set.hpp>
@@ -141,7 +142,7 @@ int main() {
 	}
 	{
 		std::unordered_set<size_t> b;
-		fixed_perfect_hash_set<size_t, 1'000/*, 1000*/> a;
+		fixed_perfect_hash_set<size_t, 1'000> a; //, 1000
 		printl(a.max_bucket_count(), ' ', a.bucket_max_size(), ' ', a.max_size());
 
 		// Insert test
@@ -183,9 +184,9 @@ int main() {
 			a.erase(a.bucket(use_f ? a.first_dirty_index() : a.last_dirty_index()).front());
 			if (!a.empty()) use_f = !use_f; else break;
 		} while (true);
-		/*do {
-			a.erase(a.bucket(a.dirty_subrange()[int_distribution(g, a.bucket_count())]).front());
-		} while (!a.empty());*/
+		//do {
+		//	a.erase(a.bucket(a.dirty_subrange()[int_distribution(g, a.bucket_count())]).front());
+		//} while (!a.empty());
 		unsafe_for_each(a.buckets(), [](const size_t i) -> void { AA_TRACE_ASSERT(!i); });
 
 		static_assert(std::ranges::bidirectional_range<decltype(a)::bucket_iterable>);
@@ -211,14 +212,14 @@ int main() {
 		static_assert(std::ranges::random_access_range<decltype(a)>);
 	}
 	{
-		using grid_type = fixed_erasable_grid<array_t<double, 2>, 100, 100, 500>;
+		using grid_type = fixed_erasable_grid<fixed_array<double, 2>, 100, 100, 500>;
 		grid_type tree = {{1, 1}};
 		fixed_vector<grid_type::value_type, tree.max_size()> positions;
 
 		{
 			repeat(tree.max_size(), [&]() { {
-					positions.emplace_back(grid_type::value_type{real_distribution<double>(g, 25.),
-						norm_map<0>(real_distribution<double>(g, 50., 10.), 50., 10., 25.)});
+					positions.emplace_back(grid_type::value_type{{real_distribution<double>(g, 25.),
+						norm_map<0>(real_distribution<double>(g, 50., 10.), 50., 10., 25.)}});
 					tree.insert(positions.back());
 				}});
 			size_t sum = 0;

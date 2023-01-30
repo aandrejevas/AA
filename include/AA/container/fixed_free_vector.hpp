@@ -97,16 +97,16 @@ namespace aa {
 		static AA_CONSTEXPR const_pointer get_elem(const node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
 
 	public:
-		AA_CONSTEXPR pointer operator[](const size_type pos) { return get_elem(elements.data(pos)); }
-		AA_CONSTEXPR const_pointer operator[](const size_type pos) const { return get_elem(elements.data(pos)); }
+		AA_CONSTEXPR pointer operator[](const size_type pos) { return get(pos); }
+		AA_CONSTEXPR const_pointer operator[](const size_type pos) const { return get(pos); }
 
-		AA_CONSTEXPR pointer elem(const size_type pos) { return get_elem(elements.data(pos)); }
-		AA_CONSTEXPR const_pointer elem(const size_type pos) const { return get_elem(elements.data(pos)); }
-		AA_CONSTEXPR const_pointer celem(const size_type pos) const { return elem(pos); }
+		AA_CONSTEXPR pointer get(const size_type pos) { return get_elem(elements.data(pos)); }
+		AA_CONSTEXPR const_pointer get(const size_type pos) const { return get_elem(elements.data(pos)); }
+		AA_CONSTEXPR const_pointer cget(const size_type pos) const { return get(pos); }
 
-		AA_CONSTEXPR pointer relem(const size_type pos) { return get_elem(elements.rdata(pos)); }
-		AA_CONSTEXPR const_pointer relem(const size_type pos) const { return get_elem(elements.rdata(pos)); }
-		AA_CONSTEXPR const_pointer crelem(const size_type pos) const { return relem(pos); }
+		AA_CONSTEXPR pointer rget(const size_type pos) { return get_elem(elements.rdata(pos)); }
+		AA_CONSTEXPR const_pointer rget(const size_type pos) const { return get_elem(elements.rdata(pos)); }
+		AA_CONSTEXPR const_pointer crget(const size_type pos) const { return rget(pos); }
 
 		AA_CONSTEXPR pointer front() { return get_elem(elements.data()); }
 		AA_CONSTEXPR const_pointer front() const { return get_elem(elements.data()); }

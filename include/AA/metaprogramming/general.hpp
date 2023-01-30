@@ -881,6 +881,6 @@ namespace std {
 	struct tuple_element<I, aa::pack<V...>> : aa::pack_element<I, V...> {};
 
 	template<size_t I, auto... V>
-	struct tuple_element<I, const aa::pack<V...>> : std::tuple_element<I, aa::pack<V...>> {};
+	struct tuple_element<I, const aa::pack<V...>> : aa::pack_element<I, V...> {};
 
 }

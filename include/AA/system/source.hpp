@@ -1,14 +1,14 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../metaprogramming/range.hpp"
 #include "../metaprogramming/io.hpp"
 #include "../container/fixed_string.hpp"
 #include "print.hpp"
 #include <cstdint> // uint32_t
 #include <cstddef> // size_t
-#include <cstdlib> // abort
+#include <cstdlib> // exit, EXIT_FAILURE
 #include <utility> // forward
-#include <ostream> // ostream
 #include <iostream> // cerr, clog
 #include <concepts> // same_as
 #include <type_traits> // remove_reference_t, extent_v
@@ -29,6 +29,15 @@ namespace aa {
 	AA_CONSTEVAL auto literal_name() {
 		return fixed_string<(std::extent_v<std::remove_reference_t<decltype(__PRETTY_FUNCTION__)>>) - 51>{__PRETTY_FUNCTION__ + 49};
 	}
+
+	template<auto A>
+	AA_CONSTEVAL auto to_fixed_string() {
+		if constexpr (fixed_string_like<decltype(A)>)	return A;
+		else											return literal_name<A>();
+	}
+
+	template<auto A>
+	using fixed_string_for = decltype(to_fixed_string<A>());
 
 
 
@@ -71,7 +80,8 @@ namespace aa {
 	[[noreturn]] AA_CONSTEXPR void abort(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		log<D>(s, args...);
 		else							log<D>(s, "Program aborted.");
-		std::abort();
+		// Netinka abort ar kitos funkcijos, nes gali būti neišspausdintas klaidos pranešimas.
+		std::exit(EXIT_FAILURE);
 	}
 
 	template<instance_of_twntp<source_data> D, class... A>

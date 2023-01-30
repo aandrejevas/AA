@@ -28,16 +28,16 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR reference operator[](const size_type pos) { return elem(pos); }
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elem(pos); }
+		AA_CONSTEXPR reference operator[](const size_type pos) { return get(pos); }
+		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return get(pos); }
 
-		AA_CONSTEXPR reference elem(const size_type pos) { return *data(pos); }
-		AA_CONSTEXPR const_reference elem(const size_type pos) const { return *data(pos); }
-		AA_CONSTEXPR const_reference celem(const size_type pos) const { return elem(pos); }
+		AA_CONSTEXPR reference get(const size_type pos) { return *data(pos); }
+		AA_CONSTEXPR const_reference get(const size_type pos) const { return *data(pos); }
+		AA_CONSTEXPR const_reference cget(const size_type pos) const { return get(pos); }
 
-		AA_CONSTEXPR reference relem(const size_type pos) { return *rdata(pos); }
-		AA_CONSTEXPR const_reference relem(const size_type pos) const { return *rdata(pos); }
-		AA_CONSTEXPR const_reference crelem(const size_type pos) const { return relem(pos); }
+		AA_CONSTEXPR reference rget(const size_type pos) { return *rdata(pos); }
+		AA_CONSTEXPR const_reference rget(const size_type pos) const { return *rdata(pos); }
+		AA_CONSTEXPR const_reference crget(const size_type pos) const { return rget(pos); }
 
 		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
 		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }

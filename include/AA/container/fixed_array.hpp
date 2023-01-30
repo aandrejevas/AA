@@ -2,6 +2,8 @@
 
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t, ptrdiff_t
+#include <type_traits> // type_identity
+#include <utility> // forward, tuple_size, tuple_element
 
 
 
@@ -25,16 +27,21 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR reference operator[](const size_type pos) { return elem(pos); }
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elem(pos); }
+		template<size_type I>
+		AA_CONSTEXPR reference get() requires (I < N) { return get(I); }
+		template<size_type I>
+		AA_CONSTEXPR const_reference get() const requires (I < N) { return get(I); }
 
-		AA_CONSTEXPR reference elem(const size_type pos) { return *data(pos); }
-		AA_CONSTEXPR const_reference elem(const size_type pos) const { return *data(pos); }
-		AA_CONSTEXPR const_reference celem(const size_type pos) const { return elem(pos); }
+		AA_CONSTEXPR reference operator[](const size_type pos) { return get(pos); }
+		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return get(pos); }
 
-		AA_CONSTEXPR reference relem(const size_type pos) { return *rdata(pos); }
-		AA_CONSTEXPR const_reference relem(const size_type pos) const { return *rdata(pos); }
-		AA_CONSTEXPR const_reference crelem(const size_type pos) const { return relem(pos); }
+		AA_CONSTEXPR reference get(const size_type pos) { return *data(pos); }
+		AA_CONSTEXPR const_reference get(const size_type pos) const { return *data(pos); }
+		AA_CONSTEXPR const_reference cget(const size_type pos) const { return get(pos); }
+
+		AA_CONSTEXPR reference rget(const size_type pos) { return *rdata(pos); }
+		AA_CONSTEXPR const_reference rget(const size_type pos) const { return *rdata(pos); }
+		AA_CONSTEXPR const_reference crget(const size_type pos) const { return rget(pos); }
 
 		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
 		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
@@ -93,7 +100,8 @@ namespace aa {
 
 		// Special member functions
 		AA_CONSTEXPR fixed_array() {}
-		AA_CONSTEXPR fixed_array(const container_type &e) : elements{e} {}
+		template<constructible_to<container_type> U = container_type>
+		AA_CONSTEXPR fixed_array(U &&u) : elements{std::forward<U>(u)} {}
 
 
 
@@ -104,5 +112,18 @@ namespace aa {
 		// Šitas kintamasis turi būti paslėptas, nes kitaip jis suteiktų galimybę naudotojui keisti const elementus.
 		value_type *const r_begin = elements.data() + last_index();
 	};
+
+}
+
+
+
+namespace std {
+
+	template<class T, size_t N>
+	struct tuple_size<aa::fixed_array<T, N>> : aa::size_t_identity<N> {};
+
+	template<size_t I, class T, size_t N>
+		requires (I < N)
+	struct tuple_element<I, aa::fixed_array<T, N>> : std::type_identity<T> {};
 
 }

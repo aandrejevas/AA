@@ -10,7 +10,7 @@
 #include "evaluator.hpp"
 #include <cstddef> // size_t
 #include <string> // string
-#include <type_traits> // remove_const_t, remove_reference_t
+#include <type_traits> // remove_const_t
 #include <limits> // numeric_limits
 #include <bit> // countr_one
 #include <utility> // tuple_size_v

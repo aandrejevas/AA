@@ -3,11 +3,12 @@
 #include "../metaprogramming/general.hpp"
 #include <cstddef> // size_t, ptrdiff_t
 #include <iterator> // reverse_iterator
-#include <string_view> // basic_string_view, string_view, hash
+#include <string_view> // basic_string_view, hash
 #include <ostream> // basic_ostream
 #include <string> // basic_string, char_traits
 #include <functional> // hash
 #include <type_traits> // type_identity, basic_common_reference
+#include <utility> // tuple_size, tuple_element
 
 
 
@@ -36,12 +37,17 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR reference operator[](const size_type pos) { return elem(pos); }
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elem(pos); }
+		template<size_type I>
+		AA_CONSTEXPR reference get() requires (I < N) { return get(I); }
+		template<size_type I>
+		AA_CONSTEXPR const_reference get() const requires (I < N) { return get(I); }
 
-		AA_CONSTEXPR reference elem(const size_type pos) { return *data(pos); }
-		AA_CONSTEXPR const_reference elem(const size_type pos) const { return *data(pos); }
-		AA_CONSTEXPR const_reference celem(const size_type pos) const { return elem(pos); }
+		AA_CONSTEXPR reference operator[](const size_type pos) { return get(pos); }
+		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return get(pos); }
+
+		AA_CONSTEXPR reference get(const size_type pos) { return *data(pos); }
+		AA_CONSTEXPR const_reference get(const size_type pos) const { return *data(pos); }
+		AA_CONSTEXPR const_reference cget(const size_type pos) const { return get(pos); }
 
 		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
 		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
@@ -166,12 +172,21 @@ namespace aa {
 
 namespace std {
 
-	template<size_t N>
-	struct hash<aa::fixed_string<N>> {
-		AA_CONSTEXPR size_t operator()(const aa::fixed_string<N> &string) const {
-			return aa::constant<std::hash<std::string_view>>()(string);
+	template<class C, class T, size_t N>
+	struct hash<aa::basic_fixed_string<C, T, N>> {
+		AA_CONSTEXPR size_t operator()(const aa::basic_fixed_string<C, T, N> &string) const {
+			return aa::constant<std::hash<std::basic_string_view<C, T>>>()(string);
 		}
 	};
+
+
+
+	template<class C, class T, size_t N>
+	struct tuple_size<aa::basic_fixed_string<C, T, N>> : aa::size_t_identity<N> {};
+
+	template<size_t I, class C, class T, size_t N>
+		requires (I < N)
+	struct tuple_element<I, aa::basic_fixed_string<C, T, N>> : std::type_identity<C> {};
 
 
 

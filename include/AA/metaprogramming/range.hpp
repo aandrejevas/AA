@@ -85,6 +85,9 @@ namespace aa {
 	template<class T, class U>
 	concept same_range_char_traits_as = sized_contiguous_range<T> && std::same_as<range_char_traits_t<T>, U>;
 
+	template<class T, size_t N = numeric_max>
+	concept fixed_string_like = range_using_traits_type<T> && array_like<T, N>;
+
 
 
 	// Neturime klasės iš kurios tiesiog galėtume paveldėti is_transparent, nes gcc taip elgiasi. Taip pat, nes
