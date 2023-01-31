@@ -19,7 +19,7 @@ namespace aa {
 	template<class P, stream_like S>
 	struct pathed_stream {
 		// Member types
-		using path_type = propagate_const_t<P>;
+		using path_type = P;
 		using stream_type = S;
 		using char_type = typename stream_type::char_type;
 		using traits_type = typename stream_type::traits_type;
