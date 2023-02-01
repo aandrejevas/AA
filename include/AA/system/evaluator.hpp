@@ -1,10 +1,13 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../algorithm/init.hpp"
 #include <cstddef> // size_t
 #include <string_view> // string_view
 #include <charconv> // from_chars
 #include <string> // string
+#include <utility> // forward
+#include <type_traits> // remove_const_t
 
 
 
@@ -45,5 +48,14 @@ namespace aa {
 	};
 
 	generic_evaluator()->generic_evaluator<>;
+
+
+
+	template<class T, size_t I = 0, class EVAL = generic_evaluator<>>
+	AA_CONSTEXPR std::remove_const_t<T> evaluate(const std::string_view &token, EVAL &&eval = constant<EVAL>()) {
+		return make_with_invocable<T>([&](std::remove_const_t<T> &t) -> void {
+			invoke<I>(std::forward<EVAL>(eval), t, token);
+		});
+	}
 
 }
