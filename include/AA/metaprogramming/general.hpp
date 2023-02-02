@@ -20,7 +20,7 @@
 #include <array> // array
 #include <bit> // has_single_bit, bit_cast
 #include <utility> // declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence, index_sequence_for
-#include <functional> // invoke, _1
+#include <functional> // function, invoke, _1
 
 
 
@@ -133,6 +133,12 @@ namespace aa {
 	template<class T, template<auto...> class U>
 	AA_CONSTEXPR const bool is_instance_of_twntp_v = is_instance_of_twntp<T, U>::value;
 
+	template<template<class...> class T, class... A>
+	struct deduced_template : std::type_identity<decltype(T(std::declval<A>()...))> {};
+
+	template<template<class...> class T, class... A>
+	using deduced_template_t = typename deduced_template<T, A...>::type;
+
 
 
 	template<class T>
@@ -179,9 +185,6 @@ namespace aa {
 
 	template<class T>
 	concept trivially_default_constructible = std::is_trivially_default_constructible_v<T>;
-
-	template<class T>
-	concept wo_const_default_initializable = std::default_initializable<std::remove_const_t<T>>;
 
 	template<class L, class R>
 	concept wo_ref_derived_from = std::derived_from<std::remove_reference_t<L>, R>;
@@ -865,6 +868,22 @@ namespace aa {
 		template<class R = void, class F>
 		static AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<R, pack>(i, std::forward<F>(f)); }
 	};
+
+
+
+	template<class F, size_t I = 0>
+	struct function_argument : function_argument<deduced_template_t<std::function, F>, I> {};
+
+	template<class R, class... A, size_t I>
+	struct function_argument<std::function<R(A...)>, I> : type_pack_element<I, A...> {};
+
+	template<class F, size_t I = 0>
+	using function_argument_t = typename function_argument<F, I>::type;
+
+
+
+	template<class F, size_t I = 0>
+	concept fcn_arg_default_initializable = std::default_initializable<std::remove_cvref_t<function_argument_t<F>>>;
 
 }
 

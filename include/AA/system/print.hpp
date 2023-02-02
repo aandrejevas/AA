@@ -7,7 +7,7 @@
 #include <utility> // forward
 #include <ostream> // basic_ostream, ostream, wostream, endl, flush
 #include <istream> // basic_istream, istream
-#include <type_traits> // remove_const_t
+#include <type_traits> // remove_cvref_t
 
 
 
@@ -36,8 +36,8 @@ namespace aa {
 	}
 
 	template<class T, class S = std::istream &>
-	AA_CONSTEXPR std::remove_const_t<T> read(S &&s = std::cin) {
-		return make_with_invocable<T>([&](std::remove_const_t<T> &t) -> void { read(s, t); });
+	AA_CONSTEXPR std::remove_cvref_t<T> read(S &&s = std::cin) {
+		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(s, t); });
 	}
 
 
