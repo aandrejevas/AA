@@ -62,7 +62,6 @@ namespace aa {
 	concept distribution_result_convertible_to = std::convertible_to<distribution_result_t<G>, T>;
 
 	template<class G, class T>
-	concept generator_result_representable_by = bits_generator<G> &&
-		std::numeric_limits<T>::digits >= std::bit_width(std::remove_reference_t<G>::max() - std::remove_reference_t<G>::min());
+	concept generator_modulus_representable_by = (std::numeric_limits<T>::digits >= std::bit_width(generator_modulus_v<G>));
 
 }

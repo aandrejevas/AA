@@ -71,29 +71,29 @@ namespace aa {
 
 	// Čia nėra daromas atsitiktinio skaičiaus cast į kažkokį paduotą tipą, nes T negalime nustatyti iš paduoto argumento tipo.
 	// [0, 1)
-	template<std::floating_point T = double, generator_result_representable_by<T> G>
+	template<std::floating_point T = double, generator_modulus_representable_by<T> G>
 	AA_CONSTEXPR T real_distribution(G &g) {
 		return quotient<generator_modulus_v<G>>(int_distribution<T>(g));
 	}
 
 	// [0, mag)
-	template<convertible_from_floating_point U, std::floating_point T, generator_result_representable_by<T> G>
+	template<convertible_from_floating_point U, std::floating_point T, generator_modulus_representable_by<T> G>
 	AA_CONSTEXPR U real_distribution(G &g, const T mag) {
 		return static_cast<U>(real_distribution<T>(g) * mag);
 	}
 
-	template<same_as_void = void, std::floating_point T, generator_result_representable_by<T> G>
+	template<same_as_void = void, std::floating_point T, generator_modulus_representable_by<T> G>
 	AA_CONSTEXPR T real_distribution(G &g, const T mag) {
 		return real_distribution<T>(g, mag);
 	}
 
 	// [off, mag + off)
-	template<convertible_from_floating_point U, std::floating_point T, generator_result_representable_by<T> G>
+	template<convertible_from_floating_point U, std::floating_point T, generator_modulus_representable_by<T> G>
 	AA_CONSTEXPR U real_distribution(G &g, const T off, const T mag) {
 		return static_cast<U>(real_distribution(g, mag) + off);
 	}
 
-	template<same_as_void = void, std::floating_point T, generator_result_representable_by<T> G>
+	template<same_as_void = void, std::floating_point T, generator_modulus_representable_by<T> G>
 	AA_CONSTEXPR T real_distribution(G &g, const T off, const T mag) {
 		return real_distribution<T>(g, off, mag);
 	}
