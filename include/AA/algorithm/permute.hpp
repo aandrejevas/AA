@@ -26,7 +26,7 @@ namespace aa {
 		std::ranges::iterator_t<R> b = std::ranges::begin(r);
 		const std::ranges::sentinel_t<R> e = std::ranges::end(r);
 		do {
-			std::ranges::iter_swap(b, b + int_distribution(g, unsign_cast<generator_modulus_t<G>>(e - b)));
+			std::ranges::iter_swap(b, b + int_distribution(g, unsign_cast<distribution_result_t<G>>(e - b)));
 			if (b != m) ++b; else return;
 		} while (true);
 	}
@@ -60,7 +60,7 @@ namespace aa {
 		const std::ranges::sentinel_t<R> e = std::ranges::end(r);
 
 		{std::ranges::iterator_t<R> b2 = b; do {
-			std::ranges::iter_swap(b2, b2 + int_distribution(g, unsign_cast<generator_modulus_t<G>>(e - b2)));
+			std::ranges::iter_swap(b2, b2 + int_distribution(g, unsign_cast<distribution_result_t<G>>(e - b2)));
 			selected[*b2] = true;
 			if (b2 != m) ++b2; else break;
 		} while (true);}

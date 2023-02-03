@@ -12,15 +12,25 @@ namespace aa {
 	//
 	// x generic, nes sqrt generic, taip pat sqrt gražinamos reikšmės tipas priklauso nuo paduodamo argumento tipo.
 	// https://en.wikipedia.org/wiki/Square_root
-	template<void_or_convertible_from_floating_point U = void, arithmetic T>
-	AA_CONSTEXPR first_not_void_t<U, T> ceil_sqrt(const T x) {
-		return static_cast<first_not_void_t<U, T>>(std::ceil(std::sqrt(x)));
+	template<convertible_from_floating_point U, arithmetic T>
+	AA_CONSTEXPR U ceil_sqrt(const T x) {
+		return static_cast<U>(std::ceil(std::sqrt(x)));
+	}
+
+	template<same_as_void = void, arithmetic T>
+	AA_CONSTEXPR T ceil_sqrt(const T x) {
+		return ceil_sqrt<T>(x);
 	}
 
 	// https://en.wikipedia.org/wiki/Exponentiation
-	template<void_or_convertible_from_floating_point U = void, arithmetic T, arithmetic E>
-	AA_CONSTEXPR first_not_void_t<U, T> ceil_pow(const T x, const E exp) {
-		return static_cast<first_not_void_t<U, T>>(std::ceil(std::pow(x, exp)));
+	template<convertible_from_floating_point U, arithmetic T, arithmetic E>
+	AA_CONSTEXPR U ceil_pow(const T x, const E exp) {
+		return static_cast<U>(std::ceil(std::pow(x, exp)));
+	}
+
+	template<same_as_void = void, arithmetic T, arithmetic E>
+	AA_CONSTEXPR T ceil_pow(const T x, const E exp) {
+		return ceil_pow<T>(x, exp);
 	}
 
 }

@@ -220,8 +220,8 @@ int main() {
 
 		{
 			repeat(tree.max_size(), [&]() { {
-					positions.emplace_back(grid_type::value_type{{real_distribution<double>(g, 25.),
-						norm_map<0>(real_distribution<double>(g, 50., 10.), 50., 10., 25.)}});
+					positions.emplace_back(grid_type::value_type{{real_distribution(g, 25.),
+						norm_map<0>(real_distribution(g, 50., 10.), 50., 10., 25.)}});
 					tree.insert(positions.back());
 				}});
 			size_t sum = 0;

@@ -13,11 +13,16 @@
 
 namespace aa {
 
-	template<fcn_arg_default_initializable F>
-	AA_CONSTEXPR std::remove_cvref_t<function_argument_t<F>> make_with_invocable(F &&f = constant<F>()) {
-		std::remove_cvref_t<function_argument_t<F>> d;
+	template<wo_cvref_default_initializable D, std::invocable<std::remove_cvref_t<D> &> F>
+	AA_CONSTEXPR std::remove_cvref_t<D> make_with_invocable(F &&f = constant<F>()) {
+		std::remove_cvref_t<D> d;
 		std::invoke(std::forward<F>(f), d);
 		return d;
+	}
+
+	template<same_as_void = void, class F>
+	AA_CONSTEXPR std::remove_cvref_t<function_argument_t<F>> make_with_invocable(F &&f = constant<F>()) {
+		return make_with_invocable<std::remove_cvref_t<function_argument_t<F>>>(std::forward<F>(f));
 	}
 
 	// Sakoma, kad D turi būti trivial, nes šiuo atveju konstruktorius neturi jokio darbo atlikti.

@@ -133,7 +133,9 @@ namespace aa {
 	template<class T, template<auto...> class U>
 	AA_CONSTEXPR const bool is_instance_of_twntp_v = is_instance_of_twntp<T, U>::value;
 
+	// Constraint negali būti pakeistas į concept, nes pirmas parametras concept'o nebūtų tipas.
 	template<template<class...> class T, class... A>
+		requires (requires { T(std::declval<A>()...); })
 	struct deduced_template : std::type_identity<decltype(T(std::declval<A>()...))> {};
 
 	template<template<class...> class T, class... A>
@@ -158,6 +160,9 @@ namespace aa {
 
 	template<class T, class... A>
 	concept same_as_any = (... || std::same_as<T, A>);
+
+	template<class T>
+	concept same_as_void = std::is_void_v<T>;
 
 	template<class T>
 	concept pointer = std::is_pointer_v<T>;
@@ -185,6 +190,9 @@ namespace aa {
 
 	template<class T>
 	concept trivially_default_constructible = std::is_trivially_default_constructible_v<T>;
+
+	template<class T>
+	concept wo_cvref_default_initializable = std::default_initializable<std::remove_cvref_t<T>>;
 
 	template<class L, class R>
 	concept wo_ref_derived_from = std::derived_from<std::remove_reference_t<L>, R>;
@@ -220,12 +228,9 @@ namespace aa {
 	template<class T, class F>
 	concept convertible_from = std::convertible_to<F, T>;
 
-	template<class T, class F>
-	concept void_or_convertible_from = std::is_void_v<T> || std::convertible_to<F, T>;
-
 	template<class T>
-	concept void_or_convertible_from_floating_point = std::is_void_v<T>
-		|| (std::convertible_to<float, T> && std::convertible_to<double, T> && std::convertible_to<long double, T>);
+	concept convertible_from_floating_point =
+		std::convertible_to<float, T> && std::convertible_to<double, T> && std::convertible_to<long double, T>;
 
 
 
@@ -491,24 +496,11 @@ namespace aa {
 
 
 
-	template<class...>
-	struct first_not_void;
-
-	template<class A1, class... A>
-	struct first_not_void<A1, A...> : std::conditional_t<std::is_void_v<A1>, first_not_void<A...>, std::type_identity<A1>> {};
-
-	template<class... A>
-	using first_not_void_t = typename first_not_void<A...>::type;
-
-
-
 	template<class A1, class...>
 	struct first : std::type_identity<A1> {};
 
 	template<class... A>
 	using first_t = typename first<A...>::type;
-
-
 
 	template<class... A>
 	struct first_or_void : first<A..., void> {};
@@ -879,11 +871,6 @@ namespace aa {
 
 	template<class F, size_t I = 0>
 	using function_argument_t = typename function_argument<F, I>::type;
-
-
-
-	template<class F, size_t I = 0>
-	concept fcn_arg_default_initializable = std::default_initializable<std::remove_cvref_t<function_argument_t<F>>>;
 
 }
 
