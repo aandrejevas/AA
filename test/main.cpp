@@ -29,7 +29,7 @@
 #include <algorithm> // is_sorted, is_permutation, for_each
 #include <string> // string
 #include <limits> // numeric_limits
-#include <iostream> // cout
+#include <iostream> // cout, clog
 #include <bit> // bit_cast
 
 
@@ -59,8 +59,8 @@ int main() {
 	{
 		log<AA_SOURCE_DATA>();
 		log<AA_SOURCE_DATA>("Hello world!");
-		log<AA_SOURCE_DATA>(std::cout);
-		log<AA_SOURCE_DATA>(std::cout, "Hello world!");
+		log<AA_SOURCE_DATA>(std::clog);
+		log<AA_SOURCE_DATA>(std::clog, "Hello world!");
 		//print();
 		printl();
 		//print(std::cout);

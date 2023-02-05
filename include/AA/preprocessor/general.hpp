@@ -50,8 +50,6 @@
 # // funkciją naudoti constexpr kontekste, bet aš nenoriu mąstyti apie tai ar funkcijos realizacija gali būti constexpr.
 #define AA_CONSTEXPR inline constexpr
 #define AA_CONSTEVAL inline consteval
-# // Kartais kompiliatorius pastebi, kad funkcija negali būti constexpr.
-#define AA_INLINE inline
 #
 # // Reikia stengtis turėti kuo mažiau macros. DISCARD macro nereikia, nes tiesiog galime cast'inti į void. Taip pat
 # // nėra reikalo naudoti std::ignore, kad discard'inti, nes reiktų visur dėti papildomą include, taip pat nėra apibrėžta
