@@ -32,8 +32,11 @@ namespace aa {
 		AA_CONSTEXPR S end() const requires (std::input_or_output_iterator<S>) { return std::ranges::next(rbegin()); }
 		AA_CONSTEXPR I rend() const requires (std::bidirectional_iterator<I>) { return std::ranges::prev(begin()); }
 
-		AA_CONSTEXPR std::iter_difference_t<I> ssize() const requires (std::sized_sentinel_for<S, I>) { return (rbegin() - begin()) + 1; }
+		AA_CONSTEXPR std::iter_difference_t<I> ssize() const requires (std::sized_sentinel_for<S, I>) { return last_sindex() + 1; }
 		AA_CONSTEXPR aa::iter_size_t<I> size() const requires (std::sized_sentinel_for<S, I>) { return unsign(ssize()); }
+
+		AA_CONSTEXPR std::iter_difference_t<I> last_sindex() const requires (std::sized_sentinel_for<S, I>) { return rbegin() - begin(); }
+		AA_CONSTEXPR aa::iter_size_t<I> last_index() const requires (std::sized_sentinel_for<S, I>) { return unsign(last_sindex()); }
 
 		static AA_CONSTEVAL bool empty() { return false; }
 		AA_CONSTEXPR bool single() const { return begin() == rbegin(); }
