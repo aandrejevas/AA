@@ -87,6 +87,7 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const { return elements.empty(); }
+		AA_CONSTEXPR bool single() const { return f_begin == elements.rdata(); }
 		AA_CONSTEXPR bool full() const { return elements.full(); }
 
 		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
@@ -112,7 +113,7 @@ namespace aa {
 		AA_CONSTEXPR void push_back() { elements.push_back(); }
 
 		AA_CONSTEXPR void pop_back() {
-			if (f_begin == elements.rdata())
+			if (single())
 				clear(); else elements.pop_back();
 		}
 
@@ -126,7 +127,7 @@ namespace aa {
 		AA_CONSTEXPR void push_front() { --f_begin; }
 
 		AA_CONSTEXPR void pop_front() {
-			if (f_begin == elements.rdata())
+			if (single())
 				clear(); else ++f_begin;
 		}
 
@@ -140,7 +141,7 @@ namespace aa {
 		AA_CONSTEXPR void push(const const_iterator pos) { elements.push(pos); }
 
 		AA_CONSTEXPR void erase(const const_iterator pos) {
-			if (f_begin == elements.rdata())
+			if (single())
 				clear(); else elements.erase(pos);
 		}
 

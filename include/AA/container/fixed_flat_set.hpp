@@ -53,6 +53,7 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const { return elements.empty(); }
+		AA_CONSTEXPR bool single() const { return elements.single(); }
 		AA_CONSTEXPR bool full() const { return elements.full(); }
 
 		AA_CONSTEXPR difference_type ssize() const { return elements.ssize(); }

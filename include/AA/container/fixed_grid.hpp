@@ -134,6 +134,7 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const { return nodes.empty(); }
+		AA_CONSTEXPR bool single() const { return nodes.single(); }
 		AA_CONSTEXPR bool full() const { return nodes.full(); }
 
 		AA_CONSTEXPR difference_type ssize() const { return nodes.ssize(); }

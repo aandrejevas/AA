@@ -216,6 +216,9 @@ namespace aa {
 	template<class F, class R, class... A>
 	concept invocable_r = std::is_invocable_r_v<R, F, A...>;
 
+	template<class F, class T, class... A>
+	concept invoke_result_constructible_to = std::invocable<F, A...> && std::constructible_from<T, std::invoke_result_t<F, A...>>;
+
 	template<class F, class T>
 	concept constructible_to = std::constructible_from<T, F>;
 

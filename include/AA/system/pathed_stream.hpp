@@ -4,7 +4,7 @@
 #include "../metaprogramming/io.hpp"
 #include "../preprocessor/assert.hpp"
 #include "source.hpp"
-#include <concepts> // constructible_from, invocable
+#include <concepts> // invocable
 #include <utility> // forward
 #include <fstream> // ofstream, ifstream
 #include <ostream> // basic_ostream, ostream
@@ -53,8 +53,7 @@ namespace aa {
 
 
 		// Special member functions
-		template<constructible_to<path_type> T, std::invocable<const path_type &> F>
-			requires (std::constructible_from<stream_type, std::invoke_result_t<F, const path_type &>>)
+		template<constructible_to<path_type> T = path_type, invoke_result_constructible_to<stream_type, const path_type &> F>
 		AA_CONSTEXPR pathed_stream(T &&t, F &&f) : path{std::forward<T>(t)}, stream{std::invoke(std::forward<F>(f), path)} {
 			if constexpr (insertable_into<path_type &, std::ostream>) {
 				AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " (", path, ") in fail state after construction.");

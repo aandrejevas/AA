@@ -87,6 +87,7 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const { return r_begin == r_end; }
+		AA_CONSTEXPR bool single() const { return r_begin == data(); }
 		AA_CONSTEXPR bool full() const { return size() == max_size(); }
 
 		AA_CONSTEXPR difference_type ssize() const { return r_begin - r_end; }

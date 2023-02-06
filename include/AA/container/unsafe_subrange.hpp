@@ -36,6 +36,7 @@ namespace aa {
 		AA_CONSTEXPR aa::iter_size_t<I> size() const requires (std::sized_sentinel_for<S, I>) { return unsign(ssize()); }
 
 		static AA_CONSTEVAL bool empty() { return false; }
+		AA_CONSTEXPR bool single() const { return begin() == rbegin(); }
 
 		AA_CONSTEXPR std::iter_reference_t<S> back() const requires (std::input_or_output_iterator<S>) { return *rbegin(); }
 		AA_CONSTEXPR aa::iter_pointer_t<S> rdata() const requires (std::contiguous_iterator<S>) { return std::to_address(rbegin()); }

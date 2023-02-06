@@ -40,7 +40,7 @@ namespace aa {
 		AA_CONSTEXPR swap_pair()
 			: b2{&(b1::template get<0>()), &(b1::template get<1>())} {}
 
-		template<class T1 = value_type, class T2 = value_type>
+		template<constructible_to<value_type> T1 = value_type, constructible_to<value_type> T2 = value_type>
 		AA_CONSTEXPR swap_pair(T1 &&t1, T2 &&t2)
 			: b1{std::forward<T1>(t1), std::forward<T2>(t2)},
 			b2{&(b1::template get<0>()), &(b1::template get<1>())} {}

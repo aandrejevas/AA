@@ -184,6 +184,10 @@ namespace aa {
 			if constexpr (is_space_efficient)	return is_numeric_min(dirty.l);
 			else								return dirty.empty();
 		}
+		AA_CONSTEXPR bool single() const {
+			if constexpr (is_space_efficient)	return dirty.f == dirty.l && bucket_size(bins[dirty.f]) == 1;
+			else								return dirty.single() && bucket_size(dirty.front()) == 1;
+		}
 		AA_CONSTEXPR bool all_buckets_dirty() const {
 			if constexpr (is_space_efficient)	return dirty.f == 0 && dirty.l == max_bucket_index();
 			else								return dirty.full();

@@ -49,11 +49,15 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR bool empty() const { return size() == 0; }
+		AA_CONSTEXPR bool single() const { return size() == 1; }
 		AA_CONSTEXPR bool full() const { return elements.full(); }
+		AA_CONSTEXPR bool truly_empty() const { return elements.empty(); }
+		AA_CONSTEXPR bool truly_single() const { return elements.single(); }
 
 		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
 		AA_CONSTEXPR size_type size() const { return elements.size() - holes_count(); }
-		AA_CONSTEXPR size_type size_with_holes() const { return elements.size(); }
+		AA_CONSTEXPR difference_type true_ssize() const { return elements.ssize(); }
+		AA_CONSTEXPR size_type true_size() const { return elements.size(); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }

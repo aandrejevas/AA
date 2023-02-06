@@ -94,6 +94,7 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const { return r_curr == r_end; }
+		AA_CONSTEXPR bool single() const { return !full() && r_curr == data(); }
 		AA_CONSTEXPR bool full() const { return is_full; }
 
 		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
