@@ -683,17 +683,28 @@ namespace aa {
 
 
 
+	// Lyginimas su 0 yra greitesnė operacija negu lyginimas su kokia kita konstanta.
+	template<invocable_ref F>
+	AA_CONSTEXPR void unsafe_repeat(size_t e_S1, F &&f) {
+		do { std::invoke(f); if (e_S1 != 0) --e_S1; else return; } while (true);
+	}
+
+	template<invocable_ref<size_t> F>
+	AA_CONSTEXPR void unsafe_repeat(size_t e_S1, F &&f) {
+		do { std::invoke(f, std::as_const(e_S1)); if (e_S1 != 0) --e_S1; else return; } while (true);
+	}
+
 	// Funkcijos nepilnai generic kaip iota_view, nes neegzistuoja weakly_decrementable concept.
 	// Jei reikia normalių indeksų, tada jau reikia naudoti nebe šias funkcijas, o pavyzdžiui iota_view su for_each.
 	// Galėtume kažkokius argumentus kiekvieną iteraciją paduoti į funkciją, bet niekur taip nėra realizuoti algoritmai.
 	template<invocable_ref F>
-	AA_CONSTEXPR void repeat(size_t e, F &&f) {
-		do { std::invoke(f); if (e != 1) --e; else return; } while (true);
+	AA_CONSTEXPR void repeat(const size_t e, F &&f) {
+		unsafe_repeat(e - 1, f);
 	}
 
 	template<invocable_ref<size_t> F>
-	AA_CONSTEXPR void repeat(size_t e, F &&f) {
-		do { std::invoke(f, std::as_const(e)); if (e != 1) --e; else return; } while (true);
+	AA_CONSTEXPR void repeat(const size_t e, F &&f) {
+		unsafe_repeat(e - 1, f);
 	}
 
 	// Parameter pack negali susidėti iš daug elementų todėl šitą funkciją reiktų naudoti tik kai reikia mažai
