@@ -41,6 +41,15 @@ namespace aa {
 	using true_identity = bool_identity<true>;
 	using false_identity = bool_identity<false>;
 
+	template<class T, T V>
+	AA_CONSTEXPR const T constant_identity_v = constant_identity<T, V>::value;
+
+	template<size_t V>
+	AA_CONSTEXPR const size_t size_t_identity_v = size_t_identity<V>::value;
+
+	template<bool V>
+	AA_CONSTEXPR const bool bool_identity_v = bool_identity<V>::value;
+
 
 
 	template<class T, std::convertible_to<T> X>
