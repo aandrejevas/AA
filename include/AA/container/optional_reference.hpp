@@ -16,23 +16,23 @@ namespace aa {
 	template<class T>
 	struct optional_reference {
 		// Member types
-		using type = T;
+		using value_type = T;
 
 
 
 		// Observers
-		AA_CONSTEXPR operator type &() const { return *ptr; }
-		AA_CONSTEXPR type &operator*() const { return *ptr; }
-		AA_CONSTEXPR type *operator->() const { return ptr; }
+		AA_CONSTEXPR operator value_type &() const { return *ptr; }
+		AA_CONSTEXPR value_type &operator*() const { return *ptr; }
+		AA_CONSTEXPR value_type *operator->() const { return ptr; }
 
-		AA_CONSTEXPR type &get() const { return *ptr; }
-		AA_CONSTEXPR type *get_pointer() const { return ptr; }
+		AA_CONSTEXPR value_type &get() const { return *ptr; }
+		AA_CONSTEXPR value_type *get_pointer() const { return ptr; }
 
 		explicit AA_CONSTEXPR operator bool() const { return ptr; }
 
 		template<class... A>
-			requires (std::invocable<type &, A...>)
-		AA_CONSTEXPR std::invoke_result_t<type &, A...> operator()(A&&... args) const {
+			requires (std::invocable<value_type &, A...>)
+		AA_CONSTEXPR std::invoke_result_t<value_type &, A...> operator()(A&&... args) const {
 			return std::invoke(*ptr, std::forward<A>(args)...);
 		}
 
@@ -41,12 +41,12 @@ namespace aa {
 		// Modifiers
 		AA_CONSTEXPR void release() { ptr = nullptr; }
 
-		AA_CONSTEXPR void reset(type *const p) { ptr = p; }
+		AA_CONSTEXPR void reset(value_type *const p) { ptr = p; }
 
 
 
 		// Member objects
-		type *ptr;
+		value_type *ptr;
 	};
 
 }

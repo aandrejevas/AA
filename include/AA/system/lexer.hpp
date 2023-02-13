@@ -233,6 +233,6 @@ namespace aa {
 namespace std {
 
 	template<aa::instance_of_twntp<aa::string_perfect_hash> H>
-	struct tuple_size<aa::param_lexer<H>> : aa::size_t_identity<H::max()> {};
+	struct tuple_size<aa::param_lexer<H>> : aa::size_identity<H::max()> {};
 
 }

@@ -183,7 +183,7 @@ namespace std {
 
 
 	template<class C, class T, size_t N>
-	struct tuple_size<aa::basic_fixed_string<C, T, N>> : aa::size_t_identity<N> {};
+	struct tuple_size<aa::basic_fixed_string<C, T, N>> : aa::size_identity<N> {};
 
 	template<size_t I, class C, class T, size_t N>
 		requires (I < N)

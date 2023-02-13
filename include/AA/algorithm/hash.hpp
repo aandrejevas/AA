@@ -89,7 +89,7 @@ namespace aa {
 namespace std {
 
 	template<auto... A>
-	struct tuple_size<aa::string_perfect_hash<A...>> : aa::size_t_identity<sizeof...(A)> {};
+	struct tuple_size<aa::string_perfect_hash<A...>> : aa::size_identity<sizeof...(A)> {};
 
 	template<size_t I, auto... A>
 	struct tuple_element<I, aa::string_perfect_hash<A...>> : aa::pack_element<I, aa::to_fixed_string<A>()...> {};
