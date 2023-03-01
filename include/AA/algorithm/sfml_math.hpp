@@ -14,7 +14,7 @@
 namespace std {
 
 	template<aa::arithmetic T>
-	struct tuple_size<sf::Vector2<T>> : aa::uz2_identity {};
+	struct tuple_size<sf::Vector2<T>> : aa::uz2_constant {};
 
 	template<aa::arithmetic T>
 	struct tuple_element<0, sf::Vector2<T>> : std::type_identity<T> {};

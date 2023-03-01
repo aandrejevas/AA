@@ -52,7 +52,7 @@ namespace aa {
 
 		template<class C>
 		AA_CONSTEXPR void init_key(supplier_type<C> &supplier) {
-			constant<hasher_type>()(token, [&]<size_t I>() -> void {
+			constant_v<hasher_type>(token, [&]<size_t I>() -> void {
 				if constexpr (I != hasher_type::max()) {
 					supplier = &param_lexer::supply<I, C>;
 					state = lexing_state::VALUE;
@@ -141,7 +141,7 @@ namespace aa {
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
 	template<class C, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE>
-	AA_CONSTEXPR void lex(FILE &&file, LEXER &&lexer, C &&consumer = constant<C>()) {
+	AA_CONSTEXPR void lex(FILE &&file, LEXER &&lexer, C &&consumer = default_value) {
 		using traits_type = typename std::remove_reference_t<FILE>::traits_type;
 
 		// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
@@ -233,6 +233,6 @@ namespace aa {
 namespace std {
 
 	template<aa::instance_of_twntp<aa::string_perfect_hash> H>
-	struct tuple_size<aa::param_lexer<H>> : aa::size_identity<H::max()> {};
+	struct tuple_size<aa::param_lexer<H>> : aa::size_constant<H::max()> {};
 
 }

@@ -43,7 +43,7 @@ namespace aa {
 	struct generic_evaluator {
 		template<size_t I = 0, argument_for_tdc_template<E> T>
 		AA_CONSTEXPR void operator()(T &t, const std::string_view &token) const {
-			invoke<I>(constant<E<T>>(), t, token);
+			invoke<I>(constant_v<E<T>>, t, token);
 		}
 	};
 
@@ -52,7 +52,7 @@ namespace aa {
 
 
 	template<class T, size_t I = 0, class EVAL = generic_evaluator<>>
-	AA_CONSTEXPR std::remove_cvref_t<T> evaluate(const std::string_view &token, EVAL &&eval = constant<EVAL>()) {
+	AA_CONSTEXPR std::remove_cvref_t<T> evaluate(const std::string_view &token, EVAL &&eval = default_value) {
 		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void {
 			invoke<I>(std::forward<EVAL>(eval), t, token);
 		});

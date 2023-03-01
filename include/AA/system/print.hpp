@@ -24,7 +24,7 @@ namespace aa {
 	// Tikriname ar į output_stream galima insert'inti visus paduotus tipus, nes tarp jų
 	// gali būti tipų, su kuriais negali susidoroti klasė, kuri paveldi iš basic_ostream.
 	template<auto L = '\n', class T, class... A>
-		requires (output_stream<T, A..., decltype(L)>)
+		requires (output_stream<T, A..., const_t<L>>)
 	AA_CONSTEXPR apply_traits_t<std::basic_ostream, T> &printl(T &&s, const A&... args) {
 		return (s << ... << args) << L;
 	}
@@ -53,7 +53,7 @@ namespace aa {
 
 	// L negali būti stream, bet vis tiek mums reikia tipo dėl atvejo kai A sąrašas tuščias.
 	template<auto L = '\n', class... A>
-		requires (!output_stream<first_t<A..., decltype(L)>>)
+		requires (!output_stream<first_t<A..., const_t<L>>>)
 	AA_CONSTEXPR std::ostream &printl(const A&... args) {
 		return printl<L>(std::cout, args...);
 	}

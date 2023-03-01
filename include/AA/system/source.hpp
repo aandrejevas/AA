@@ -32,21 +32,21 @@ namespace aa {
 
 	template<auto A>
 	AA_CONSTEVAL auto to_fixed_string() {
-		if constexpr (fixed_string_like<decltype(A)>)	return A;
+		if constexpr (fixed_string_like<const_t<A>>)	return A;
 		else											return literal_name<A>();
 	}
 
 	template<auto A>
-	using fixed_string_for = decltype(to_fixed_string<A>());
+	using fixed_string_for = const_t<to_fixed_string<A>()>;
 
 
 
 	// Klasės reikia, nes source_location klasės negalima naudoti kaip non type template parameter
 	// ir taip pat yra truputį keista man, kad minėtos klasės duomenys pasiekiami tik per metodus.
 	template<size_t COL, size_t LINE, basic_fixed_string FILE, basic_fixed_string FUNC>
-		requires (std::same_as<typename decltype(FILE)::traits_type, typename decltype(FUNC)::traits_type>)
+		requires (std::same_as<typename const_t<FILE>::traits_type, typename const_t<FUNC>::traits_type>)
 	struct source_data {
-		using ostream_type = typename decltype(FILE)::ostream_type;
+		using ostream_type = typename const_t<FILE>::ostream_type;
 
 		// Naudojamas ostream stream, nes fixed_string galima naudoti tik su tokiu stream, o
 		// fixed_string turime naudoti dėl constantų tipo, kuriomis ši klasė inicializuojama.
@@ -66,7 +66,7 @@ namespace aa {
 	// D tipas ne bet koks, nes funkcija buvo sukurta dirbti su source_data tipu.
 	template<instance_of_twntp<source_data> D, output_stream S, class... A>
 	AA_CONSTEXPR void log(S &&s, const A&... args) {
-		if constexpr (sizeof...(A))		printl(s, constant<D>(), ": ", args...);
+		if constexpr (sizeof...(A))		printl(s, constant_v<D>, ": ", args...);
 		else							log<D>(s, "Info logged.");
 	}
 

@@ -17,7 +17,7 @@ namespace aa {
 	// Algoritmai priima tik ranges, jei reikia paduoti iteratorius tai galima paduoti iš jų sukurtą range.
 	// Išskyrus tada nepaduodami ranges, jei reikia algoritmui tik atskirų iteratorių, reiškia būtų neefektyvu padavinėti iteratorių poras.
 	template<sized_random_access_range R, class T, std::indirect_strict_weak_order<const T *, std::ranges::iterator_t<R>> C = std::ranges::less>
-	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> unsafe_upper_bound(R &&r, const T &value, C &&comp = constant<C>()) {
+	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> unsafe_upper_bound(R &&r, const T &value, C &&comp = default_value) {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		std::ranges::range_size_t<R> len = std::ranges::size(r);
 		do {
@@ -34,7 +34,7 @@ namespace aa {
 	}
 
 	template<sized_random_access_range R, class T, std::indirect_strict_weak_order<const T *, std::ranges::iterator_t<R>> C = std::ranges::less>
-	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> unsafe_lower_bound(R &&r, const T &value, C &&comp = constant<C>()) {
+	AA_CONSTEXPR std::ranges::borrowed_iterator_t<R> unsafe_lower_bound(R &&r, const T &value, C &&comp = default_value) {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		std::ranges::range_size_t<R> len = std::ranges::size(r);
 		do {

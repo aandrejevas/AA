@@ -235,11 +235,11 @@ namespace aa {
 
 		// Special member functions
 		template<constructible_to<locator_type> U = locator_type, array_similar_to<pair_type> P = pair_type>
-		AA_CONSTEXPR fixed_grid(const P &size, U &&u = constant<U>())
+		AA_CONSTEXPR fixed_grid(const P &size, U &&u = default_value)
 			: fixed_grid{size, {product<W>(get_w(size)) - 1, product<H>(get_h(size)) - 1}, std::forward<U>(u)} {}
 
 		template<constructible_to<locator_type> U = locator_type, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
-		AA_CONSTEXPR fixed_grid(const P1 &size, const P2 &l, U &&u = constant<U>())
+		AA_CONSTEXPR fixed_grid(const P1 &size, const P2 &l, U &&u = default_value)
 			: leaf_size{get_w(size), get_h(size)}, max_loc{get_x(l), get_y(l)}, locator{std::forward<U>(u)} {}
 
 

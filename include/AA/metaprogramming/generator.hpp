@@ -35,11 +35,11 @@ namespace aa {
 	using distribution_result_t = typename distribution_result<G>::type;
 
 	template<bits_generator G>
-	struct generator_modulus : constant_identity<generator_result_t<G>,
+	struct generator_modulus : constant<generator_result_t<G>,
 		std::remove_reference_t<G>::max() - std::remove_reference_t<G>::min() + 1> {};
 
 	template<full_range_generator G>
-	struct generator_modulus<G> : constant_identity<distribution_result_t<G>,
+	struct generator_modulus<G> : constant<distribution_result_t<G>,
 		cast<distribution_result_t<G>>(std::remove_reference_t<G>::max()) + 1> {};
 
 	template<class G>
@@ -51,9 +51,9 @@ namespace aa {
 
 
 	template<class G, class I>
-	concept differences_generator_for = full_range_generator<G>
+	concept differences_generator_for = (full_range_generator<G>
 		&& std::convertible_to<std::iter_difference_t<I>, distribution_result_t<G>>
-		&& std::convertible_to<distribution_result_t<G>, std::iter_difference_t<I>>;
+		&& std::convertible_to<distribution_result_t<G>, std::iter_difference_t<I>>);
 
 	template<class G, class T>
 	concept generator_result_convertible_to = std::convertible_to<generator_result_t<G>, T>;

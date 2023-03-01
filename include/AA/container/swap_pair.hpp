@@ -56,7 +56,7 @@ namespace aa {
 namespace std {
 
 	template<class T>
-	struct tuple_size<aa::swap_pair<T>> : aa::uz2_identity {};
+	struct tuple_size<aa::swap_pair<T>> : aa::uz2_constant {};
 
 	template<class T>
 	struct tuple_element<0, aa::swap_pair<T>> : std::type_identity<T> {};

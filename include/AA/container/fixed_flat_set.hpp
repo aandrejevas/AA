@@ -164,10 +164,10 @@ namespace aa {
 		// nes comparer tipas yra const. Perfect forwarding naudojame, kad palaikyti move semantics
 		// ir pass by reference, jei parametras būtų const& tai neišeitų palaikyti move semantics.
 		template<constructible_to<comparer_type> U = comparer_type>
-		AA_CONSTEXPR fixed_flat_set(U &&c = constant<U>()) : comparer{std::forward<U>(c)} {}
+		AA_CONSTEXPR fixed_flat_set(U &&c = default_value) : comparer{std::forward<U>(c)} {}
 
 		template<assignable_to<reference> V, constructible_to<comparer_type> U = comparer_type>
-		AA_CONSTEXPR fixed_flat_set(V &&value, U &&c = constant<U>())
+		AA_CONSTEXPR fixed_flat_set(V &&value, U &&c = default_value)
 			: elements{elements.begin()}, comparer{std::forward<U>(c)} { elements.back() = std::forward<V>(value); }
 
 

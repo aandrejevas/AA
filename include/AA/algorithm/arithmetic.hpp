@@ -4,7 +4,7 @@
 #include <cstddef> // size_t
 #include <cmath> // fmod
 #include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as
-#include <bit> // countl_zero, has_single_bit, bit_cast
+#include <bit> // has_single_bit, bit_cast
 #include <limits> // numeric_limits
 #include <type_traits> // make_signed_t
 
@@ -60,19 +60,6 @@ namespace aa {
 
 
 
-	template<std::integral U = size_t, std::unsigned_integral T>
-	AA_CONSTEXPR auto int_exp2(const T x) {
-		return one_v<U> << x;
-	}
-
-	// T yra tipas, kurio bitus skaičiuosime, U nurodo kokiu tipu pateikti rezutatus.
-	template<std::integral U = size_t, std::unsigned_integral T>
-	AA_CONSTEXPR auto int_log2(const T x) {
-		return constant<U, std::numeric_limits<T>::digits - 1>() - unsign<U>(std::countl_zero(x));
-	}
-
-
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 	// https://en.wikipedia.org/wiki/Product_(mathematics)
@@ -81,36 +68,36 @@ namespace aa {
 	// Reikalaujama, kad T būtų unsigned, nes per shift operacijas neįmanoma pagreitinti neigiamų skaičių daugybos.
 	template<arithmetic auto X, arithmetic T>
 	AA_CONSTEXPR auto product(const T x) {
-		if constexpr (!std::same_as<T, decltype(X)>)	return product<static_cast<T>(X)>(x);
+		if constexpr (!std::same_as<T, const_t<X>>)		return product<static_cast<T>(X)>(x);
 		else if constexpr (X == 0)						return zero_v<T>;
 		else if constexpr (X == 1)						return x;
 		else if constexpr (!std::unsigned_integral<T>)	return x * X;
 		else if constexpr (!std::has_single_bit(X))		return x * X;
-		else											return x << constant<int_log2(X)>();
+		else											return x << const_v<int_log2(X)>;
 	}
 
 	// https://en.wikipedia.org/wiki/Remainder
 	template<arithmetic auto X, arithmetic T>
 		requires (X != 0)
 	AA_CONSTEXPR auto remainder(const T x) {
-		if constexpr (!std::same_as<T, decltype(X)>)	return remainder<static_cast<T>(X)>(x);
+		if constexpr (!std::same_as<T, const_t<X>>)		return remainder<static_cast<T>(X)>(x);
 		else if constexpr (X == 1)						return zero_v<T>;
 		else if constexpr (std::floating_point<T>)		return std::fmod(x, X);
 		else if constexpr (std::signed_integral<T>)		return x % X;
 		else if constexpr (!std::has_single_bit(X))		return x % X;
-		else											return x & constant<X - 1>();
+		else											return x & const_v<X - 1>;
 	}
 
 	// https://en.wikipedia.org/wiki/Quotient
 	template<arithmetic auto X, arithmetic T>
 		requires (X != 0)
 	AA_CONSTEXPR auto quotient(const T x) {
-		if constexpr (!std::same_as<T, decltype(X)>)	return quotient<static_cast<T>(X)>(x);
+		if constexpr (!std::same_as<T, const_t<X>>)		return quotient<static_cast<T>(X)>(x);
 		else if constexpr (X == 1)						return x;
 		else if constexpr (std::floating_point<T>)		return product<1 / X>(x);
 		else if constexpr (std::signed_integral<T>)		return x / X;
 		else if constexpr (!std::has_single_bit(X))		return x / X;
-		else											return x >> constant<int_log2(X)>();
+		else											return x >> const_v<int_log2(X)>;
 	}
 #pragma GCC diagnostic pop
 
@@ -165,13 +152,13 @@ namespace aa {
 	template<std::unsigned_integral T>
 	AA_CONSTEXPR T min(const T x, const T y) {
 		const T d = (x - y);
-		return y + (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> constant<std::numeric_limits<T>::digits - 1>()));
+		return y + (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> std::numeric_limits<std::make_signed_t<T>>::digits));
 	}
 
 	template<std::unsigned_integral T>
 	AA_CONSTEXPR T max(const T x, const T y) {
 		const T d = (x - y);
-		return x - (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> constant<std::numeric_limits<T>::digits - 1>()));
+		return x - (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> std::numeric_limits<std::make_signed_t<T>>::digits));
 	}
 
 }

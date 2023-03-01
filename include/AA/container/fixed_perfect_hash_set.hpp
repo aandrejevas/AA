@@ -442,13 +442,13 @@ namespace aa {
 
 		// Special member functions
 		template<constructible_to<hasher_type> U = hasher_type>
-		AA_CONSTEXPR fixed_perfect_hash_set(U &&h = constant<U>()) : hasher{std::forward<U>(h)} {}
+		AA_CONSTEXPR fixed_perfect_hash_set(U &&h = default_value) : hasher{std::forward<U>(h)} {}
 
 
 
 		// Member objects
 	protected:
-		container_type bins = constant<container_type>();
+		container_type bins = default_value;
 		std::conditional_t<is_space_efficient, dirty_region, fixed_vector<bucket_type *, M>> dirty;
 
 	public:

@@ -17,7 +17,7 @@ namespace aa {
 	struct generic_hash {
 		template<hashable_by_template<H> T>
 		AA_CONSTEXPR size_t operator()(const T &t) const {
-			return constant<H<T>>()(t);
+			return constant_v<H<T>>(t);
 		}
 
 		static AA_CONSTEVAL size_t min() { return numeric_min; }
@@ -34,7 +34,7 @@ namespace aa {
 	struct mod_generic_hash {
 		template<hashable_by_template<H> T>
 		AA_CONSTEXPR size_t operator()(const T &t) const {
-			return remainder<N>(constant<H<T>>()(t));
+			return remainder<N>(constant_v<H<T>>(t));
 		}
 
 		static AA_CONSTEVAL size_t min() { return 0; }
@@ -49,7 +49,7 @@ namespace aa {
 	//
 	// MAX negali rodyti į kažkurį iš argumentų, nes MAX represents a failure state kai nerandamas nei vienas iš template parametrų.
 	template<auto... A>
-		requires (are_same_v<range_char_traits_t<fixed_string_for<A>>...>)
+		requires (same_as_every<range_char_traits_t<fixed_string_for<A>>...>)
 	struct string_perfect_hash : pack<to_fixed_string<A>()...> {
 		using is_transparent = void;
 		using traits_type = first_or_void_t<range_char_traits_t<fixed_string_for<A>>...>;
@@ -63,7 +63,7 @@ namespace aa {
 					return true;
 				} else {
 					return trie<I + 1, V>(t, std::forward<F>(f),
-						traits_type::eq(std::ranges::data(t)[I], constant<constant<getter<I>>()(to_fixed_string<V>())>()));
+						traits_type::eq(std::ranges::data(t)[I], const_v<constant_v<getter<I>>(to_fixed_string<V>())>));
 				}
 			} else return false;
 		}
@@ -89,7 +89,7 @@ namespace aa {
 namespace std {
 
 	template<auto... A>
-	struct tuple_size<aa::string_perfect_hash<A...>> : aa::size_identity<sizeof...(A)> {};
+	struct tuple_size<aa::string_perfect_hash<A...>> : aa::size_constant<sizeof...(A)> {};
 
 	template<size_t I, auto... A>
 	struct tuple_element<I, aa::string_perfect_hash<A...>> : aa::pack_element<I, aa::to_fixed_string<A>()...> {};

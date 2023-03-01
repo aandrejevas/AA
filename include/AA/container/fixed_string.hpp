@@ -164,7 +164,7 @@ namespace aa {
 	// https://stackoverflow.com/questions/62853609/understanding-user-defined-string-literals-addition-for-c20
 	inline namespace literals {
 		template<basic_fixed_string S>
-		AA_CONSTEVAL decltype(S) operator""_fs() { return S; }
+		AA_CONSTEVAL const_t<S> operator""_fs() { return S; }
 	}
 
 }
@@ -176,14 +176,14 @@ namespace std {
 	template<class C, class T, size_t N>
 	struct hash<aa::basic_fixed_string<C, T, N>> {
 		AA_CONSTEXPR size_t operator()(const aa::basic_fixed_string<C, T, N> &string) const {
-			return aa::constant<std::hash<std::basic_string_view<C, T>>>()(string);
+			return aa::constant_v<std::hash<std::basic_string_view<C, T>>>(string);
 		}
 	};
 
 
 
 	template<class C, class T, size_t N>
-	struct tuple_size<aa::basic_fixed_string<C, T, N>> : aa::size_identity<N> {};
+	struct tuple_size<aa::basic_fixed_string<C, T, N>> : aa::size_constant<N> {};
 
 	template<size_t I, class C, class T, size_t N>
 		requires (I < N)

@@ -36,11 +36,6 @@
 #
 #
 #
-#define AA_SHL(l, r) ((l) << (r))
-#define AA_SHR(l, r) ((l) >> (r))
-#
-#
-#
 #define AA_CALL_OPERATOR operator()
 #
 #
