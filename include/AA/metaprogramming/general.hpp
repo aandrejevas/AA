@@ -35,22 +35,13 @@ namespace aa {
 
 
 
-	// Neturime tiesiog auto parametro, nes tada reiktų kreipti dėmėsį į expression tipą, o tai nepatogu.
-	// Reikia mums tokios infrastruktūros, nes integral_constant::type alias yra sugadintas.
-	template<class T, T V = default_value>
-	struct constant : std::integral_constant<T, V>, std::type_identity<T> {
-		using std::type_identity<T>::type;
-	};
+	template<auto V>
+	using constant = std::integral_constant<decltype(V), V>;
 
 	template<size_t V>
-	using size_constant = constant<size_t, V>;
+	using size_constant = constant<V>;
 	using uz0_constant = size_constant<0uz>;
 	using uz2_constant = size_constant<2uz>;
-
-	template<bool V>
-	using bool_constant = constant<bool, V>;
-	using true_constant = bool_constant<true>;
-	using false_constant = bool_constant<false>;
 
 	// Nieko tokio, kad kopijuojame konstantas, kadangi viskas vyksta kompiliavimo metu.
 	//
@@ -59,13 +50,13 @@ namespace aa {
 	//
 	// constant_t alias neturėtų prasmės, nes, kad juo naudotis jau reiktų nurodyti ką norime gauti.
 	template<class T, T V = default_value>
-	AA_CONSTEXPR const T constant_v = constant<T, V>::value;
+	AA_CONSTEXPR const T constant_v = constant<V>::value;
 
 	template<auto V>
-	using const_t = typename constant<decltype(V), V>::type;
+	using const_t = typename constant<V>::value_type;
 
 	template<auto V>
-	AA_CONSTEXPR const const_t<V> const_v = constant<const_t<V>, V>::value;
+	AA_CONSTEXPR const const_t<V> const_v = constant<V>::value;
 
 
 
@@ -122,24 +113,6 @@ namespace aa {
 
 
 
-	template<class, template<class...> class>
-	struct is_instance_of_twtp : false_constant {};
-
-	template<template<class...> class T, class... A>
-	struct is_instance_of_twtp<T<A...>, T> : true_constant {};
-
-	template<class T, template<class...> class U>
-	AA_CONSTEXPR const bool is_instance_of_twtp_v = is_instance_of_twtp<T, U>::value;
-
-	template<class, template<auto...> class>
-	struct is_instance_of_twntp : false_constant {};
-
-	template<template<auto...> class T, auto... A>
-	struct is_instance_of_twntp<T<A...>, T> : true_constant {};
-
-	template<class T, template<auto...> class U>
-	AA_CONSTEXPR const bool is_instance_of_twntp_v = is_instance_of_twntp<T, U>::value;
-
 	// Constraint negali būti pakeistas į concept, nes pirmas parametras concept'o nebūtų tipas.
 	template<template<class...> class T, class... A>
 		requires (requires { T(std::declval<A>()...); })
@@ -160,16 +133,23 @@ namespace aa {
 	template<class... A>
 	using first_or_void_t = typename first_or_void<A...>::type;
 
+	// TODO: GCC bug, can't use decltype(lambda) directly.
+	template<template<auto...> class U>
+	struct lambda_accepting_twntp : decltype([]<auto... A>(const U<A...> &) -> void {}) {};
+
+	template<template<class...> class U>
+	struct lambda_accepting_twtp : decltype([]<class... A>(const U<A...> &) -> void {}) {};
+
 
 
 	template<class T>
 	concept not_const = !std::is_const_v<T>;
 
 	template<class T, template<auto...> class U>
-	concept instance_of_twntp = is_instance_of_twntp_v<T, U>;
+	concept instance_of_twntp = std::invocable<lambda_accepting_twntp<U>, T &>;
 
 	template<class T, template<class...> class U>
-	concept instance_of_twtp = is_instance_of_twtp_v<std::remove_cvref_t<T>, U>;
+	concept instance_of_twtp = std::invocable<lambda_accepting_twtp<U>, T &>;
 
 	template<class T, template<class...> class U>
 	concept not_const_instance_of_twtp = not_const<T> && instance_of_twtp<T, U>;
@@ -498,19 +478,19 @@ namespace aa {
 
 
 	template<convertible_from<size_t> T>
-	struct zero : constant<T, static_cast<T>(0uz)> {};
+	struct zero : constant<static_cast<T>(0uz)> {};
 
 	template<class T>
 	AA_CONSTEXPR const T zero_v = zero<T>::value;
 
 	template<convertible_from<size_t> T>
-	struct one : constant<T, static_cast<T>(1uz)> {};
+	struct one : constant<static_cast<T>(1uz)> {};
 
 	template<class T>
 	AA_CONSTEXPR const T one_v = one<T>::value;
 
 	template<convertible_from<size_t> T>
-	struct two : constant<T, static_cast<T>(2uz)> {};
+	struct two : constant<static_cast<T>(2uz)> {};
 
 	template<class T>
 	AA_CONSTEXPR const T two_v = two<T>::value;
@@ -824,7 +804,7 @@ namespace aa {
 
 
 	template<size_t, auto V>
-	struct pack_unit : constant<const_t<V>, V> {};
+	struct pack_unit : constant<V> {};
 
 	template<class, auto...>
 	struct pack_base;
@@ -834,10 +814,10 @@ namespace aa {
 
 	template<size_t I, auto... V>
 	struct pack_element : decltype(([]<auto A>(const pack_unit<I, A> &&) ->
-		constant<const_t<A>, A> { return {}; })(pack_base<std::index_sequence_for<const_t<V>...>, V...>{})) {};
+		constant<A> { return {}; })(pack_base<std::index_sequence_for<const_t<V>...>, V...>{})) {};
 
 	template<size_t I, auto... V>
-	using pack_element_t = typename pack_element<I, V...>::type;
+	using pack_element_t = typename pack_element<I, V...>::value_type;
 
 	template<size_t I, auto... V>
 	AA_CONSTEXPR const pack_element_t<I, V...> pack_element_v = pack_element<I, V...>::value;
