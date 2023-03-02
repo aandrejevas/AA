@@ -134,11 +134,13 @@ namespace aa {
 	using first_or_void_t = typename first_or_void<A...>::type;
 
 	// TODO: GCC bug, can't use decltype(lambda) directly.
-	template<template<auto...> class U>
-	struct lambda_accepting_twntp : decltype([]<auto... A>(const U<A...> &) -> void {}) {};
+	namespace {
+		template<template<auto...> class U>
+		struct lambda_accepting_twntp : decltype([]<auto... A>(const U<A...> &) -> void {}) {};
 
-	template<template<class...> class U>
-	struct lambda_accepting_twtp : decltype([]<class... A>(const U<A...> &) -> void {}) {};
+		template<template<class...> class U>
+		struct lambda_accepting_twtp : decltype([]<class... A>(const U<A...> &) -> void {}) {};
+	}
 
 
 
