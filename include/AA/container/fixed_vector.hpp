@@ -1,13 +1,12 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <cstring> // memmove
-#include <cstddef> // size_t, ptrdiff_t, byte
+#include <cstddef> // size_t, ptrdiff_t
 #include <memory> // construct_at
 #include <utility> // forward
 #include <concepts> // constructible_from
 #include <bit> // bit_cast
-#include <algorithm> // copy
+#include <algorithm> // copy, copy_n, copy_backward
 #include <ranges> // input_range
 
 
@@ -128,8 +127,8 @@ namespace aa {
 		AA_CONSTEXPR void insert_back(V &&value) { *push_back() = std::forward<V>(value); }
 
 		AA_CONSTEXPR void push(const const_iterator pos) {
-			std::memmove(const_cast<iterator>(pos + 1), pos,
-				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(++r_begin) - std::bit_cast<const std::byte *>(pos)));
+			++r_begin;
+			std::ranges::copy_backward(pos, const_cast<const_iterator>(r_begin), r_begin + 1);
 		}
 
 		template<class... A>
@@ -146,8 +145,8 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR void erase(const const_iterator pos) {
-			std::memmove(const_cast<iterator>(pos), pos + 1,
-				std::bit_cast<size_type>(std::bit_cast<const std::byte *>(r_begin--) - std::bit_cast<const std::byte *>(pos)));
+			std::ranges::copy_n(pos + 1, r_begin - pos, const_cast<iterator>(pos));
+			--r_begin;
 		}
 
 		template<class... A>
