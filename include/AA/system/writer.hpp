@@ -16,34 +16,6 @@
 
 namespace aa {
 
-	// Nors čia ant S tipo galėtų nebūti constraint uždėtas, jis ten padėtas tam, kad pažymėti, kad S tipas nėra bet koks.
-	struct identity_inserter {
-		template<output_stream S, class U>
-		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, u); }
-	};
-
-	template<auto D = ' '>
-	struct delim_r_inserter {
-		template<output_stream S, class U>
-		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, u, D); }
-	};
-
-	delim_r_inserter()->delim_r_inserter<>;
-
-	template<auto D = ' '>
-	struct delim_l_inserter {
-		template<output_stream S, class U>
-		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, D, u); }
-	};
-
-	delim_l_inserter()->delim_l_inserter<>;
-
-	template<int N>
-	struct width_inserter {
-		template<output_stream S, class U>
-		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, std::setw(N), u); }
-	};
-
 	struct tuple_inserter {
 		template<output_stream S, tuple_like U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
@@ -57,6 +29,43 @@ namespace aa {
 				print("{}");
 			}
 		}
+	};
+
+	// Nors čia ant S tipo galėtų nebūti constraint uždėtas, jis ten padėtas tam, kad pažymėti, kad S tipas nėra bet koks.
+	struct identity_inserter {
+		template<output_stream S, class U>
+		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
+			if constexpr (output_stream<S, U>)		print(s, u);
+			else									constant_v<tuple_inserter>(s, u);
+		}
+	};
+
+	template<auto D = ' '>
+	struct delim_r_inserter {
+		template<output_stream S, class U>
+		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
+			constant_v<identity_inserter>(s, u);
+			print(s, D);
+		}
+	};
+
+	delim_r_inserter()->delim_r_inserter<>;
+
+	template<auto D = ' '>
+	struct delim_l_inserter {
+		template<output_stream S, class U>
+		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
+			print(s, D);
+			constant_v<identity_inserter>(s, u);
+		}
+	};
+
+	delim_l_inserter()->delim_l_inserter<>;
+
+	template<int N>
+	struct width_inserter {
+		template<output_stream S, class U>
+		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, std::setw(N), u); }
 	};
 
 
