@@ -7,6 +7,8 @@
 #include <utility> // forward
 #include <concepts> // constructible_from
 #include <bit> // bit_cast
+#include <algorithm> // copy
+#include <ranges> // input_range
 
 
 
@@ -176,6 +178,8 @@ namespace aa {
 		AA_CONSTEXPR fixed_vector() {}
 		AA_CONSTEXPR fixed_vector(const const_iterator pos) : r_begin{const_cast<iterator>(pos)} {}
 		AA_CONSTEXPR fixed_vector(const size_type count) : r_begin{r_end + count} {}
+		template<std::ranges::input_range R>
+		AA_CONSTEXPR fixed_vector(R &&r) : r_begin{std::ranges::copy(r, elements.data()).out - 1} {}
 #pragma GCC diagnostic pop
 
 

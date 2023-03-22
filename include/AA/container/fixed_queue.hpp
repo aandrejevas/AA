@@ -7,6 +7,7 @@
 #include <utility> // forward
 #include <concepts> // constructible_from
 #include <bit> // bit_cast
+#include <ranges> // input_range
 
 
 
@@ -149,6 +150,8 @@ namespace aa {
 
 		// Special member functions
 		AA_CONSTEXPR fixed_queue() {}
+		template<std::ranges::input_range R>
+		AA_CONSTEXPR fixed_queue(R &&r) : elements{r} {}
 
 
 
