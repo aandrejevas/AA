@@ -2,14 +2,9 @@
 
 #include "../metaprogramming/general.hpp"
 #include "fixed_vector.hpp"
-#include <cstddef> // size_t, ptrdiff_t
 #include <variant> // variant, get, get_if
-#include <utility> // forward
-#include <concepts> // constructible_from
 #include <iterator> // random_access_iterator_tag
 #include <compare> // strong_ordering
-#include <functional> // invoke
-#include <bit> // bit_cast
 
 
 

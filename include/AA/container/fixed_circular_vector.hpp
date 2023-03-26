@@ -1,11 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <cstddef> // size_t, ptrdiff_t
 #include <memory> // construct_at
-#include <utility> // forward
-#include <concepts> // constructible_from
-#include <bit> // bit_cast
 
 
 

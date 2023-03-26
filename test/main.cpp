@@ -19,7 +19,6 @@
 #include <AA/system/writer.hpp>
 #include <AA/system/print.hpp>
 #include <AA/system/pathed_stream.hpp>
-#include <cstddef> // size_t
 #include <cstdlib> // EXIT_SUCCESS
 #include <ios> // sync_with_stdio
 #include <map> // map
@@ -28,9 +27,7 @@
 #include <ranges> // reverse, iota, contiguous_range, random_access_range, bidirectional_range, subrange
 #include <algorithm> // is_sorted, is_permutation, for_each
 #include <string> // string
-#include <limits> // numeric_limits
 #include <iostream> // cout, clog
-#include <bit> // bit_cast
 
 
 
@@ -57,10 +54,10 @@ int main() {
 	tttt.start();
 	linear_congruential_generator g;
 	{
-		log<AA_SOURCE_DATA>();
-		log<AA_SOURCE_DATA>("Hello world!");
-		log<AA_SOURCE_DATA>(std::clog);
-		log<AA_SOURCE_DATA>(std::clog, "Hello world!");
+		log<AA_PRETTY_SOURCE_DATA>();
+		log<AA_PRETTY_SOURCE_DATA>("Hello world!");
+		log<AA_PRETTY_SOURCE_DATA>(std::clog);
+		log<AA_PRETTY_SOURCE_DATA>(std::clog, "Hello world!");
 		//print();
 		printl();
 		//print(std::cout);

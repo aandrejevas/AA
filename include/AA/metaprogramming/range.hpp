@@ -1,9 +1,6 @@
 #pragma once
 
 #include "general.hpp"
-#include <cstddef> // size_t
-#include <type_traits> // type_identity, make_unsigned_t, add_pointer_t
-#include <concepts> // convertible_to, same_as
 #include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, next, prev, distance, iter_reference_t
 #include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, iterator_t, sentinel_t, range_value_t, begin, end, rbegin, size, data, range
 #include <string> // char_traits
@@ -43,9 +40,9 @@ namespace aa {
 	// Turėtų ne convertible_to<bool> būti naudojamas, o boolean-testable, bet toks concept kol kas yra tik exposition only.
 	// https://en.cppreference.com/w/cpp/concepts/boolean-testable.
 	template<class B, class I>
-	concept key_bool_iterator_for = std::random_access_iterator<B> && std::convertible_to<std::iter_value_t<B>, bool>
+	concept key_bool_iterator_for = (std::random_access_iterator<B> && std::convertible_to<std::iter_value_t<B>, bool>
 		&& std::output_iterator<B, bool> && std::convertible_to<std::iter_value_t<I>, std::iter_difference_t<B>>
-		&& std::convertible_to<std::iter_difference_t<B>, std::iter_value_t<I>>;
+		&& std::convertible_to<std::iter_difference_t<B>, std::iter_value_t<I>>);
 
 	template<class O, class I>
 	concept trivial_output_iterator_for = std::contiguous_iterator<O> && std::contiguous_iterator<I>

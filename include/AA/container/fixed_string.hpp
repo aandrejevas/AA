@@ -1,14 +1,10 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <cstddef> // size_t, ptrdiff_t
 #include <iterator> // reverse_iterator
 #include <string_view> // basic_string_view, hash
 #include <ostream> // basic_ostream
 #include <string> // basic_string, char_traits
-#include <functional> // hash
-#include <type_traits> // type_identity, basic_common_reference
-#include <utility> // tuple_size, tuple_element
 
 
 
@@ -94,6 +90,7 @@ namespace aa {
 		static AA_CONSTEVAL difference_type ssize() { return N; }
 		static AA_CONSTEVAL size_type size() { return N; }
 		static AA_CONSTEVAL size_type max_size() { return N; }
+		static AA_CONSTEVAL size_type tuple_size() { return N; }
 		static AA_CONSTEVAL size_type last_index() { return N - 1; }
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
@@ -157,7 +154,7 @@ namespace aa {
 	// Nekopijuojame į fixed_string null character, nes tik užimtų bereikalingai vietą simbolis.
 	// Netikriname ar (N != 0), nes C++ standartas draudžia deklaruoti tokius masyvus.
 	template<class T, size_t N>
-	basic_fixed_string(const T(&)[N]) -> basic_fixed_string<T, std::char_traits<T>, N - 1>;
+	basic_fixed_string(const T(&)[N]) -> semibasic_fixed_string<T, N - 1>;
 
 
 
@@ -179,15 +176,6 @@ namespace std {
 			return aa::constant_v<std::hash<std::basic_string_view<C, T>>>(string);
 		}
 	};
-
-
-
-	template<class C, class T, size_t N>
-	struct tuple_size<aa::basic_fixed_string<C, T, N>> : aa::size_constant<N> {};
-
-	template<size_t I, class C, class T, size_t N>
-		requires (I < N)
-	struct tuple_element<I, aa::basic_fixed_string<C, T, N>> : std::type_identity<C> {};
 
 
 

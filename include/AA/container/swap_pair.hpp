@@ -1,10 +1,6 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <cstddef> // size_t
-#include <concepts> // swap
-#include <utility> // forward, tuple_size, tuple_element
-#include <type_traits> // common_type_t, type_identity
 
 
 
@@ -14,6 +10,7 @@ namespace aa {
 	struct swap_pair : pair<T>, protected pair<T *> {
 		// Member types
 		using value_type = T;
+		using pair<T>::tuple_size;
 
 	protected:
 		using b1 = pair<value_type>;
@@ -48,20 +45,5 @@ namespace aa {
 
 	template<class T1, class T2>
 	swap_pair(T1 &&, T2 &&) -> swap_pair<std::common_type_t<T1, T2>>;
-
-}
-
-
-
-namespace std {
-
-	template<class T>
-	struct tuple_size<aa::swap_pair<T>> : aa::uz2_constant {};
-
-	template<class T>
-	struct tuple_element<0, aa::swap_pair<T>> : std::type_identity<T> {};
-
-	template<class T>
-	struct tuple_element<1, aa::swap_pair<T>> : std::type_identity<T> {};
 
 }

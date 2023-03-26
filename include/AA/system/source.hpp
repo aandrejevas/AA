@@ -5,14 +5,8 @@
 #include "../metaprogramming/io.hpp"
 #include "../container/fixed_string.hpp"
 #include "print.hpp"
-#include <cstdint> // uint32_t
-#include <cstddef> // size_t
 #include <cstdlib> // exit, EXIT_FAILURE
-#include <utility> // forward
 #include <iostream> // cerr, clog
-#include <concepts> // same_as
-#include <type_traits> // remove_reference_t, extent_v
-#undef assert
 
 
 
@@ -52,11 +46,11 @@ namespace aa {
 		// fixed_string turime naudoti dėl constantų tipo, kuriomis ši klasė inicializuojama.
 		// Input/output
 		friend AA_CONSTEXPR ostream_type &operator<<(ostream_type &s, const source_data &) {
-			print(s, FILE, '(', LINE);
+			print(s, FILE, ':', LINE);
 			if constexpr (!is_numeric_max(COL)) {
 				print(s, ':', COL);
 			}
-			return print(s, ") `", FUNC, '`');
+			return print(s, ": `", FUNC, '`');
 		}
 	};
 
@@ -90,30 +84,8 @@ namespace aa {
 		abort<D>(std::cerr, args...);
 	}
 
-	template<instance_of_twntp<source_data> D, bool T = true, class F>
-	AA_CONSTEXPR void trace(const bool condition, F &&f) {
-		if constexpr (T || !AA_ISDEF_NDEBUG) {
-			if (!condition) {
-				invoke<D>(std::forward<F>(f));
-			}
-		}
-	}
-
-	// Dėl atributo, naudoti šią funkciją turėtų būti tas pats kaip naudoti macro greitaveikos atžvilgiu.
-	template<instance_of_twntp<source_data> D, bool T = true, output_stream S, class... A>
-	AA_CONSTEXPR void assert(const bool condition, S &&s, const A&... args) {
-		if constexpr (T || !AA_ISDEF_NDEBUG) {
-			if (!condition) {
-				if constexpr (sizeof...(A))		abort<D>(s, args...);
-				else							abort<D>(s, "Assertion failed.");
-			}
-		}
-	}
-
-	template<instance_of_twntp<source_data> D, bool T = true, class... A>
-		requires (!output_stream<first_or_void_t<A...>>)
-	AA_CONSTEXPR void assert(const bool condition, const A&... args) {
-		assert<D, T>(condition, std::cerr, args...);
-	}
+	// Neturime assert funkcijų, nes nereikia turėti dviejų kelių, kad pasiekti tą patį. Na ir macros
+	// sprendimas geresnis greitaveikos atžvilgiu (funkcijos argumentai būtų įvertinami, gal to būtų įmanoma
+	// išvengti naudojant atributą) ir kodo trumpumo (naudotojui tektų funkcijai paduoti source_data klasę).
 
 }

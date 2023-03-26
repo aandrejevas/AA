@@ -9,12 +9,7 @@
 #include "lexer.hpp"
 #include "evaluator.hpp"
 #include "source.hpp"
-#include <cstddef> // size_t
 #include <string> // string
-#include <type_traits> // remove_cvref_t, remove_reference_t
-#include <limits> // numeric_limits
-#include <bit> // countr_one
-#include <utility> // tuple_size_v
 
 
 
@@ -37,10 +32,14 @@ namespace aa {
 					invoke<I>(eval, constant_v<getter<I>>(t), token);
 				});
 			}})));
-		trace<AA_SOURCE_DATA>(index == std::tuple_size_v<TUPLE>, [&]<class D>() -> void {
-			std::remove_reference_t<LEXER>::hasher_type
-				::get(index, []<size_t, auto NAME>() -> void { abort<D>("Parameter `", NAME, "` not found."); });
-		});
+		if (index != std::tuple_size_v<TUPLE>) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+			constify<TUPLE>(index, []<size_t I>() -> void {
+#pragma GCC diagnostic pop
+				abort<AA_SOURCE_DATA>("Parameter `", std::remove_reference_t<LEXER>::template get<I>(), "` (index: ", I, ") not found.");
+			});
+		}
 	}
 
 	template<class TUPLE, class EVAL = generic_evaluator<>, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE>

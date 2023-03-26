@@ -3,8 +3,6 @@
 #include "general.hpp"
 #include <ostream> // basic_ostream
 #include <istream> // basic_istream
-#include <concepts> // same_as
-#include <utility> // forward
 #include <ios> // basic_ios
 
 

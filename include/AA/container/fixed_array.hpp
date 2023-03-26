@@ -1,9 +1,6 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <cstddef> // size_t, ptrdiff_t
-#include <type_traits> // type_identity
-#include <utility> // forward, tuple_size, tuple_element
 
 
 
@@ -94,6 +91,7 @@ namespace aa {
 		static AA_CONSTEVAL difference_type ssize() { return N; }
 		static AA_CONSTEVAL size_type size() { return N; }
 		static AA_CONSTEVAL size_type max_size() { return N; }
+		static AA_CONSTEVAL size_type tuple_size() { return N; }
 		static AA_CONSTEVAL size_type last_index() { return N - 1; }
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
@@ -113,18 +111,5 @@ namespace aa {
 		// Šitas kintamasis turi būti paslėptas, nes kitaip jis suteiktų galimybę naudotojui keisti const elementus.
 		value_type *const r_begin = elements.data() + last_index();
 	};
-
-}
-
-
-
-namespace std {
-
-	template<class T, size_t N>
-	struct tuple_size<aa::fixed_array<T, N>> : aa::size_constant<N> {};
-
-	template<size_t I, class T, size_t N>
-		requires (I < N)
-	struct tuple_element<I, aa::fixed_array<T, N>> : std::type_identity<T> {};
 
 }

@@ -3,10 +3,7 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
 #include "../algorithm/hash.hpp"
-#include <cstddef> // size_t
 #include <string> // string
-#include <utility> // unreachable, tuple_size
-#include <type_traits> // remove_reference_t
 
 
 
@@ -16,7 +13,7 @@ namespace aa {
 	// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
 	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
 	template<instance_of_twntp<string_perfect_hash> H>
-	struct param_lexer {
+	struct param_lexer : H::pack_type {
 		// Special member functions
 		AA_CONSTEXPR param_lexer(const size_t r1 = 50, const size_t r2 = 50) {
 			token.reserve(r1);
@@ -28,33 +25,26 @@ namespace aa {
 		// Member types
 		using hasher_type = H;
 
-	protected:
-		template<class C>
-		using supplier_type = void(param_lexer:: *)(C &) const;
-
 
 
 		// Member objects
+	protected:
 		enum struct lexing_state : size_t {
 			BEFORE_KEY, KEY, KEY_SPACE,
 			VALUE, SKIP_VALUE
 		} state = lexing_state::BEFORE_KEY;
 		std::string token, whitespace;
+		size_t index;
 
 
 
 		// Member functions
-		template<size_t I, class C>
-		AA_CONSTEXPR void supply(C &consumer) const {
-			// Negalime išsisaugoti C::operator() funkcijos rodyklės, nes ta funkcija gali turėti įvairias formas.
-			invoke<I>(consumer, token);
-		}
-
-		template<class C>
-		AA_CONSTEXPR void init_key(supplier_type<C> &supplier) {
+		AA_CONSTEXPR void init_key() {
 			constant_v<hasher_type>(token, [&]<size_t I>() -> void {
-				if constexpr (I != hasher_type::max()) {
-					supplier = &param_lexer::supply<I, C>;
+				if constexpr (I != std::tuple_size_v<hasher_type>) {
+					// Anksčiau čia kopijuodavome metodų rodykles, o ne indeksus, bet buvo labai nepatogu talpinti
+					// tą rodyklę ir metodų rodyklių dydis (16 baitų) yra didesnis negu size_t tipo (8 baitai).
+					index = I;
 					state = lexing_state::VALUE;
 				} else
 					state = lexing_state::SKIP_VALUE;
@@ -64,12 +54,10 @@ namespace aa {
 	public:
 		template<class C>
 		AA_CONSTEXPR void operator()(const int character, C &&consumer) {
-			static constinit supplier_type<C> supplier;
-
 			switch (state) {
 				case lexing_state::BEFORE_KEY:
 					switch (character) {
-						case '=': init_key(supplier);
+						case '=': init_key();
 						case ' ': case '\t': case '\n': case '\r': return;
 						default:
 							state = lexing_state::KEY;
@@ -88,7 +76,7 @@ namespace aa {
 							whitespace.push_back(static_cast<char>(character));
 							return;
 						case '=':
-							init_key(supplier);
+							init_key();
 							token.clear();
 							return;
 					}
@@ -104,7 +92,7 @@ namespace aa {
 							whitespace.push_back(static_cast<char>(character));
 							return;
 						case '=':
-							init_key(supplier);
+							init_key();
 							token.clear();
 							whitespace.clear();
 							return;
@@ -117,7 +105,7 @@ namespace aa {
 							return;
 						case '\n':
 							state = lexing_state::BEFORE_KEY;
-							(this->*supplier)(consumer);
+							constify<hasher_type>(index, std::forward<C>(consumer), std::as_const(token));
 							token.clear();
 							return;
 					}
@@ -225,14 +213,5 @@ namespace aa {
 		// Svarbu nepamiršti, kad jei parametrą bandoma apibrėžti failo pabaigoje,
 		// tai failo paskutinis simbolis turės būti '\n', kitaip parametras nebus apibrėžtas.
 	}
-
-}
-
-
-
-namespace std {
-
-	template<aa::instance_of_twntp<aa::string_perfect_hash> H>
-	struct tuple_size<aa::param_lexer<H>> : aa::size_constant<H::max()> {};
 
 }

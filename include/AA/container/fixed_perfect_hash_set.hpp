@@ -7,14 +7,7 @@
 #include "fixed_vector.hpp"
 #include "unsafe_subrange.hpp"
 #include <cstring> // memset
-#include <cstddef> // size_t, ptrdiff_t
-#include <limits> // numeric_limits
-#include <functional> // invoke
-#include <utility> // forward
 #include <iterator> // bidirectional_iterator_tag, forward_iterator_tag, default_sentinel_t, iter_value_t
-#include <bit> // countr_zero, countl_zero, popcount, bit_cast
-#include <type_traits> // conditional_t
-#include <concepts> // same_as
 
 
 

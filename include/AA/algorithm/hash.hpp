@@ -4,10 +4,7 @@
 #include "../metaprogramming/range.hpp"
 #include "../system/source.hpp"
 #include "arithmetic.hpp"
-#include <cstddef> // size_t
-#include <functional> // hash
 #include <ranges> // size, data
-#include <utility> // forward, tuple_size, tuple_size_v, tuple_element
 
 
 
@@ -48,6 +45,7 @@ namespace aa {
 	// Rekomenduojama naudoti su templates šią klasę kaip tipo parametrą.
 	//
 	// MAX negali rodyti į kažkurį iš argumentų, nes MAX represents a failure state kai nerandamas nei vienas iš template parametrų.
+	// MAX nėra numeric_max, nes tokia reikšmė indikuotų, kad klasė gali gražinti visas reikšmes nuo 0 iki numeric_max.
 	template<auto... A>
 		requires (same_as_every<range_char_traits_t<fixed_string_for<A>>...>)
 	struct string_perfect_hash : pack<to_fixed_string<A>()...> {
@@ -81,17 +79,5 @@ namespace aa {
 		static AA_CONSTEVAL size_t min() { return 0; }
 		static AA_CONSTEVAL size_t max() { return sizeof...(A); }
 	};
-
-}
-
-
-
-namespace std {
-
-	template<auto... A>
-	struct tuple_size<aa::string_perfect_hash<A...>> : aa::size_constant<sizeof...(A)> {};
-
-	template<size_t I, auto... A>
-	struct tuple_element<I, aa::string_perfect_hash<A...>> : aa::pack_element<I, aa::to_fixed_string<A>()...> {};
 
 }

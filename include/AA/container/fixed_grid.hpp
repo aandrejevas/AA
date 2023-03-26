@@ -6,11 +6,7 @@
 #include "fixed_fast_free_vector.hpp"
 #include "fixed_vector.hpp"
 #include "unsafe_subrange.hpp"
-#include <cstddef> // ptrdiff_t, size_t
-#include <functional> // invoke, identity
-#include <utility> // forward, exchange, as_const
 #include <algorithm> // min, max
-#include <type_traits> // conditional_t
 
 
 

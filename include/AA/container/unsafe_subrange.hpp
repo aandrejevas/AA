@@ -4,10 +4,7 @@
 #include "../metaprogramming/range.hpp"
 #include <iterator> // input_or_output_iterator, sentinel_for, next, prev, bidirectional_iterator, random_access_iterator, contiguous_iterator, sized_sentinel_for, iter_difference_t, iter_reference_t
 #include <ranges> // view_interface, iterator_t, sentinel_t, begin, borrowed_range
-#include <type_traits> // type_identity
-#include <utility> // forward, tuple_size, tuple_element
 #include <memory> // to_address
-#include <concepts> // convertible_to
 
 
 
@@ -21,6 +18,7 @@ namespace aa {
 
 	public:
 		using std::ranges::view_interface<unsafe_subrange>::data;
+		using pair<I, S>::get;
 
 
 
@@ -79,20 +77,5 @@ namespace aa {
 
 	template<class R>
 	unsafe_subrange(R &&) -> unsafe_subrange<std::ranges::iterator_t<R>, std::ranges::sentinel_t<R>>;
-
-}
-
-
-
-namespace std {
-
-	template<class I, class S>
-	struct tuple_size<aa::unsafe_subrange<I, S>> : aa::uz2_constant {};
-
-	template<class I, class S>
-	struct tuple_element<0, aa::unsafe_subrange<I, S>> : std::type_identity<I> {};
-
-	template<class I, class S>
-	struct tuple_element<1, aa::unsafe_subrange<I, S>> : std::type_identity<S> {};
 
 }

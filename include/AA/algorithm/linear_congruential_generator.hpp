@@ -2,9 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include "arithmetic.hpp"
-#include <cstddef> // size_t
 #include <chrono> // system_clock
-#include <concepts> // unsigned_integral
 #include <numeric> // gcd
 
 

@@ -3,13 +3,9 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
 #include "print.hpp"
-#include <cstddef> // size_t
 #include <ranges> // input_range, range_value_t
-#include <functional> // invoke
-#include <concepts> // invocable
 #include <ostream> // basic_ostream
 #include <algorithm> // for_each
-#include <utility> // tuple_size_v
 #include <iomanip> // setw
 
 

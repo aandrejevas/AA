@@ -5,9 +5,6 @@
 #include "arithmetic.hpp"
 #include <ranges> // iterator_t, sentinel_t, borrowed_iterator_t, range_reference_t, range_size_t, begin, size, forward_range, bidirectional_range, input_range
 #include <iterator> // indirect_strict_weak_order, indirect_binary_predicate, indirectly_unary_invocable, indirect_unary_predicate
-#include <functional> // invoke, less, equal_to
-#include <utility> // as_const
-#include <type_traits> // invoke_result_t
 
 
 

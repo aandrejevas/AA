@@ -4,11 +4,9 @@
 #include "../metaprogramming/range.hpp"
 #include "../algorithm/arithmetic.hpp"
 #include <cstring> // memcpy
-#include <cstddef> // size_t
 #include <ranges> // data, size
 #include <iterator> // contiguous_iterator, iter_value_t
 #include <memory> // to_address
-#include <bit> // bit_cast
 
 
 

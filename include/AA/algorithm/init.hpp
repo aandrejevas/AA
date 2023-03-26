@@ -1,12 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <cstddef> // size_t
 #include <cstring> // memcpy, memset
-#include <type_traits> // remove_cvref_t
-#include <concepts> // invocable
-#include <functional> // invoke
-#include <utility> // forward
 #include <memory> // addressof
 
 

@@ -2,12 +2,9 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../algorithm/init.hpp"
-#include <cstddef> // size_t
 #include <string_view> // string_view
 #include <charconv> // from_chars
 #include <string> // string
-#include <utility> // forward
-#include <type_traits> // remove_cvref_t
 
 
 

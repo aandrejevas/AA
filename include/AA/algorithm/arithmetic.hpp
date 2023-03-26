@@ -1,12 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <cstddef> // size_t
 #include <cmath> // fmod
-#include <concepts> // integral, unsigned_integral, signed_integral, floating_point, same_as
-#include <bit> // has_single_bit, bit_cast
-#include <limits> // numeric_limits
-#include <type_traits> // make_signed_t
 
 
 

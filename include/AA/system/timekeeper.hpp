@@ -2,9 +2,6 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/time.hpp"
-#include <concepts> // invocable
-#include <functional> // invoke
-#include <utility> // forward
 #include <chrono> // steady_clock, duration, duration_cast
 
 
@@ -65,6 +62,14 @@ namespace aa {
 			resume();
 			std::invoke(std::forward<F>(f), std::forward<A>(args)...);
 			stop();
+		}
+
+		template<class F, class... A>
+			requires (std::invocable<F, A...>)
+		AA_CONSTEXPR void exclude(F &&f, A&&... args) {
+			stop();
+			std::invoke(std::forward<F>(f), std::forward<A>(args)...);
+			resume();
 		}
 
 		// Pagal nutylėjimą, laikas pateikiamas sekundėmis.

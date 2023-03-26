@@ -14,7 +14,7 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t
+#include <type_traits> // remove_reference, remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t
 #include <concepts> // convertible_to, same_as, default_initializable, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, assignable_from, integral, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <array> // array
@@ -204,6 +204,9 @@ namespace aa {
 	template<class L, class R>
 	concept wo_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
 
+	template<class L, class R>
+	concept wo_cvref_same_as = std::same_as<std::remove_cvref_t<L>, R>;
+
 	template<class T>
 	concept regular_unsigned_integral = std::unsigned_integral<T> && std::has_single_bit(unsign(std::numeric_limits<T>::digits));
 
@@ -268,28 +271,28 @@ namespace aa {
 
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
 	template<class T, size_t I>
-	concept member_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(std::remove_cvref_t<T> &t) {
-		{ t.template get<I>() } -> wo_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
-		{ std::as_const(t).template get<I>() } -> wo_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
+	concept member_get_exists = requires(std::remove_cvref_t<T> &t) {
+		t.template get<I>();
+		std::as_const(t).template get<I>();
 	};
 
 	template<class T, size_t I>
-	concept adl_get = (I < std::tuple_size_v<std::remove_reference_t<T>>) && requires(std::remove_cvref_t<T> &t) {
-		{ get<I>(t) } -> wo_ref_same_as<std::tuple_element_t<I, std::remove_cvref_t<T>>>;
-		{ get<I>(std::as_const(t)) } -> wo_ref_same_as<std::tuple_element_t<I, const std::remove_cvref_t<T>>>;
+	concept adl_get_exists = requires(std::remove_cvref_t<T> &t) {
+		get<I>(t);
+		get<I>(std::as_const(t));
 	};
 
 	template<class T, size_t I>
-	concept gettable = member_get<T, I> || adl_get<T, I>;
+	concept gettable = member_get_exists<T, I> || adl_get_exists<T, I>;
 
 	// declval viduje reference, nes getter taip veikia, o getter taip veikia, nes iš standarto imiau pavyzdį.
 	template<size_t I, gettable<I>>
 	struct get_result;
 
-	template<size_t I, member_get<I> T>
+	template<size_t I, member_get_exists<I> T>
 	struct get_result<I, T> : std::type_identity<decltype(std::declval<T &>().template get<I>())> {};
 
-	template<size_t I, adl_get<I> T>
+	template<size_t I, adl_get_exists<I> T>
 	struct get_result<I, T> : std::type_identity<decltype(get<I>(std::declval<T &>()))> {};
 
 	template<size_t I, class T>
@@ -299,8 +302,8 @@ namespace aa {
 	struct getter {
 		template<gettable<I> T>
 		AA_CONSTEXPR get_result_t<I, T> operator()(T &&t) const {
-			if constexpr (member_get<T, I>)		return t.template get<I>();
-			else								return get<I>(t);
+			if constexpr (member_get_exists<T, I>)	return t.template get<I>();
+			else									return get<I>(t);
 		}
 	};
 
@@ -318,45 +321,43 @@ namespace aa {
 		return std::forward<F>(f).template AA_CALL_OPERATOR<A...>(std::forward<T>(t)...);
 	}
 
-	template<class... A, class F, class... T>
-		requires (requires(F &&f, T&&... t) { std::forward<F>(f).template AA_CALL_OPERATOR<A...>(std::forward<T>(t)...); })
-	AA_CONSTEXPR decltype(auto) invoke(F &&f, T&&... t) {
-		return std::forward<F>(f).template AA_CALL_OPERATOR<A...>(std::forward<T>(t)...);
-	}
-
 	template<class>
 	struct applier;
 
 	template<size_t... I>
 	struct applier<std::index_sequence<I...>> {
-		template<class F>
-		AA_CONSTEXPR decltype(auto) operator()(F &&f) const {
-			return invoke<I...>(std::forward<F>(f));
+		template<class F, class... A>
+		AA_CONSTEXPR decltype(auto) operator()(F &&f, A&&... args) const {
+			return invoke<I...>(std::forward<F>(f), std::forward<A>(args)...);
 		}
 	};
 
-	template<size_t N, class F>
-	AA_CONSTEXPR decltype(auto) apply(F &&f) {
-		return constant_v<applier<std::make_index_sequence<N>>>(std::forward<F>(f));
+	template<size_t N, class F, class... A>
+	AA_CONSTEXPR decltype(auto) apply(F &&f, A&&... args) {
+		return constant_v<applier<std::make_index_sequence<N>>>(std::forward<F>(f), std::forward<A>(args)...);
 	}
 
-	template<class T, class F>
-	AA_CONSTEXPR decltype(auto) apply(F &&f) {
-		return aa::apply<std::tuple_size_v<std::remove_reference_t<T>>>(std::forward<F>(f));
+	template<class T, class F, class... A>
+	AA_CONSTEXPR decltype(auto) apply(F &&f, A&&... args) {
+		return aa::apply<std::tuple_size_v<T>>(std::forward<F>(f), std::forward<A>(args)...);
 	}
 
 
 
-	template<class T, size_t N = numeric_max>
-	concept tuple_like = apply<T>([]<size_t... I>() -> bool { return (... && gettable<T, I>); })
-		&& (is_numeric_max(N) || std::tuple_size_v<std::remove_reference_t<T>> == N);
+	template<class T>
+	concept new_tuple_like = apply<std::remove_cvref_t<T>::tuple_size()>(
+		[]<size_t... I>() -> bool { return (... && gettable<T, I>); });
 
 	template<class T, size_t N = numeric_max>
-	concept array_like = (tuple_like<T, N> && !!std::tuple_size_v<std::remove_reference_t<T>>
+	concept tuple_like = (std::tuple_size_v<T> == N || is_numeric_max(N)) && apply<T>(
+		[]<size_t... I>() -> bool { return (... && wo_ref_same_as<get_result_t<I, T>, std::tuple_element_t<I, T>>); });
+
+	template<class T, size_t N = numeric_max>
+	concept array_like = (tuple_like<T, N> && !!std::tuple_size_v<T>
 		&& apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; }));
 
 	template<array_like T>
-	struct array_element : std::tuple_element<0, std::remove_reference_t<T>> {};
+	struct array_element : std::tuple_element<0, T> {};
 
 	template<array_like T>
 	using array_element_t = typename array_element<T>::type;
@@ -365,32 +366,30 @@ namespace aa {
 	concept arithmetic_array_like = (array_like<T, N> && arithmetic<array_element_t<T>>);
 
 	template<class T, class U>
-	concept same_tuple_size_as = std::tuple_size_v<std::remove_reference_t<T>> == std::tuple_size_v<std::remove_reference_t<U>>;
+	concept same_tuple_size_as = std::tuple_size_v<T> == std::tuple_size_v<U>;
 
 	template<class T, class U>
 	concept array_similar_to = (std::same_as<array_element_t<T>, array_element_t<U>> && same_tuple_size_as<T, U>);
 
+	template<class F, size_t N>
+	concept constifier_like = apply<N>([]<size_t... I>() ->
+		bool { return same_as_every<decltype(&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<I>)...>; });
 
 
-	template<class T, class F, class R = void>
-	AA_CONSTEXPR const auto tuple_getter_table = apply<T>([]<size_t... I>() ->
-			std::array<R(*)(F &&, T &&), std::tuple_size_v<std::remove_reference_t<T>>>
-	{ return {([](F &&f, T &&t) -> R { return invoke<I>(std::forward<F>(f), constant_v<getter<I>>(t)); })...}; });
 
-	// visit funkcijų reikia, nes visoms tuple klasėms tiesiogiai nepatogu dirbti su funkcijų masyvais.
-	template<class R = void, class T, class F>
-	AA_CONSTEXPR R visit(const size_t i, F &&f, T &&t) {
-		return tuple_getter_table<T &, F, R>[i](std::forward<F>(f), t);
+	template<size_t N, constifier_like<N> F>
+	AA_CONSTEXPR const auto constifier_table = apply<N>([]<size_t... I>() ->
+		std::array<decltype(&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<0>), N>
+	{ return {(&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<I>)...}; });
+
+	template<size_t N, class F, class... A>
+	AA_CONSTEXPR decltype(auto) constify(const size_t i, F &&f, A&&... args) {
+		return (std::forward<F>(f).*constifier_table<N, F>[i])(std::forward<A>(args)...);
 	}
 
-	template<class T, class F, class R = void>
-	AA_CONSTEXPR const auto pack_getter_table = apply<T>([]<size_t... I>() ->
-			std::array<R(*)(F &&), std::tuple_size_v<T>>
-	{ return {([](F &&f) -> R { return invoke<I, T::template get<I>()>(std::forward<F>(f)); })...}; });
-
-	template<class R = void, class T, class F>
-	AA_CONSTEXPR R visit(const size_t i, F &&f) {
-		return pack_getter_table<T, F, R>[i](std::forward<F>(f));
+	template<class T, class F, class... A>
+	AA_CONSTEXPR decltype(auto) constify(const size_t i, F &&f, A&&... args) {
+		return constify<std::tuple_size_v<T>>(i, std::forward<F>(f), std::forward<A>(args)...);
 	}
 
 
@@ -750,23 +749,29 @@ namespace aa {
 	struct tuple : tuple_base<std::index_sequence_for<T...>, T...> {
 #pragma GCC diagnostic pop
 		// Member types
-		template<size_t I>
+		using tuple_type = tuple;
+		using size_type = size_t;
+
+		template<size_type I>
 		using value_type = type_pack_element_t<I, T...>;
 
-		template<size_t I>
+		template<size_type I>
 		using unit_type = tuple_unit<I, value_type<I>>;
 
 		// Member constants
 		template<class U>
-		static AA_CONSTEXPR const size_t index = type_pack_index_v<U, T...>;
+		static AA_CONSTEXPR const size_type index = type_pack_index_v<U, T...>;
+
+		// Capacity
+		static AA_CONSTEVAL size_type tuple_size() { return sizeof...(T); }
 
 
 
 		// Element access
-		template<size_t I>
+		template<size_type I>
 		AA_CONSTEXPR value_type<I> &get() { return unit_type<I>::value; }
 
-		template<size_t I>
+		template<size_type I>
 		AA_CONSTEXPR const value_type<I> &get() const { return unit_type<I>::value; }
 
 		template<class U>
@@ -774,12 +779,6 @@ namespace aa {
 
 		template<class U>
 		AA_CONSTEXPR const value_type<index<U>> &get() const { return get<index<U>>(); }
-
-		template<class R = void, class F>
-		AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<R>(i, std::forward<F>(f), *this); }
-
-		template<class R = void, class F>
-		AA_CONSTEXPR R get(const size_t i, F &&f) const { return visit<R>(i, std::forward<F>(f), *this); }
 	};
 
 	template<class... T>
@@ -834,24 +833,27 @@ namespace aa {
 	template<auto... V>
 	struct pack : pack_base<std::index_sequence_for<const_t<V>...>, V...> {
 		// Member types
-		template<size_t I>
+		using pack_type = pack;
+		using size_type = size_t;
+
+		template<size_type I>
 		using value_type = pack_element_t<I, V...>;
 
-		template<size_t I>
+		template<size_type I>
 		using unit_type = pack_unit<I, pack_element_v<I, V...>>;
 
 		// Member constants
 		template<auto A>
-		static AA_CONSTEXPR const size_t index = pack_index_v<A, V...>;
+		static AA_CONSTEXPR const size_type index = pack_index_v<A, V...>;
+
+		// Capacity
+		static AA_CONSTEVAL size_type tuple_size() { return sizeof...(V); }
 
 
 
 		// Element access
-		template<size_t I>
+		template<size_type I>
 		static AA_CONSTEVAL value_type<I> get() { return unit_type<I>::value; }
-
-		template<class R = void, class F>
-		static AA_CONSTEXPR R get(const size_t i, F &&f) { return visit<R, pack>(i, std::forward<F>(f)); }
 	};
 
 
@@ -871,21 +873,18 @@ namespace aa {
 
 namespace std {
 
-	template<class... T>
-	struct tuple_size<aa::tuple<T...>> : aa::size_constant<sizeof...(T)> {};
+	template<class T>
+	struct tuple_size<T &> : std::tuple_size<T> {};
 
-	template<size_t I, class... T>
-	struct tuple_element<I, aa::tuple<T...>> : aa::type_pack_element<I, T...> {};
+	template<size_t I, class T>
+	struct tuple_element<I, T &> : std::tuple_element<I, T> {};
 
+	// Negalime tikrinti ar prieš šį momentą tuple_size<T> buvo deklaruotas tipas ar ne, nes įeitume į begalinį
+	// ciklą. Reiškia turi mums pats tipas pranešti ar jis nori būti laikomas kaip tuple like tipas.
+	template<aa::new_tuple_like T>
+	struct tuple_size<T> : aa::size_constant<T::tuple_size()> {};
 
-
-	template<auto... V>
-	struct tuple_size<aa::pack<V...>> : aa::size_constant<sizeof...(V)> {};
-
-	template<size_t I, auto... V>
-	struct tuple_element<I, aa::pack<V...>> : aa::pack_element<I, V...> {};
-
-	template<size_t I, auto... V>
-	struct tuple_element<I, const aa::pack<V...>> : aa::pack_element<I, V...> {};
+	template<size_t I, aa::new_tuple_like T>
+	struct tuple_element<I, T> : std::remove_reference<aa::get_result_t<I, T>> {};
 
 }

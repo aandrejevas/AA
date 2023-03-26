@@ -27,10 +27,8 @@
 #
 #
 #ifdef NDEBUG
-#define AA_ISDEF_NDEBUG true
 #define AA_IF_DEBUG(...) static_cast<void>(false)
 #else
-#define AA_ISDEF_NDEBUG false
 #define AA_IF_DEBUG(...) AA_EXPAND(__VA_ARGS__)
 #endif
 #

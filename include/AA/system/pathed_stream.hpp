@@ -4,12 +4,8 @@
 #include "../metaprogramming/io.hpp"
 #include "../preprocessor/assert.hpp"
 #include "source.hpp"
-#include <concepts> // invocable
-#include <utility> // forward
 #include <fstream> // ofstream, ifstream
 #include <ostream> // basic_ostream, ostream
-#include <functional> // invoke
-#include <type_traits> // invoke_result_t
 #include <ios> // openmode, out, in
 
 
