@@ -14,7 +14,7 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference, remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, conditional, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, add_const_t, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t
+#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, enable_if_t, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t
 #include <concepts> // convertible_to, same_as, default_initializable, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, assignable_from, integral, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <array> // array
@@ -127,8 +127,9 @@ namespace aa {
 	template<class... A>
 	using first_t = typename first<A...>::type;
 
+	// Nors galėtume paveldėti tiesiog iš first, bet to nedarome, kad nekurti nereikalingų paveldėjimo ryšių.
 	template<class... A>
-	struct first_or_void : first<A..., void> {};
+	struct first_or_void : std::type_identity<first_t<A..., void>> {};
 
 	template<class... A>
 	using first_or_void_t = typename first_or_void<A...>::type;
@@ -337,7 +338,11 @@ namespace aa {
 		return constant_v<applier<std::make_index_sequence<N>>>(std::forward<F>(f), std::forward<A>(args)...);
 	}
 
-	template<class T, class F, class... A>
+	template<class T, size_t N = numeric_max>
+	concept tuple_like = (is_numeric_max(N) || std::tuple_size_v<T> == N) && apply<std::tuple_size_v<T>>(
+		[]<size_t... I>() -> bool { return (... && wo_ref_same_as<get_result_t<I, T>, std::tuple_element_t<I, T>>); });
+
+	template<tuple_like T, class F, class... A>
 	AA_CONSTEXPR decltype(auto) apply(F &&f, A&&... args) {
 		return aa::apply<std::tuple_size_v<T>>(std::forward<F>(f), std::forward<A>(args)...);
 	}
@@ -349,15 +354,11 @@ namespace aa {
 		[]<size_t... I>() -> bool { return (... && gettable<T, I>); });
 
 	template<class T, size_t N = numeric_max>
-	concept tuple_like = (std::tuple_size_v<T> == N || is_numeric_max(N)) && apply<T>(
-		[]<size_t... I>() -> bool { return (... && wo_ref_same_as<get_result_t<I, T>, std::tuple_element_t<I, T>>); });
-
-	template<class T, size_t N = numeric_max>
 	concept array_like = (tuple_like<T, N> && !!std::tuple_size_v<T>
 		&& apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; }));
 
 	template<array_like T>
-	struct array_element : std::tuple_element<0, T> {};
+	struct array_element : std::type_identity<std::tuple_element_t<0, T>> {};
 
 	template<array_like T>
 	using array_element_t = typename array_element<T>::type;
@@ -387,7 +388,7 @@ namespace aa {
 		return (std::forward<F>(f).*constifier_table<N, F>[i])(std::forward<A>(args)...);
 	}
 
-	template<class T, class F, class... A>
+	template<tuple_like T, class F, class... A>
 	AA_CONSTEXPR decltype(auto) constify(const size_t i, F &&f, A&&... args) {
 		return constify<std::tuple_size_v<T>>(i, std::forward<F>(f), std::forward<A>(args)...);
 	}
@@ -437,7 +438,7 @@ namespace aa {
 		&& arithmetic_array_like<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>, N>);
 
 	template<class U, arithmetic_array_getter<U> T>
-	struct arithmetic_array_getter_result : std::remove_cvref<std::invoke_result_t<const T &, const U &>> {};
+	struct arithmetic_array_getter_result : std::type_identity<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>> {};
 
 	template<class U, class T>
 	using arithmetic_array_getter_result_t = typename arithmetic_array_getter_result<U, T>::type;
@@ -449,7 +450,7 @@ namespace aa {
 	// nes galime interpretuoti stuktūros pavadinimą kaip masyvą masyvų. Taip pat struktūrą vadinti
 	// matrix būtų netikslinga, nes tai implikuotų, kad struktūra palaiko matricos operacijas.
 	template<class T, size_t N1, size_t... N>
-	struct array : array<std::array<T, N1>, N...> {};
+	struct array : std::type_identity<typename array<std::array<T, N1>, N...>::type> {};
 
 	template<class T, size_t N1>
 	struct array<T, N1> : std::type_identity<std::array<T, N1>> {};
@@ -461,7 +462,7 @@ namespace aa {
 
 	// https://mathworld.wolfram.com/Hypercube.html
 	template<class T, size_t D, size_t N>
-	struct hypercube_array : hypercube_array<std::array<T, N>, D - 1, N> {};
+	struct hypercube_array : std::type_identity<typename hypercube_array<std::array<T, N>, D - 1, N>::type> {};
 
 	template<class T, size_t N>
 	struct hypercube_array<T, 1, N> : std::type_identity<std::array<T, N>> {};
@@ -498,58 +499,34 @@ namespace aa {
 
 
 
-	template<class, class...>
-	struct next_type;
+	template<class T, class A1, class A2, class... A>
+	struct next_type : std::type_identity<typename std::conditional_t<std::same_as<T, A1>, std::type_identity<A2>, next_type<T, A2, A...>>::type> {};
+
+	template<class T, class A1, class A2>
+	struct next_type<T, A1, A2> : std::type_identity<std::enable_if_t<std::same_as<T, A1>, A2>> {};
 
 	template<class T, class A1, class A2, class... A>
-	struct next_type<T, A1, A2, A...> : std::conditional_t<std::same_as<T, A1>, std::type_identity<A2>, next_type<T, A2, A...>> {};
-
-	template<class T, class... A>
-	using next_type_t = typename next_type<T, A...>::type;
+	using next_type_t = typename next_type<T, A1, A2, A...>::type;
 
 	template<class T>
-	struct next_unsigned : next_type<T, uint8_t, uint16_t, uint32_t, uint64_t> {};
+	struct next_unsigned : std::type_identity<next_type_t<T, uint8_t, uint16_t, uint32_t, uint64_t>> {};
 	template<class T>
 	using next_unsigned_t = typename next_unsigned<T>::type;
 
 	template<class T>
-	struct prev_unsigned : next_type<T, uint64_t, uint32_t, uint16_t, uint8_t> {};
+	struct prev_unsigned : std::type_identity<next_type_t<T, uint64_t, uint32_t, uint16_t, uint8_t>> {};
 	template<class T>
 	using prev_unsigned_t = typename prev_unsigned<T>::type;
 
 	template<class T>
-	struct next_signed : next_type<T, int8_t, int16_t, int32_t, int64_t> {};
+	struct next_signed : std::type_identity<next_type_t<T, int8_t, int16_t, int32_t, int64_t>> {};
 	template<class T>
 	using next_signed_t = typename next_signed<T>::type;
 
 	template<class T>
-	struct prev_signed : next_type<T, int64_t, int32_t, int16_t, int8_t> {};
+	struct prev_signed : std::type_identity<next_type_t<T, int64_t, int32_t, int16_t, int8_t>> {};
 	template<class T>
 	using prev_signed_t = typename prev_signed<T>::type;
-
-
-
-	template<template<class> class F, bool C, class T>
-	struct apply_if : std::conditional<C, F<T>, T> {};
-
-	template<template<class> class F, bool C, class T>
-	using apply_if_t = typename apply_if<F, C, T>::type;
-
-
-
-	template<bool C, class T>
-	struct add_const_if : apply_if<std::add_const_t, C, T> {};
-
-	template<bool C, class T>
-	using add_const_if_t = typename add_const_if<C, T>::type;
-
-
-
-	template<class F, class T>
-	struct copy_const : add_const_if<std::is_const_v<F>, T> {};
-
-	template<class F, class T>
-	using copy_const_t = typename copy_const<F, T>::type;
 
 
 
@@ -859,10 +836,13 @@ namespace aa {
 
 
 	template<class F, size_t I = 0>
-	struct function_argument : function_argument<deduced_template_t<std::function, F>, I> {};
+	struct function_argument : std::type_identity<typename function_argument<deduced_template_t<std::function, F>, I>::type> {};
 
 	template<class R, class... A, size_t I>
-	struct function_argument<std::function<R(A...)>, I> : type_pack_element<I, A...> {};
+	struct function_argument<std::function<R(A...)>, I> : std::type_identity<type_pack_element_t<I, A...>> {};
+
+	template<class R, class... A>
+	struct function_argument<std::function<R(A...)>, aa::numeric_max> : std::type_identity<R> {};
 
 	template<class F, size_t I = 0>
 	using function_argument_t = typename function_argument<F, I>::type;
@@ -874,10 +854,10 @@ namespace aa {
 namespace std {
 
 	template<class T>
-	struct tuple_size<T &> : std::tuple_size<T> {};
+	struct tuple_size<T &> : aa::size_constant<std::tuple_size_v<T>> {};
 
 	template<size_t I, class T>
-	struct tuple_element<I, T &> : std::tuple_element<I, T> {};
+	struct tuple_element<I, T &> : std::type_identity<std::tuple_element_t<I, T>> {};
 
 	// Negalime tikrinti ar prieš šį momentą tuple_size<T> buvo deklaruotas tipas ar ne, nes įeitume į begalinį
 	// ciklą. Reiškia turi mums pats tipas pranešti ar jis nori būti laikomas kaip tuple like tipas.
@@ -885,6 +865,6 @@ namespace std {
 	struct tuple_size<T> : aa::size_constant<T::tuple_size()> {};
 
 	template<size_t I, aa::new_tuple_like T>
-	struct tuple_element<I, T> : std::remove_reference<aa::get_result_t<I, T>> {};
+	struct tuple_element<I, T> : std::type_identity<std::remove_reference_t<aa::get_result_t<I, T>>> {};
 
 }

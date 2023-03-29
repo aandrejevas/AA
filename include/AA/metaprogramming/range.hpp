@@ -75,7 +75,7 @@ namespace aa {
 	struct range_char_traits : std::type_identity<std::char_traits<std::ranges::range_value_t<T>>> {};
 
 	template<range_using_traits_type T>
-	struct range_char_traits<T> : traits_type_in_use<T> {};
+	struct range_char_traits<T> : std::type_identity<traits_type_in_use_t<T>> {};
 
 	template<sized_contiguous_range T>
 	using range_char_traits_t = typename range_char_traits<T>::type;
