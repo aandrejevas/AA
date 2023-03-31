@@ -41,7 +41,8 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR void resume() {
-			begin += (now() - end);
+			begin -= std::exchange(end, zero_v<rep>);
+			begin += now();
 		}
 
 		AA_CONSTEXPR void stop() {
@@ -70,6 +71,11 @@ namespace aa {
 			stop();
 			std::invoke(std::forward<F>(f), std::forward<A>(args)...);
 			resume();
+		}
+
+		// Negali tikrinimas būti (end == 0), nes reset() metodą iškvietus rodytų, kad running.
+		AA_CONSTEXPR bool is_running() const {
+			return end < begin;
 		}
 
 		// Pagal nutylėjimą, laikas pateikiamas sekundėmis.
