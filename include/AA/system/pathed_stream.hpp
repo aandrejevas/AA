@@ -46,6 +46,11 @@ namespace aa {
 			return stream << u;
 		}
 
+		template<extractable_from<stream_type> U>
+		AA_CONSTEXPR apply_traits_t<std::basic_istream, stream_type> &operator>>(U &&u) {
+			return stream >> std::forward<U>(u);
+		}
+
 
 
 		// Special member functions
