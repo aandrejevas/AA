@@ -6,6 +6,7 @@
 #include "source.hpp"
 #include <fstream> // ofstream, ifstream
 #include <ostream> // basic_ostream, ostream
+#include <istream> // basic_istream
 #include <ios> // openmode, out, in
 
 
