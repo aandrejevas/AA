@@ -671,6 +671,11 @@ namespace aa {
 		apply<N>([&]<size_t... I>() -> void { (aa::invoke<I>(f), ...); });
 	}
 
+	template<tuple_like T, class F>
+	AA_CONSTEXPR void repeat(F &&f) {
+		repeat<std::tuple_size_v<T>>(std::forward<F>(f));
+	}
+
 
 
 	// Atrodo galima būtų turėti tipą, kuris generalizuotu šią klasę, tai yra tiesiog jis susidėtų iš
