@@ -43,21 +43,19 @@ namespace aa {
 	// Čia neatliekamas perfect forwarding, nes atrodo spausdinimui užtenka const kintamųjų. Žinoma gali atsirasti
 	// situacijų, kai tai nėra tiesa, pavyzdžiui norint sekti kiek kartų kintamasis buvo išspausdintas. Bet tokiems
 	// atvejams klasė gali būti taip parašyta, kad ji ignoruotų const kvalifikatorių.
-	template<class A1, class... A>
-		requires (!output_stream<A1>)
+	template<not_output_stream A1, class... A>
 	AA_CONSTEXPR std::ostream &print(const A1 &a1, const A&... args) {
 		return print(std::cout, a1, args...);
 	}
 
 	// L negali būti stream, bet vis tiek mums reikia tipo dėl atvejo kai A sąrašas tuščias.
 	template<auto L = '\n', class... A>
-		requires (!output_stream<first_t<A..., const_t<L>>>)
+		requires (not_output_stream<first_t<A..., const_t<L>>>)
 	AA_CONSTEXPR std::ostream &printl(const A&... args) {
 		return printl<L>(std::cout, args...);
 	}
 
-	template<class A1, class... A>
-		requires (!input_stream<A1>)
+	template<not_input_stream A1, class... A>
 	AA_CONSTEXPR std::istream &read(A1 &&a1, A&&... args) {
 		return read(std::cin, std::forward<A1>(a1), std::forward<A>(args)...);
 	}

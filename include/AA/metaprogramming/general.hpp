@@ -100,8 +100,14 @@ namespace aa {
 	template<uses_traits_type T>
 	using traits_type_in_use_t = typename std::remove_reference_t<T>::traits_type;
 
+	template<uses_traits_type T>
+	using char_type_in_use_t = typename traits_type_in_use_t<T>::char_type;
+
+	template<uses_traits_type T>
+	using int_type_in_use_t = typename traits_type_in_use_t<T>::int_type;
+
 	template<template<class...> class F, uses_traits_type T>
-	using apply_traits_t = F<typename traits_type_in_use_t<T>::char_type, traits_type_in_use_t<T>>;
+	using apply_traits_t = F<char_type_in_use_t<T>, traits_type_in_use_t<T>>;
 
 
 

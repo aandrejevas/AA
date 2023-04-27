@@ -9,13 +9,15 @@
 
 namespace aa {
 
-	// Lexing parameters
-	// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
-	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
+	enum struct lexing_state : size_t {
+		BEFORE_KEY, KEY, KEY_SPACE,
+		VALUE, SKIP_VALUE
+	};
+
 	template<instance_of_twnttp<string_perfect_hash> H>
-	struct param_lexer : H::pack_type {
+	struct lexer_config : H::pack_type {
 		// Special member functions
-		AA_CONSTEXPR param_lexer(const size_t r1 = 50, const size_t r2 = 50) {
+		AA_CONSTEXPR lexer_config(const size_t r1 = 64, const size_t r2 = 64) {
 			token.reserve(r1);
 			whitespace.reserve(r2);
 		}
@@ -25,88 +27,111 @@ namespace aa {
 		// Member types
 		using hasher_type = H;
 
+	protected:
+		template<not_const_instance_of_twttp<lexer_config>, class>
+		friend struct lexer;
+
+
+
+		// Member objects
+		lexing_state state = lexing_state::BEFORE_KEY;
+		std::string token, whitespace;
+	};
+
+	// Lexing parameters
+	// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
+	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
+	template<not_const_instance_of_twttp<lexer_config> CONFIG, class CONSUMER>
+	struct lexer {
+		// Member types
+		using config_type = std::remove_reference_t<CONFIG>;
+		using consumer_type = std::remove_cvref_t<CONSUMER>;
+		using hasher_type = typename config_type::hasher_type;
+
+
+
+		// Special member functions
+		template<constructible_to<CONFIG> C1 = CONFIG, constructible_to<CONSUMER> C2 = CONSUMER>
+		AA_CONSTEXPR lexer(C1 &&c1, C2 &&c2 = default_value) : config{std::forward<C1>(c1)}, consumer{std::forward<C2>(c2)} {}
+
 
 
 		// Member objects
 	protected:
-		enum struct lexing_state : size_t {
-			BEFORE_KEY, KEY, KEY_SPACE,
-			VALUE, SKIP_VALUE
-		} state = lexing_state::BEFORE_KEY;
-		std::string token, whitespace;
-		size_t index;
+		CONFIG config;
+		CONSUMER consumer;
+		void(consumer_type:: *target)(const std::string &) const;
 
 
 
 		// Member functions
 		AA_CONSTEXPR void init_key() {
-			constant_v<hasher_type>(token, [&]<size_t I>() -> void {
+			constant_v<hasher_type>(config.token, [&]<size_t I>() -> void {
 				if constexpr (I != std::tuple_size_v<hasher_type>) {
-					// Anksčiau čia kopijuodavome metodų rodykles, o ne indeksus, bet buvo labai nepatogu talpinti
-					// tą rodyklę ir metodų rodyklių dydis (16 baitų) yra didesnis negu size_t tipo (8 baitai).
-					index = I;
-					state = lexing_state::VALUE;
-				} else
-					state = lexing_state::SKIP_VALUE;
+					// Metodų rodyklių dydis (16 baitai) yra didesnis negu size_t tipo (8 baitai).
+					target = &consumer_type::template AA_CALL_OPERATOR<I>;
+					config.state = lexing_state::VALUE;
+				} else {
+					config.state = lexing_state::SKIP_VALUE;
+				}
 			});
 		}
 
 	public:
-		template<class C>
-		AA_CONSTEXPR void operator()(const int character, C &&consumer) {
-			switch (state) {
+		AA_CONSTEXPR void operator()(const int character) {
+			switch (config.state) {
 				case lexing_state::BEFORE_KEY:
 					switch (character) {
 						case '=': init_key();
 						case ' ': case '\t': case '\n': case '\r': return;
 						default:
-							state = lexing_state::KEY;
+							config.state = lexing_state::KEY;
 							// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
-							token.push_back(static_cast<char>(character));
+							config.token.push_back(static_cast<char>(character));
 							return;
 					}
 
 				case lexing_state::KEY:
 					switch (character) {
 						default:
-							token.push_back(static_cast<char>(character));
+							config.token.push_back(static_cast<char>(character));
 							return;
 						case ' ': case '\t':
-							state = lexing_state::KEY_SPACE;
-							whitespace.push_back(static_cast<char>(character));
+							config.state = lexing_state::KEY_SPACE;
+							config.whitespace.push_back(static_cast<char>(character));
 							return;
 						case '=':
 							init_key();
-							token.clear();
+							config.token.clear();
 							return;
 					}
 
 				case lexing_state::KEY_SPACE:
 					switch (character) {
 						default:
-							state = lexing_state::KEY;
-							token.append(whitespace).push_back(static_cast<char>(character));
-							whitespace.clear();
+							config.state = lexing_state::KEY;
+							config.token.append(config.whitespace).push_back(static_cast<char>(character));
+							config.whitespace.clear();
 							return;
 						case ' ': case '\t':
-							whitespace.push_back(static_cast<char>(character));
+							config.whitespace.push_back(static_cast<char>(character));
 							return;
 						case '=':
 							init_key();
-							token.clear();
-							whitespace.clear();
+							config.token.clear();
+							config.whitespace.clear();
 							return;
 					}
 
 				case lexing_state::VALUE:
 					switch (character) {
 						default:
-							token.push_back(static_cast<char>(character));
+							config.token.push_back(static_cast<char>(character));
 							return;
 						case '\n':
-							state = lexing_state::BEFORE_KEY;
-							constify<hasher_type>(index, std::forward<C>(consumer), std::as_const(token));
-							token.clear();
+							config.state = lexing_state::BEFORE_KEY;
+							(consumer.*target)(config.token);
+							config.token.clear();
 							return;
 					}
 
@@ -115,7 +140,7 @@ namespace aa {
 						default:
 							return;
 						case '\n':
-							state = lexing_state::BEFORE_KEY;
+							config.state = lexing_state::BEFORE_KEY;
 							return;
 					}
 
@@ -125,15 +150,18 @@ namespace aa {
 		}
 	};
 
+	template<class C1, class C2>
+	lexer(C1 &&, C2 &&) -> lexer<C1, C2>;
+
+
+
 	// https://en.wikipedia.org/wiki/Lexical_analysis
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<class C, not_const_instance_of_twttp<param_lexer> LEXER, input_stream FILE>
-	AA_CONSTEXPR void lex(FILE &&file, LEXER &&lexer, C &&consumer = default_value) {
-		using traits_type = typename std::remove_reference_t<FILE>::traits_type;
-
+	template<not_const_instance_of_twttp<lexer> LEXER, char_input_stream FILE>
+	AA_CONSTEXPR void lex(FILE &&file, LEXER &&lexer) {
 		// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
-		if (file.peek() == traits_type::eof())
+		if (file.peek() == traits_type_in_use_t<FILE>::eof())
 			return;
 
 		// Lexing comments
@@ -146,7 +174,7 @@ namespace aa {
 		} state = lexing_state::NONE;
 
 		do {
-			const typename traits_type::int_type character = file.get();
+			const int_type_in_use_t<FILE> character = file.get();
 
 			switch (state) {
 				case lexing_state::NONE:
@@ -155,7 +183,7 @@ namespace aa {
 							state = lexing_state::CHECK;
 							continue;
 						default:
-							lexer(character, consumer);
+							lexer(character);
 							continue;
 					}
 
@@ -169,8 +197,8 @@ namespace aa {
 							continue;
 						default:
 							state = lexing_state::NONE;
-							lexer('/', consumer);
-							lexer(character, consumer);
+							lexer('/');
+							lexer(character);
 							continue;
 					}
 
@@ -180,7 +208,7 @@ namespace aa {
 							state = lexing_state::NONE;
 							// Pasibaigus paprastam komentarui vis tiek į lekserį turime nusiųsti '\n' simbolį,
 							// nes kitaip gali lekseris nepastebėti, kad pasibaigė parametro reikšmės leksema.
-							lexer('\n', consumer);
+							lexer('\n');
 							continue;
 						default:
 							continue;
@@ -208,7 +236,7 @@ namespace aa {
 				default:
 					std::unreachable();
 			}
-		} while (file.peek() != traits_type::eof());
+		} while (file.peek() != traits_type_in_use_t<FILE>::eof());
 		// Parametro apibrėžimo forma: PARAMETRO_VARDAS =PARAMETRO_REIKŠMĖ'\n'
 		// Svarbu nepamiršti, kad jei parametrą bandoma apibrėžti failo pabaigoje,
 		// tai failo paskutinis simbolis turės būti '\n', kitaip parametras nebus apibrėžtas.

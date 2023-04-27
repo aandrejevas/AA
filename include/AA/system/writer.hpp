@@ -13,7 +13,7 @@
 namespace aa {
 
 	struct tuple_inserter {
-		template<output_stream S, tuple_like U>
+		template<class S, tuple_like U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
 			if constexpr (std::tuple_size_v<U>) {
 				apply<(std::tuple_size_v<U>) - 1>([&]<size_t... I>() -> void {
@@ -29,7 +29,7 @@ namespace aa {
 
 	// Nors čia ant S tipo galėtų nebūti constraint uždėtas, jis ten padėtas tam, kad pažymėti, kad S tipas nėra bet koks.
 	struct identity_inserter {
-		template<output_stream S, class U>
+		template<class S, class U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
 			if constexpr (output_stream<S, U>)		print(s, u);
 			else									constant_v<tuple_inserter>(s, u);
@@ -38,7 +38,7 @@ namespace aa {
 
 	template<auto D = ' '>
 	struct delim_r_inserter {
-		template<output_stream S, class U>
+		template<class S, class U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
 			constant_v<identity_inserter>(s, u);
 			print(s, D);
@@ -49,7 +49,7 @@ namespace aa {
 
 	template<auto D = ' '>
 	struct delim_l_inserter {
-		template<output_stream S, class U>
+		template<class S, class U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
 			print(s, D);
 			constant_v<identity_inserter>(s, u);
@@ -60,7 +60,7 @@ namespace aa {
 
 	template<int N>
 	struct width_inserter {
-		template<output_stream S, class U>
+		template<class S, class U>
 		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, std::setw(N), u); }
 	};
 
@@ -99,7 +99,7 @@ namespace aa {
 	};
 
 	template<class R, class F = delim_r_inserter<>>
-	range_writer(R &&, F && = {}) -> range_writer<R, F>;
+	range_writer(R &&, F && = default_value) -> range_writer<R, F>;
 
 
 
@@ -121,15 +121,15 @@ namespace aa {
 
 	// Reikia šitų guides, nes kitaip copy elision suvalgo konstruktorius. range_writer jų nereikia, nes negali jis savyje būti.
 	template<class IE, class IF, class F = delim_r_inserter<>>
-	writer(const writer<IE, IF> &, F && = {}) -> writer<const writer<IE, IF> &, F>;
+	writer(const writer<IE, IF> &, F && = default_value) -> writer<const writer<IE, IF> &, F>;
 
 	template<class IE, class IF, class F = delim_r_inserter<>>
-	writer(writer<IE, IF> &, F && = {}) -> writer<writer<IE, IF> &, F>;
+	writer(writer<IE, IF> &, F && = default_value) -> writer<writer<IE, IF> &, F>;
 
 	template<class IE, class IF, class F = delim_r_inserter<>>
-	writer(const writer<IE, IF> &&, F && = {}) -> writer<writer<IE, IF>, F>;
+	writer(const writer<IE, IF> &&, F && = default_value) -> writer<writer<IE, IF>, F>;
 
 	template<not_instance_of_twttp<writer> E, class F = delim_r_inserter<>>
-	writer(E &&, F && = {}) -> writer<E, F>;
+	writer(E &&, F && = default_value) -> writer<E, F>;
 
 }

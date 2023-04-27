@@ -38,7 +38,7 @@ namespace aa {
 	// Klasės reikia, nes source_location klasės negalima naudoti kaip non type template parameter
 	// ir taip pat yra truputį keista man, kad minėtos klasės duomenys pasiekiami tik per metodus.
 	template<size_t COL, size_t LINE, basic_fixed_string FILE, basic_fixed_string FUNC>
-		requires (std::same_as<typename const_t<FILE>::traits_type, typename const_t<FUNC>::traits_type>)
+		requires (std::same_as<traits_type_in_use_t<const_t<FILE>>, traits_type_in_use_t<const_t<FUNC>>>)
 	struct source_data {
 		using ostream_type = typename const_t<FILE>::ostream_type;
 
@@ -58,19 +58,19 @@ namespace aa {
 
 	// S constrained, nes kitaip gali būti paduotas ne stream tipas.
 	// D tipas ne bet koks, nes funkcija buvo sukurta dirbti su source_data tipu.
-	template<instance_of_twnttp<source_data> D, output_stream S, class... A>
+	template<instance_of_twnttp<source_data> D, class S, class... A>
 	AA_CONSTEXPR void log(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		printl(s, constant_v<D>, ": ", args...);
 		else							log<D>(s, "Info logged.");
 	}
 
 	template<instance_of_twnttp<source_data> D, class... A>
-		requires (!output_stream<first_or_void_t<A...>>)
+		requires (not_output_stream<first_or_void_t<A...>>)
 	AA_CONSTEXPR void log(const A&... args) {
 		log<D>(std::clog, args...);
 	}
 
-	template<instance_of_twnttp<source_data> D, output_stream S, class... A>
+	template<instance_of_twnttp<source_data> D, class S, class... A>
 	[[noreturn]] AA_CONSTEXPR void abort(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		log<D>(s, args...);
 		else							log<D>(s, "Program aborted.");
@@ -79,7 +79,7 @@ namespace aa {
 	}
 
 	template<instance_of_twnttp<source_data> D, class... A>
-		requires (!output_stream<first_or_void_t<A...>>)
+		requires (not_output_stream<first_or_void_t<A...>>)
 	[[noreturn]] AA_CONSTEXPR void abort(const A&... args) {
 		abort<D>(std::cerr, args...);
 	}
