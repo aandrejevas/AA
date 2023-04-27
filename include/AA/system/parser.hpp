@@ -15,14 +15,14 @@
 
 namespace aa {
 
-	template<class EVAL = generic_evaluator<>, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE, same_tuple_size_as<LEXER> TUPLE>
+	template<class EVAL = generic_evaluator<>, not_const_instance_of_twttp<param_lexer> LEXER, input_stream FILE, same_tuple_size_as<LEXER> TUPLE>
 	AA_CONSTEXPR void parse(TUPLE &t, FILE &&file, LEXER &&lexer, EVAL &&eval = default_value) {
 		lex(file, lexer, [&]<size_t I>(const std::string & token) -> void {
 			invoke<I>(eval, constant_v<getter<I>>(t), token);
 		});
 	}
 
-	template<class EVAL = generic_evaluator<>, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE, same_tuple_size_as<LEXER> TUPLE>
+	template<class EVAL = generic_evaluator<>, not_const_instance_of_twttp<param_lexer> LEXER, input_stream FILE, same_tuple_size_as<LEXER> TUPLE>
 		requires (std::tuple_size_v<TUPLE> <= std::numeric_limits<size_t>::digits)
 	AA_CONSTEXPR void safe_parse(TUPLE &t, FILE &&file, LEXER &&lexer, EVAL &&eval = default_value) {
 		const size_t index = unsign<size_t>(std::countr_one(make_with_invocable([&](size_t &bitset) -> void { {
@@ -42,14 +42,14 @@ namespace aa {
 		}
 	}
 
-	template<class TUPLE, class EVAL = generic_evaluator<>, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE>
+	template<class TUPLE, class EVAL = generic_evaluator<>, not_const_instance_of_twttp<param_lexer> LEXER, input_stream FILE>
 	AA_CONSTEXPR std::remove_cvref_t<TUPLE> parse(FILE &&file, LEXER &&lexer, EVAL &&eval = default_value) {
 		return make_with_invocable([&](std::remove_cvref_t<TUPLE> &t) -> void {
 			parse(t, file, lexer, eval);
 		});
 	}
 
-	template<class TUPLE, class EVAL = generic_evaluator<>, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE>
+	template<class TUPLE, class EVAL = generic_evaluator<>, not_const_instance_of_twttp<param_lexer> LEXER, input_stream FILE>
 	AA_CONSTEXPR std::remove_cvref_t<TUPLE> safe_parse(FILE &&file, LEXER &&lexer, EVAL &&eval = default_value) {
 		return make_with_invocable([&](std::remove_cvref_t<TUPLE> &t) -> void {
 			safe_parse(t, file, lexer, eval);

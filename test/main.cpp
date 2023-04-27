@@ -1,26 +1,26 @@
-#include <AA/container/fixed_string.hpp>
-#include <AA/container/fixed_array.hpp>
-#include <AA/container/fixed_grid.hpp>
-#include <AA/container/fixed_free_vector.hpp>
-#include <AA/container/fixed_perfect_hash_set.hpp>
-#include <AA/container/fixed_flat_set.hpp>
-#include <AA/container/fixed_vector.hpp>
-#include <AA/algorithm/arithmetic.hpp>
-#include <AA/algorithm/hash.hpp>
-#include <AA/algorithm/find.hpp>
-#include <AA/algorithm/shift.hpp>
-#include <AA/algorithm/permute.hpp>
-#include <AA/algorithm/generate.hpp>
-#include <AA/algorithm/linear_congruential_generator.hpp>
-#include <AA/preprocessor/assert.hpp>
-#include <AA/metaprogramming/general.hpp>
-#include <AA/system/timekeeper.hpp>
-#include <AA/system/parser.hpp>
-#include <AA/system/writer.hpp>
-#include <AA/system/print.hpp>
-#include <AA/system/pathed_stream.hpp>
+#include "../include/AA/container/fixed_string.hpp"
+#include "../include/AA/container/fixed_array.hpp"
+#include "../include/AA/container/fixed_grid.hpp"
+#include "../include/AA/container/fixed_free_vector.hpp"
+#include "../include/AA/container/fixed_perfect_hash_set.hpp"
+#include "../include/AA/container/fixed_flat_set.hpp"
+#include "../include/AA/container/fixed_vector.hpp"
+#include "../include/AA/algorithm/arithmetic.hpp"
+#include "../include/AA/algorithm/hash.hpp"
+#include "../include/AA/algorithm/find.hpp"
+#include "../include/AA/algorithm/shift.hpp"
+#include "../include/AA/algorithm/permute.hpp"
+#include "../include/AA/algorithm/generate.hpp"
+#include "../include/AA/algorithm/linear_congruential_generator.hpp"
+#include "../include/AA/preprocessor/assert.hpp"
+#include "../include/AA/metaprogramming/general.hpp"
+#include "../include/AA/system/timekeeper.hpp"
+#include "../include/AA/system/parser.hpp"
+#include "../include/AA/system/writer.hpp"
+#include "../include/AA/system/print.hpp"
+#include "../include/AA/system/pathed_stream.hpp"
 #include <cstdlib> // EXIT_SUCCESS
-#include <ios> // sync_with_stdio
+#include <ios> // ios_base
 #include <map> // map
 #include <unordered_set> // unordered_set
 #include <iterator> // forward_iterator, default_sentinel

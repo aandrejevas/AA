@@ -19,16 +19,10 @@ namespace aa {
 
 	// Viduje invoke_result_t nėra naudojamas remove_reference_t<G>, nes tiesiog pasinaudojama reference collapse taisyklėmis.
 	template<bits_generator G>
-	struct generator_result : std::type_identity<std::invoke_result_t<G &>> {};
-
-	template<class G>
-	using generator_result_t = typename generator_result<G>::type;
+	using generator_result_t = std::invoke_result_t<G &>;
 
 	template<full_range_generator G>
-	struct distribution_result : std::type_identity<next_unsigned_t<generator_result_t<G>>> {};
-
-	template<class G>
-	using distribution_result_t = typename distribution_result<G>::type;
+	using distribution_result_t = next_unsigned_t<generator_result_t<G>>;
 
 	template<bits_generator G>
 	struct generator_modulus : constant<std::remove_reference_t<G>::max() - std::remove_reference_t<G>::min() + 1> {};

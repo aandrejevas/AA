@@ -12,7 +12,7 @@ namespace aa {
 	// Lexing parameters
 	// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
 	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
-	template<instance_of_twntp<string_perfect_hash> H>
+	template<instance_of_twnttp<string_perfect_hash> H>
 	struct param_lexer : H::pack_type {
 		// Special member functions
 		AA_CONSTEXPR param_lexer(const size_t r1 = 50, const size_t r2 = 50) {
@@ -128,7 +128,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Lexical_analysis
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<class C, not_const_instance_of_twtp<param_lexer> LEXER, input_stream FILE>
+	template<class C, not_const_instance_of_twttp<param_lexer> LEXER, input_stream FILE>
 	AA_CONSTEXPR void lex(FILE &&file, LEXER &&lexer, C &&consumer = default_value) {
 		using traits_type = typename std::remove_reference_t<FILE>::traits_type;
 

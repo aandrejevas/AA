@@ -80,4 +80,7 @@ namespace aa {
 		static AA_CONSTEVAL size_t max() { return sizeof...(A); }
 	};
 
+	template<size_t N>
+	using string_identity_hash = decltype(apply<N>([]<size_t... I>() -> string_perfect_hash<I...> { return {}; }));
+
 }

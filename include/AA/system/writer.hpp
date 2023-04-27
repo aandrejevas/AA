@@ -129,7 +129,7 @@ namespace aa {
 	template<class IE, class IF, class F = delim_r_inserter<>>
 	writer(const writer<IE, IF> &&, F && = {}) -> writer<writer<IE, IF>, F>;
 
-	template<not_instance_of_twtp<writer> E, class F = delim_r_inserter<>>
+	template<not_instance_of_twttp<writer> E, class F = delim_r_inserter<>>
 	writer(E &&, F && = {}) -> writer<E, F>;
 
 }

@@ -2,12 +2,22 @@
 
 #include "general.hpp"
 #include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, next, prev, distance, iter_reference_t
-#include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, iterator_t, sentinel_t, range_value_t, begin, end, rbegin, size, data, range
+#include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, iterator_t, sentinel_t, range_value_t, range_reference_t, begin, end, rbegin, size, data, range
 #include <string> // char_traits
+#include <memory> // to_address
 
 
 
 namespace aa {
+
+	template<class I>
+	using iter_size_t = std::make_unsigned_t<std::iter_difference_t<I>>;
+
+	template<std::contiguous_iterator I>
+	using iter_pointer_t = std::add_pointer_t<std::iter_reference_t<I>>;
+
+	template<std::ranges::contiguous_range R>
+	using range_pointer_t = std::add_pointer_t<std::ranges::range_reference_t<R>>;
 
 	template<class R>
 	concept unusual_range = std::ranges::range<R>
@@ -27,13 +37,14 @@ namespace aa {
 		}
 	}
 
-
-
-	template<class I>
-	using iter_size_t = std::make_unsigned_t<std::iter_difference_t<I>>;
-
-	template<std::contiguous_iterator I>
-	using iter_pointer_t = std::add_pointer_t<std::iter_reference_t<I>>;
+	template<std::ranges::contiguous_range R>
+	AA_CONSTEXPR range_pointer_t<R> get_data_end(R &&r) {
+		if constexpr (std::same_as<range_pointer_t<R>, iter_pointer_t<std::ranges::sentinel_t<R>>>) {
+			return std::to_address(std::ranges::end(r));
+		} else {
+			return std::ranges::data(r) + std::ranges::distance(r);
+		}
+	}
 
 
 
@@ -67,6 +78,9 @@ namespace aa {
 
 
 	template<class T>
+	concept char_range = sized_contiguous_range<T> && std::same_as<std::ranges::range_value_t<T>, char>;
+
+	template<class T>
 	concept range_using_traits_type = sized_contiguous_range<T> && uses_traits_type<T>
 		&& char_traits_for<traits_type_in_use_t<T>, std::ranges::range_value_t<T>>;
 
@@ -94,8 +108,9 @@ namespace aa {
 	struct string_equal_to {
 		template<sized_contiguous_range L, same_range_char_traits_as<range_char_traits_t<L>> R>
 		AA_CONSTEXPR bool operator()(const L &l, const R &r) const {
-			return std::ranges::size(l) == std::ranges::size(r) &&
-				!range_char_traits_t<L>::compare(std::ranges::data(l), std::ranges::data(r), std::ranges::size(l));
+			const size_t count = std::ranges::size(l);
+			return count == std::ranges::size(r) &&
+				!range_char_traits_t<L>::compare(std::ranges::data(l), std::ranges::data(r), count);
 		}
 
 		using is_transparent = void;

@@ -98,28 +98,17 @@ namespace aa {
 		&& char_traits_like<typename std::remove_reference_t<T>::traits_type>;
 
 	template<uses_traits_type T>
-	struct traits_type_in_use : std::type_identity<typename std::remove_reference_t<T>::traits_type> {};
-
-	template<uses_traits_type T>
-	using traits_type_in_use_t = typename traits_type_in_use<T>::type;
-
-
+	using traits_type_in_use_t = typename std::remove_reference_t<T>::traits_type;
 
 	template<template<class...> class F, uses_traits_type T>
-	struct apply_traits : std::type_identity<F<typename traits_type_in_use_t<T>::char_type, traits_type_in_use_t<T>>> {};
-
-	template<template<class...> class F, class T>
-	using apply_traits_t = typename apply_traits<F, T>::type;
+	using apply_traits_t = F<typename traits_type_in_use_t<T>::char_type, traits_type_in_use_t<T>>;
 
 
 
 	// Constraint negali būti pakeistas į concept, nes pirmas parametras concept'o nebūtų tipas.
 	template<template<class...> class T, class... A>
 		requires (requires { T(std::declval<A>()...); })
-	struct deduced_template : std::type_identity<decltype(T(std::declval<A>()...))> {};
-
-	template<template<class...> class T, class... A>
-	using deduced_template_t = typename deduced_template<T, A...>::type;
+	using deduced_template_t = decltype(T(std::declval<A>()...));
 
 	template<class A1, class...>
 	struct first : std::type_identity<A1> {};
@@ -129,18 +118,15 @@ namespace aa {
 
 	// Nors galėtume paveldėti tiesiog iš first, bet to nedarome, kad nekurti nereikalingų paveldėjimo ryšių.
 	template<class... A>
-	struct first_or_void : std::type_identity<first_t<A..., void>> {};
-
-	template<class... A>
-	using first_or_void_t = typename first_or_void<A...>::type;
+	using first_or_void_t = first_t<A..., void>;
 
 	// TODO: GCC bug, can't use decltype(lambda) directly.
 	namespace {
 		template<template<auto...> class U>
-		struct lambda_accepting_twntp : decltype([]<auto... A>(const U<A...> &) -> void {}) {};
+		struct lambda_accepting_twnttp : decltype([]<auto... A>(const U<A...> &) -> void {}) {};
 
 		template<template<class...> class U>
-		struct lambda_accepting_twtp : decltype([]<class... A>(const U<A...> &) -> void {}) {};
+		struct lambda_accepting_twttp : decltype([]<class... A>(const U<A...> &) -> void {}) {};
 	}
 
 
@@ -149,16 +135,16 @@ namespace aa {
 	concept not_const = !std::is_const_v<T>;
 
 	template<class T, template<auto...> class U>
-	concept instance_of_twntp = std::invocable<lambda_accepting_twntp<U>, T &>;
+	concept instance_of_twnttp = std::invocable<lambda_accepting_twnttp<U>, T &>;
 
 	template<class T, template<class...> class U>
-	concept instance_of_twtp = std::invocable<lambda_accepting_twtp<U>, T &>;
+	concept instance_of_twttp = std::invocable<lambda_accepting_twttp<U>, T &>;
 
 	template<class T, template<class...> class U>
-	concept not_const_instance_of_twtp = not_const<T> && instance_of_twtp<T, U>;
+	concept not_const_instance_of_twttp = not_const<T> && instance_of_twttp<T, U>;
 
 	template<class T, template<class...> class U>
-	concept not_instance_of_twtp = !instance_of_twtp<T, U>;
+	concept not_instance_of_twttp = !instance_of_twttp<T, U>;
 
 	template<class... A>
 	concept same_as_every = (... && std::same_as<first_t<A...>, A>);
@@ -358,10 +344,7 @@ namespace aa {
 		&& apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; }));
 
 	template<array_like T>
-	struct array_element : std::type_identity<std::tuple_element_t<0, T>> {};
-
-	template<array_like T>
-	using array_element_t = typename array_element<T>::type;
+	using array_element_t = std::tuple_element_t<0, T>;
 
 	template<class T, size_t N = numeric_max>
 	concept arithmetic_array_like = (array_like<T, N> && arithmetic<array_element_t<T>>);
@@ -379,7 +362,7 @@ namespace aa {
 
 
 	template<size_t N, constifier_like<N> F>
-	AA_CONSTEXPR const auto constifier_table = apply<N>([]<size_t... I>() ->
+	AA_CONSTEXPR const std::array constifier_table = apply<N>([]<size_t... I>() ->
 		std::array<decltype(&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<0>), N>
 	{ return {(&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<I>)...}; });
 
@@ -438,10 +421,7 @@ namespace aa {
 		&& arithmetic_array_like<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>, N>);
 
 	template<class U, arithmetic_array_getter<U> T>
-	struct arithmetic_array_getter_result : std::type_identity<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>> {};
-
-	template<class U, class T>
-	using arithmetic_array_getter_result_t = typename arithmetic_array_getter_result<U, T>::type;
+	using arithmetic_array_getter_result_t = std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>;
 
 
 
@@ -480,22 +460,13 @@ namespace aa {
 
 
 	template<convertible_from<size_t> T>
-	struct zero : constant<static_cast<T>(0uz)> {};
-
-	template<class T>
-	AA_CONSTEXPR const T zero_v = zero<T>::value;
+	AA_CONSTEXPR const T zero_v = static_cast<T>(0uz);
 
 	template<convertible_from<size_t> T>
-	struct one : constant<static_cast<T>(1uz)> {};
-
-	template<class T>
-	AA_CONSTEXPR const T one_v = one<T>::value;
+	AA_CONSTEXPR const T one_v = static_cast<T>(1uz);
 
 	template<convertible_from<size_t> T>
-	struct two : constant<static_cast<T>(2uz)> {};
-
-	template<class T>
-	AA_CONSTEXPR const T two_v = two<T>::value;
+	AA_CONSTEXPR const T two_v = static_cast<T>(2uz);
 
 
 
@@ -509,24 +480,16 @@ namespace aa {
 	using next_type_t = typename next_type<T, A1, A2, A...>::type;
 
 	template<class T>
-	struct next_unsigned : std::type_identity<next_type_t<T, uint8_t, uint16_t, uint32_t, uint64_t>> {};
-	template<class T>
-	using next_unsigned_t = typename next_unsigned<T>::type;
+	using next_unsigned_t = next_type_t<T, uint8_t, uint16_t, uint32_t, uint64_t>;
 
 	template<class T>
-	struct prev_unsigned : std::type_identity<next_type_t<T, uint64_t, uint32_t, uint16_t, uint8_t>> {};
-	template<class T>
-	using prev_unsigned_t = typename prev_unsigned<T>::type;
+	using prev_unsigned_t = next_type_t<T, uint64_t, uint32_t, uint16_t, uint8_t>;
 
 	template<class T>
-	struct next_signed : std::type_identity<next_type_t<T, int8_t, int16_t, int32_t, int64_t>> {};
-	template<class T>
-	using next_signed_t = typename next_signed<T>::type;
+	using next_signed_t = next_type_t<T, int8_t, int16_t, int32_t, int64_t>;
 
 	template<class T>
-	struct prev_signed : std::type_identity<next_type_t<T, int64_t, int32_t, int16_t, int8_t>> {};
-	template<class T>
-	using prev_signed_t = typename prev_signed<T>::type;
+	using prev_signed_t = next_type_t<T, int64_t, int32_t, int16_t, int8_t>;
 
 
 
@@ -549,11 +512,8 @@ namespace aa {
 	//
 	// Vietoje byte negalime naudoti uint8_t, nes jei sistemoje baitas būtų ne 8 bitų, tas tipas nebus apibrėžtas.
 	template<uniquely_representable T>
-	struct representable_values
-		: size_constant<int_exp2(sizeof(T[std::numeric_limits<std::underlying_type_t<std::byte>>::digits]))> {};
-
-	template<class T>
-	AA_CONSTEXPR const size_t representable_values_v = representable_values<T>::value;
+	AA_CONSTEXPR const size_t representable_values_v
+		= int_exp2(sizeof(T[std::numeric_limits<std::underlying_type_t<std::byte>>::digits]));
 
 
 
@@ -700,6 +660,9 @@ namespace aa {
 		[[no_unique_address]] value_type value;
 	};
 
+	template<size_t I, class T>
+	using tuple_unit_t = typename tuple_unit<I, T>::value_type;
+
 	template<class, class...>
 	struct tuple_base;
 
@@ -784,6 +747,10 @@ namespace aa {
 	template<class T1, class T2 = T1, class T3 = T2, class T4 = T3, class T5 = T4, class T6 = T5>
 	using sextet = tuple<T1, T2, T3, T4, T5, T6>;
 
+	template<class T, size_t N>
+	using tuple_array = typename decltype(apply<N>([]<size_t... I>() ->
+		std::type_identity<tuple<tuple_unit_t<I, T>...>> { return {}; }))::type;
+
 
 
 	template<size_t, auto V>
@@ -847,10 +814,13 @@ namespace aa {
 	struct function_argument<std::function<R(A...)>, I> : std::type_identity<type_pack_element_t<I, A...>> {};
 
 	template<class R, class... A>
-	struct function_argument<std::function<R(A...)>, aa::numeric_max> : std::type_identity<R> {};
+	struct function_argument<std::function<R(A...)>, numeric_max> : std::type_identity<R> {};
 
 	template<class F, size_t I = 0>
 	using function_argument_t = typename function_argument<F, I>::type;
+
+	template<class F>
+	using function_result_t = function_argument_t<F, numeric_max>;
 
 }
 
