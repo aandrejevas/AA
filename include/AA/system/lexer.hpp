@@ -59,7 +59,7 @@ namespace aa {
 		// Member objects
 	protected:
 		CONFIG config;
-		CONSUMER consumer;
+		[[no_unique_address]] const CONSUMER consumer;
 		void(consumer_type:: *target)(const std::string &) const;
 
 
