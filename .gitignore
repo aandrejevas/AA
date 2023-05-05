@@ -35,6 +35,8 @@
 *.gcov
 *.gcda
 *.gcno
+*.info
+coverage
 
 # Code counter files
 .VSCodeCounter
