@@ -5,6 +5,7 @@
 #include <string_view> // basic_string_view, hash
 #include <ostream> // basic_ostream
 #include <string> // basic_string, char_traits
+#include <format> // formatter
 
 
 
@@ -171,11 +172,14 @@ namespace aa {
 namespace std {
 
 	template<class C, class T, size_t N>
-	struct hash<aa::basic_fixed_string<C, T, N>> {
-		static AA_CONSTEXPR size_t operator()(const aa::basic_fixed_string<C, T, N> &string) {
-			return aa::constant_v<std::hash<std::basic_string_view<C, T>>>(string);
-		}
-	};
+	struct formatter<aa::basic_fixed_string<C, T, N>, C>
+		: std::formatter<std::basic_string_view<C, T>, C> {};
+
+
+
+	template<class C, class T, size_t N>
+	struct hash<aa::basic_fixed_string<C, T, N>>
+		: std::hash<std::basic_string_view<C, T>> {};
 
 
 

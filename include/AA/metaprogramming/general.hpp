@@ -346,8 +346,8 @@ namespace aa {
 		[]<size_t... I>() -> bool { return (... && gettable<T, I>); });
 
 	template<class T, size_t N = numeric_max>
-	concept array_like = tuple_like<T, N>
-		&&apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; });
+	concept array_like = (tuple_like<T, N>
+		&& apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; }));
 
 	// Nereikia N parametro, nes jei naudotojas naudotų N=0, tai tada jis žinotų, kad concept bus false ir atvirkščiai.
 	template<class T>
