@@ -349,8 +349,9 @@ namespace aa {
 	concept array_like = tuple_like<T, N>
 		&& apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; });
 
-	template<class T, size_t N = numeric_max>
-	concept not_empty_array_like = !!std::tuple_size_v<T> && array_like<T, N>;
+	// Nereikia N parametro, nes jei naudotojas naudotų N=0, tai tada jis žinotų, kad concept bus false ir atvirkščiai.
+	template<class T>
+	concept not_empty_array_like = !!std::tuple_size_v<T> && array_like<T>;
 
 	template<not_empty_array_like T>
 	using array_element_t = std::tuple_element_t<0, T>;
