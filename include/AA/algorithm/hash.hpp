@@ -13,7 +13,7 @@ namespace aa {
 	template<template<class> class H = std::hash>
 	struct generic_hash {
 		template<hashable_by_template<H> T>
-		AA_CONSTEXPR size_t operator()(const T &t) const {
+		static AA_CONSTEXPR size_t operator()(const T &t) {
 			return constant_v<H<T>>(t);
 		}
 
@@ -30,7 +30,7 @@ namespace aa {
 	template<size_t N, template<class> class H = std::hash>
 	struct mod_generic_hash {
 		template<hashable_by_template<H> T>
-		AA_CONSTEXPR size_t operator()(const T &t) const {
+		static AA_CONSTEXPR size_t operator()(const T &t) {
 			return remainder<N>(constant_v<H<T>>(t));
 		}
 
@@ -68,7 +68,7 @@ namespace aa {
 
 	public:
 		template<class T, class F>
-		AA_CONSTEXPR void operator()(const T &t, F &&f) const {
+		static AA_CONSTEXPR void operator()(const T &t, F &&f) {
 			if constexpr (same_range_char_traits_as<T, traits_type>) {
 				if ((... || trie<0, A>(t, std::forward<F>(f), std::ranges::size(t) == std::tuple_size_v<fixed_string_for<A>>)))
 					return;

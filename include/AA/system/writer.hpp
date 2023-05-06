@@ -14,7 +14,7 @@ namespace aa {
 
 	struct tuple_inserter {
 		template<class S, tuple_like U>
-		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
+		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			if constexpr (std::tuple_size_v<U>) {
 				apply<(std::tuple_size_v<U>) - 1>([&]<size_t... I>() -> void {
 					print('{');
@@ -30,7 +30,7 @@ namespace aa {
 	// Nors čia ant S tipo galėtų nebūti constraint uždėtas, jis ten padėtas tam, kad pažymėti, kad S tipas nėra bet koks.
 	struct identity_inserter {
 		template<class S, class U>
-		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
+		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			if constexpr (output_stream<S, U>)		print(s, u);
 			else									constant_v<tuple_inserter>(s, u);
 		}
@@ -39,7 +39,7 @@ namespace aa {
 	template<auto D = ' '>
 	struct delim_r_inserter {
 		template<class S, class U>
-		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
+		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			constant_v<identity_inserter>(s, u);
 			print(s, D);
 		}
@@ -50,7 +50,7 @@ namespace aa {
 	template<auto D = ' '>
 	struct delim_l_inserter {
 		template<class S, class U>
-		AA_CONSTEXPR void operator()(S &&s, const U &u) const {
+		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			print(s, D);
 			constant_v<identity_inserter>(s, u);
 		}
@@ -61,7 +61,9 @@ namespace aa {
 	template<int N>
 	struct width_inserter {
 		template<class S, class U>
-		AA_CONSTEXPR void operator()(S &&s, const U &u) const { print(s, std::setw(N), u); }
+		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
+			print(s, std::setw(N), u);
+		}
 	};
 
 

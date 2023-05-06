@@ -294,7 +294,7 @@ namespace aa {
 	template<size_t I>
 	struct getter {
 		template<gettable<I> T>
-		AA_CONSTEXPR get_result_t<I, T> operator()(T &&t) const {
+		static AA_CONSTEXPR get_result_t<I, T> operator()(T &&t) {
 			if constexpr (member_get_exists<T, I>)	return t.template get<I>();
 			else									return get<I>(t);
 		}
@@ -320,7 +320,7 @@ namespace aa {
 	template<size_t... I>
 	struct applier<std::index_sequence<I...>> {
 		template<class F, class... A>
-		AA_CONSTEXPR decltype(auto) operator()(F &&f, A&&... args) const {
+		static AA_CONSTEXPR decltype(auto) operator()(F &&f, A&&... args) {
 			return invoke<I...>(std::forward<F>(f), std::forward<A>(args)...);
 		}
 	};
@@ -347,7 +347,7 @@ namespace aa {
 
 	template<class T, size_t N = numeric_max>
 	concept array_like = tuple_like<T, N>
-		&& apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; });
+		&&apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; });
 
 	// Nereikia N parametro, nes jei naudotojas naudotų N=0, tai tada jis žinotų, kad concept bus false ir atvirkščiai.
 	template<class T>
@@ -537,73 +537,73 @@ namespace aa {
 	template<auto R = std::placeholders::_1>
 	struct less {
 		template<std::totally_ordered_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l < R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l < R; }
 	};
 
 	template<>
 	struct less<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l < R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l < R; }
 	};
 
 	template<auto R = std::placeholders::_1>
 	struct less_equal {
 		template<std::totally_ordered_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l <= R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l <= R; }
 	};
 
 	template<>
 	struct less_equal<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l <= R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l <= R; }
 	};
 
 	template<auto R = std::placeholders::_1>
 	struct greater {
 		template<std::totally_ordered_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l > R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l > R; }
 	};
 
 	template<>
 	struct greater<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l > R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l > R; }
 	};
 
 	template<auto R = std::placeholders::_1>
 	struct greater_equal {
 		template<std::totally_ordered_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l >= R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l >= R; }
 	};
 
 	template<>
 	struct greater_equal<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l >= R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l >= R; }
 	};
 
 	template<auto R = std::placeholders::_1>
 	struct equal_to {
 		template<std::equality_comparable_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l == R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l == R; }
 	};
 
 	template<>
 	struct equal_to<std::placeholders::_1> {
 		template<auto R, std::equality_comparable_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l == R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l == R; }
 	};
 
 	template<auto R = std::placeholders::_1>
 	struct not_equal_to {
 		template<std::equality_comparable_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l != R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l != R; }
 	};
 
 	template<>
 	struct not_equal_to<std::placeholders::_1> {
 		template<auto R, std::equality_comparable_with<const_t<R>> L>
-		AA_CONSTEXPR bool operator()(const L &l) const { return l != R; }
+		static AA_CONSTEXPR bool operator()(const L &l) { return l != R; }
 	};
 
 

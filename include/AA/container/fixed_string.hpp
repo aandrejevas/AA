@@ -172,7 +172,7 @@ namespace std {
 
 	template<class C, class T, size_t N>
 	struct hash<aa::basic_fixed_string<C, T, N>> {
-		AA_CONSTEXPR size_t operator()(const aa::basic_fixed_string<C, T, N> &string) const {
+		static AA_CONSTEXPR size_t operator()(const aa::basic_fixed_string<C, T, N> &string) {
 			return aa::constant_v<std::hash<std::basic_string_view<C, T>>>(string);
 		}
 	};

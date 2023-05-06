@@ -107,7 +107,7 @@ namespace aa {
 	// std::iterator, kuris buvo naudojamas tokiu pačiu principu, tai reiškia nerekomenduojama tokia realizacija.
 	struct string_equal_to {
 		template<sized_contiguous_range L, same_range_char_traits_as<range_char_traits_t<L>> R>
-		AA_CONSTEXPR bool operator()(const L &l, const R &r) const {
+		static AA_CONSTEXPR bool operator()(const L &l, const R &r) {
 			const size_t count = std::ranges::size(l);
 			return count == std::ranges::size(r) &&
 				!range_char_traits_t<L>::compare(std::ranges::data(l), std::ranges::data(r), count);
