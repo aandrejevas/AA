@@ -346,10 +346,13 @@ namespace aa {
 		[]<size_t... I>() -> bool { return (... && gettable<T, I>); });
 
 	template<class T, size_t N = numeric_max>
-	concept array_like = (tuple_like<T, N> && !!std::tuple_size_v<T>
-		&& apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; }));
+	concept array_like = tuple_like<T, N>
+		&& apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; });
 
-	template<array_like T>
+	template<class T, size_t N = numeric_max>
+	concept not_empty_array_like = !!std::tuple_size_v<T> && array_like<T, N>;
+
+	template<not_empty_array_like T>
 	using array_element_t = std::tuple_element_t<0, T>;
 
 	template<class T, size_t N = numeric_max>
