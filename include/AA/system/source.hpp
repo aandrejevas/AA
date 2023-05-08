@@ -58,7 +58,7 @@ namespace aa {
 
 	// S constrained, nes kitaip gali būti paduotas ne stream tipas.
 	// D tipas ne bet koks, nes funkcija buvo sukurta dirbti su source_data tipu.
-	template<instance_of_twnttp<source_data> D, class S, class... A>
+	template<instance_of_twnttp<source_data> D, output_stream S, class... A>
 	AA_CONSTEXPR void log(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		printl(s, constant_v<D>, ": ", args...);
 		else							log<D>(s, "Info logged.");
@@ -70,7 +70,7 @@ namespace aa {
 		log<D>(std::clog, args...);
 	}
 
-	template<instance_of_twnttp<source_data> D, class S, class... A>
+	template<instance_of_twnttp<source_data> D, output_stream S, class... A>
 	[[noreturn]] AA_CONSTEXPR void abort(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		log<D>(s, args...);
 		else							log<D>(s, "Program aborted.");
