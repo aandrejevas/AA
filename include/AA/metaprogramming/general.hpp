@@ -135,6 +135,15 @@ namespace aa {
 		struct lambda_accepting_twttp : decltype([]<class... A>(const U<A...> &) -> void {}) {};
 	}
 
+	template<bool B, auto T, auto F>
+	struct conditional_nttp : constant<T> {};
+
+	template<auto T, auto F>
+	struct conditional_nttp<false, T, F> : constant<F> {};
+
+	template<bool B, auto T, auto F>
+	AA_CONSTEXPR const auto conditional_nttp_v = conditional_nttp<B, T, F>::value;
+
 
 
 	template<class T>
@@ -258,6 +267,19 @@ namespace aa {
 	template<std::equality_comparable T>
 	AA_CONSTEXPR bool is_numeric_min(const T &x) {
 		return x == std::numeric_limits<T>::min();
+	}
+
+
+
+	// Su funkcija std::to_array neišeina sukurti tuščio masyvo.
+	template<class T, T... A>
+	AA_CONSTEVAL std::array<T, sizeof...(A)> to_array() {
+		return {A...};
+	}
+
+	template<auto A1, const_t<A1>... A>
+	AA_CONSTEVAL std::array<const_t<A1>, 1 + sizeof...(A)> to_array() {
+		return {A1, A...};
 	}
 
 

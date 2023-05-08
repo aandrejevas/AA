@@ -28,7 +28,7 @@ namespace aa {
 		using value_type = size_type;
 		using hasher_type = H;
 		using bucket_pointer = const bucket_type *;
-		using container_type = array_t<bucket_type, N>;
+		using container_type = std::array<bucket_type, N>;
 
 		// Member constants
 		static AA_CONSTEXPR const bucket_type full_mask = numeric_max, empty_mask = numeric_min,

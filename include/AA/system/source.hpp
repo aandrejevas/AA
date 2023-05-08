@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/range.hpp"
 #include "../metaprogramming/io.hpp"
 #include "../container/fixed_string.hpp"
 #include "print.hpp"
@@ -19,19 +18,16 @@ namespace aa {
 		return fixed_string<(std::extent_v<std::remove_reference_t<decltype(__PRETTY_FUNCTION__)>>) - 43>{__PRETTY_FUNCTION__ + 41};
 	}
 
+	template<class A>
+	AA_CONSTEXPR const fixed_string type_name_v = type_name<A>();
+
 	template<auto A>
 	AA_CONSTEVAL auto literal_name() {
 		return fixed_string<(std::extent_v<std::remove_reference_t<decltype(__PRETTY_FUNCTION__)>>) - 51>{__PRETTY_FUNCTION__ + 49};
 	}
 
 	template<auto A>
-	AA_CONSTEVAL auto to_fixed_string() {
-		if constexpr (fixed_string_like<const_t<A>>)	return A;
-		else											return literal_name<A>();
-	}
-
-	template<auto A>
-	using fixed_string_for = const_t<to_fixed_string<A>()>;
+	AA_CONSTEXPR const fixed_string literal_name_v = literal_name<A>();
 
 
 

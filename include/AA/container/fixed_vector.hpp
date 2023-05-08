@@ -180,7 +180,7 @@ namespace aa {
 
 
 		// Member objects
-		array_t<value_type, N> elements;
+		std::array<value_type, N> elements;
 
 	protected:
 		value_type *const r_end = elements.data() - 1, *r_begin = r_end;

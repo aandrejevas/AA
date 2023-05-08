@@ -186,7 +186,7 @@ namespace aa {
 				leaves.data() + ib,
 				leaves.data() + ie
 			},
-			[&](const array_t<leaf, W> &row) -> void {
+			[&](const std::array<leaf, W> &row) -> void {
 				unsafe_for_each(unsafe_subrange{
 					row.data() + jb,
 					row.data() + je

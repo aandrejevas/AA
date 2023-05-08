@@ -58,17 +58,17 @@ namespace aa {
 		template<constructible_to<path_type> T = path_type, invoke_result_constructible_to<stream_type, const path_type &> F>
 		AA_CONSTEXPR pathed_stream(T &&t, F &&f) : path{std::forward<T>(t)}, stream{std::invoke(std::forward<F>(f), path)} {
 			if constexpr (insertable_into<path_type &, std::ostream>) {
-				AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " (", path, ") in fail state after construction.");
+				AA_TRACE_ASSERT(!stream.fail(), type_name_v<stream_type>, " (", path, ") in fail state after construction.");
 			} else {
-				AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " in fail state after construction.");
+				AA_TRACE_ASSERT(!stream.fail(), type_name_v<stream_type>, " in fail state after construction.");
 			}
 		}
 
 		AA_CONSTEXPR ~pathed_stream() {
 			if constexpr (insertable_into<path_type &, std::ostream>) {
-				AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " (", path, ") in fail state before destruction.");
+				AA_TRACE_ASSERT(!stream.fail(), type_name_v<stream_type>, " (", path, ") in fail state before destruction.");
 			} else {
-				AA_TRACE_ASSERT(!stream.fail(), type_name<stream_type>(), " in fail state before destruction.");
+				AA_TRACE_ASSERT(!stream.fail(), type_name_v<stream_type>, " in fail state before destruction.");
 			}
 		}
 

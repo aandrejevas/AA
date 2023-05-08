@@ -140,7 +140,7 @@ namespace aa {
 
 
 		// Member objects
-		array_t<value_type, N> elements;
+		std::array<value_type, N> elements;
 
 	protected:
 		bool is_full = false;

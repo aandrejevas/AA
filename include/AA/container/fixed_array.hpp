@@ -19,7 +19,7 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using iterator = pointer;
 		using const_iterator = const_pointer;
-		using container_type = array_t<value_type, N>;
+		using container_type = std::array<value_type, N>;
 
 
 
