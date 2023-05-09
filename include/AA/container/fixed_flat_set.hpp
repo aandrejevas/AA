@@ -3,6 +3,7 @@
 #include "../metaprogramming/general.hpp"
 #include "../algorithm/find.hpp"
 #include "fixed_vector.hpp"
+#include <iterator> // default_sentinel
 
 
 
@@ -164,7 +165,7 @@ namespace aa {
 
 		template<assignable_to<reference> V, constructible_to<comparer_type> U = comparer_type>
 		AA_CONSTEXPR fixed_flat_set(V &&value, U &&c = default_value)
-			: elements{elements.begin()}, comparer{std::forward<U>(c)} { elements.back() = std::forward<V>(value); }
+			: elements{std::default_sentinel}, comparer{std::forward<U>(c)} { elements.back() = std::forward<V>(value); }
 
 
 

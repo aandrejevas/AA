@@ -4,6 +4,7 @@
 #include <memory> // construct_at
 #include <algorithm> // copy, copy_n, copy_backward
 #include <ranges> // input_range
+#include <iterator> // default_sentinel_t
 
 
 
@@ -171,7 +172,12 @@ namespace aa {
 		// Nedarome = default, nes konstrukrotius vis tiek nebus trivial,
 		// nes klasė turi kintamųjų su numatytais inicializatoriais.
 		AA_CONSTEXPR fixed_vector() {}
-		AA_CONSTEXPR fixed_vector(const const_iterator pos) : r_begin{const_cast<iterator>(pos)} {}
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+		// Negalime turėti konstruktoriaus, kuris priimtų rodyklę, nes
+		// tik po konstruktoriaus įvykdymo galima gauti rodykles.
+		AA_CONSTEXPR fixed_vector(const std::default_sentinel_t) : r_begin{elements.data()} {}
+#pragma GCC diagnostic pop
 		AA_CONSTEXPR fixed_vector(const size_type count) : r_begin{r_end + count} {}
 		template<std::ranges::input_range R>
 		AA_CONSTEXPR fixed_vector(R &&r) : r_begin{std::ranges::copy(r, elements.data()).out - 1} {}
