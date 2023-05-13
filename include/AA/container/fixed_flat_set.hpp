@@ -84,18 +84,31 @@ namespace aa {
 
 		template<in_relation_with<value_type, const comparer_type &> K>
 		AA_CONSTEXPR const_iterator find(const K &key) const {
-			if (empty() || compare(back(), key)) {
+			if (empty())	return nullptr;
+			else			return unsafe_find(key);
+		}
+
+		template<in_relation_with<value_type, const comparer_type &> K>
+		AA_CONSTEXPR const_iterator unsafe_find(const K &key) const {
+			if (compare(back(), key)) {
 				return nullptr;
 			} else {
 				const const_iterator pos = unsafe_lower_bound(key);
-				return !compare(key, *pos) ? pos : nullptr;
+				if (!compare(key, *pos))	return pos;
+				else						return nullptr;
 			}
 		}
 
 		template<in_relation_with<value_type, const comparer_type &> K>
 		AA_CONSTEXPR bool contains(const K &key) const {
-			return (empty() || compare(back(), key))
-				? false : !compare(key, *unsafe_lower_bound(key));
+			if (empty())	return false;
+			else			return unsafe_contains(key);
+		}
+
+		template<in_relation_with<value_type, const comparer_type &> K>
+		AA_CONSTEXPR bool unsafe_contains(const K &key) const {
+			if (compare(back(), key))	return false;
+			else						return !compare(key, *unsafe_lower_bound(key));
 		}
 
 
@@ -112,21 +125,21 @@ namespace aa {
 		AA_CONSTEXPR const_iterator pop_back() { return elements.pop_back(); }
 		AA_CONSTEXPR const_iterator pop_back(const size_type count) { return elements.pop_back(count); }
 
-		template<cref_assignable_to<reference> V>
-		AA_CONSTEXPR std::conditional_t<MULTISET, void, bool> insert(const V &value) {
+		template<in_relation_with_and_assignable_to<value_type, const comparer_type &> V>
+		AA_CONSTEXPR bool insert(const V &value) {
+			if (empty())	return (clear(value), true);
+			else			return unsafe_insert(value);
+		}
+
+		template<in_relation_with_and_assignable_to<value_type, const comparer_type &> V>
+		AA_CONSTEXPR bool unsafe_insert(const V &value) {
 			if constexpr (MULTISET) {
-				if (empty()) {
-					clear(value);
-				} else {
-					elements.insert(unsafe_upper_bound(value), value);
-				}
+				elements.insert(unsafe_upper_bound(value), value);
+				return true;
 			} else {
 				// Nors reikia kiekvieną kartą daryti papildomą tikrinimą ar konteineris nėra tuščias,
 				// vis tiek pasirinkta tokia realizacija, nes kartais išvengiamas lower_bound iškvietimas.
-				if (empty()) {
-					clear(value);
-					return true;
-				} else if (compare(back(), value)) {
+				if (compare(back(), value)) {
 					elements.insert_back(value);
 					return true;
 				} else {
@@ -140,13 +153,21 @@ namespace aa {
 		}
 
 		template<in_relation_with<value_type, const comparer_type &> K>
-		AA_CONSTEXPR void erase(const K &key) {
-			if (empty() || compare(back(), key)) {
-				return;
+		AA_CONSTEXPR bool erase(const K &key) {
+			if (empty())	return false;
+			else			return unsafe_erase(key);
+		}
+
+		template<in_relation_with<value_type, const comparer_type &> K>
+		AA_CONSTEXPR bool unsafe_erase(const K &key) {
+			if (compare(back(), key)) {
+				return false;
 			} else {
 				const const_iterator pos = unsafe_lower_bound(key);
-				if (!compare(key, *pos))
+				if (!compare(key, *pos)) {
 					elements.erase(pos);
+					return true;
+				} else return false;
 			}
 		}
 

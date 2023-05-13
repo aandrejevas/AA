@@ -231,9 +231,6 @@ namespace aa {
 	template<class R, class L>
 	concept assignable_to = std::assignable_from<L, R>;
 
-	template<class R, class L>
-	concept cref_assignable_to = std::assignable_from<L, const R &>;
-
 	template<class T, class F>
 	concept convertible_from = std::convertible_to<F, T>;
 
@@ -429,6 +426,9 @@ namespace aa {
 
 	template<class U, class V, class T>
 	concept in_relation_with = std::relation<T, const U &, const V &>;
+
+	template<class U, class V, class T>
+	concept in_relation_with_and_assignable_to = in_relation_with<U, V, T> && assignable_to<const U &, V &>;
 
 	template<class T, class U, class V = U>
 	concept relation_for = in_relation_with<U, V, const T &>;
