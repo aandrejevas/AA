@@ -5,6 +5,7 @@
 #include "../include/AA/container/fixed_hashes_set.hpp"
 #include "../include/AA/container/fixed_flat_set.hpp"
 #include "../include/AA/container/fixed_vector.hpp"
+#include "../include/AA/container/bitset_view.hpp"
 #include "../include/AA/algorithm/arithmetic.hpp"
 #include "../include/AA/algorithm/hash.hpp"
 #include "../include/AA/algorithm/find.hpp"
@@ -138,6 +139,13 @@ int main() {
 		} while (!a.empty());
 
 		static_assert(std::ranges::contiguous_range<decltype(a)>);
+	}
+	{
+		const bitset_view a = {0x00'00'00'FFu};
+		printl(range_writer{a});
+		printl(range_writer{get_reversed_subrange(a)});
+		AA_TRACE_ASSERT(a.front() == 0);
+		AA_TRACE_ASSERT(a.back() == 7);
 	}
 	{
 		std::unordered_set<size_t> b;

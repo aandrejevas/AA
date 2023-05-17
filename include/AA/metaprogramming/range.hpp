@@ -1,8 +1,8 @@
 #pragma once
 
 #include "general.hpp"
-#include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, next, prev, distance, iter_reference_t
-#include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, iterator_t, sentinel_t, range_value_t, range_reference_t, begin, end, rbegin, size, data, range
+#include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, next, prev, distance, iter_reference_t, make_reverse_iterator
+#include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, common_range, iterator_t, sentinel_t, range_value_t, range_reference_t, begin, end, rbegin, rend, size, data, range, subrange
 #include <string> // char_traits
 #include <memory> // to_address
 
@@ -23,16 +23,19 @@ namespace aa {
 	concept unusual_range = std::ranges::range<R>
 		&& requires(R & r) { { std::ranges::rbegin(r) } -> std::same_as<std::ranges::sentinel_t<R>>; };
 
+	template<class R>
+	concept unusual_or_bidirectional_or_common_range = (unusual_range<R> || std::ranges::bidirectional_range<R> || std::ranges::common_range<R>);
+
 	// Darome daug prielaidų čia, nes atrodo, kad C++ standartas jas daro taip pat.
 	//
 	// Nėra atitinkamos funkcijos rend iteratoriui, nes jis nėra svarbus.
-	template<std::ranges::range R>
+	template<unusual_or_bidirectional_or_common_range R>
 	AA_CONSTEXPR std::ranges::sentinel_t<R> get_rbegin(R &&r) {
 		if constexpr (unusual_range<R>) {
 			return std::ranges::rbegin(r);
 		} else if constexpr (std::ranges::bidirectional_range<R>) {
 			return std::ranges::prev(std::ranges::end(r));
-		} else {
+		} else if constexpr (std::ranges::common_range<R>) {
 			return std::ranges::next(std::ranges::begin(r), std::ranges::distance(r) - 1);
 		}
 	}
@@ -43,6 +46,15 @@ namespace aa {
 			return std::to_address(std::ranges::end(r));
 		} else {
 			return std::ranges::data(r) + std::ranges::distance(r);
+		}
+	}
+
+	template<std::ranges::range R>
+	AA_CONSTEXPR auto get_reversed_subrange(R &&r) {
+		if constexpr (unusual_range<R> && std::ranges::bidirectional_range<R>) {
+			return std::ranges::subrange{std::make_reverse_iterator(std::ranges::end(r)), std::make_reverse_iterator(std::ranges::begin(r))};
+		} else {
+			return std::ranges::subrange{std::ranges::rbegin(r), std::ranges::rend(r)};
 		}
 	}
 

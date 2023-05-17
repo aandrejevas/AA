@@ -156,4 +156,16 @@ namespace aa {
 		return x - (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> std::numeric_limits<std::make_signed_t<T>>::digits));
 	}
 
+	// https://graphics.stanford.edu/~seander/bithacks.html#ReverseParallel
+	template<regular_unsigned_integral T>
+	AA_CONSTEXPR T bitswap(T v) {
+		T s = constant_v<T, (std::numeric_limits<T>::digits >> 1)>;
+		T mask = numeric_max;
+		do {
+			mask ^= (mask << s);
+			v = ((v >> s) & mask) | ((v << s) & ~mask);
+		} while ((s >>= 1));
+		return v;
+	}
+
 }

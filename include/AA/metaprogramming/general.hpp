@@ -129,10 +129,10 @@ namespace aa {
 	// TODO: GCC bug, can't use decltype(lambda) directly.
 	namespace {
 		template<template<auto...> class U>
-		struct lambda_accepting_twnttp : decltype([]<auto... A>(const U<A...> &) -> void {}) {};
+		struct lambda_accepting_twnttp : decltype([]<auto... A>(const U<A...> &) consteval -> void {}) {};
 
 		template<template<class...> class U>
-		struct lambda_accepting_twttp : decltype([]<class... A>(const U<A...> &) -> void {}) {};
+		struct lambda_accepting_twttp : decltype([]<class... A>(const U<A...> &) consteval -> void {}) {};
 	}
 
 	template<bool B, auto T, auto F>
@@ -211,6 +211,9 @@ namespace aa {
 
 	template<class T>
 	concept regular_unsigned_integral = std::unsigned_integral<T> && std::has_single_bit(unsign(std::numeric_limits<T>::digits));
+
+	template<class T>
+	concept unsigned_integral_or_void = std::unsigned_integral<T> || same_as_void<T>;
 
 	// https://en.wikipedia.org/wiki/Function_object
 	template<class T>
@@ -428,7 +431,7 @@ namespace aa {
 	concept in_relation_with = std::relation<T, const U &, const V &>;
 
 	template<class U, class V, class T>
-	concept in_relation_with_and_assignable_to = in_relation_with<U, V, T> && assignable_to<const U &, V &>;
+	concept in_relation_with_and_assignable_to = (in_relation_with<U, V, T> && assignable_to<const U &, V &>);
 
 	template<class T, class U, class V = U>
 	concept relation_for = in_relation_with<U, V, const T &>;
@@ -706,14 +709,14 @@ namespace aa {
 
 	// https://ldionne.com/2015/11/29/efficient-parameter-pack-indexing/
 	template<size_t I, class... T>
-	struct type_pack_element : decltype(([]<class U>(const tuple_unit<I, U> &&) ->
+	struct type_pack_element : decltype(([]<class U>(const tuple_unit<I, U> &&) consteval ->
 		std::type_identity<U> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
 
 	template<size_t I, class... T>
 	using type_pack_element_t = typename type_pack_element<I, T...>::type;
 
 	template<class U, class... T>
-	struct type_pack_index : decltype(([]<size_t I>(const tuple_unit<I, U> &&) ->
+	struct type_pack_index : decltype(([]<size_t I>(const tuple_unit<I, U> &&) consteval ->
 		size_constant<I> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
 
 	template<class U, class... T>
@@ -795,7 +798,7 @@ namespace aa {
 	struct pack_base<std::index_sequence<I...>, V...> : pack_unit<I, V>... {};
 
 	template<size_t I, auto... V>
-	struct pack_element : decltype(([]<auto A>(const pack_unit<I, A> &&) ->
+	struct pack_element : decltype(([]<auto A>(const pack_unit<I, A> &&) consteval ->
 		constant<A> { return {}; })(pack_base<std::index_sequence_for<const_t<V>...>, V...>{})) {};
 
 	template<size_t I, auto... V>
@@ -805,7 +808,7 @@ namespace aa {
 	AA_CONSTEXPR const pack_element_t<I, V...> pack_element_v = pack_element<I, V...>::value;
 
 	template<auto A, auto... V>
-	struct pack_index : decltype(([]<size_t I>(const pack_unit<I, A> &&) ->
+	struct pack_index : decltype(([]<size_t I>(const pack_unit<I, A> &&) consteval ->
 		size_constant<I> { return {}; })(pack_base<std::index_sequence_for<const_t<V>...>, V...>{})) {};
 
 	template<auto A, auto... V>
