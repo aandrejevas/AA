@@ -19,7 +19,7 @@ namespace aa {
 	// Neturi klasė iteratoriu, nes nežinome, kurie buckets naudojami, dirty regione taip pat ne visi naudojami.
 	template<regular_unsigned_integral T, size_t N, size_t M = 0, class H = generic_hash<>>
 		requires (N >= M)
-	struct fixed_perfect_hash_set {
+	struct fixed_hashes_set {
 		// Member types
 		// Neturime reference ir pointer tipų, nes konteineris nelaiko elementų, jis juos apskaičiuoja.
 		using bucket_type = T;
@@ -435,7 +435,7 @@ namespace aa {
 
 		// Special member functions
 		template<constructible_to<hasher_type> U = hasher_type>
-		AA_CONSTEXPR fixed_perfect_hash_set(U &&h = default_value) : hasher{std::forward<U>(h)} {}
+		AA_CONSTEXPR fixed_hashes_set(U &&h = default_value) : hasher{std::forward<U>(h)} {}
 
 
 

@@ -2,7 +2,7 @@
 #include "../include/AA/container/fixed_array.hpp"
 #include "../include/AA/container/fixed_grid.hpp"
 #include "../include/AA/container/fixed_free_vector.hpp"
-#include "../include/AA/container/fixed_perfect_hash_set.hpp"
+#include "../include/AA/container/fixed_hashes_set.hpp"
 #include "../include/AA/container/fixed_flat_set.hpp"
 #include "../include/AA/container/fixed_vector.hpp"
 #include "../include/AA/algorithm/arithmetic.hpp"
@@ -141,7 +141,7 @@ int main() {
 	}
 	{
 		std::unordered_set<size_t> b;
-		fixed_perfect_hash_set<size_t, 1'000> a; //, 1000
+		fixed_hashes_set<size_t, 1'000> a; //, 1000
 		printl(a.max_bucket_count(), ' ', a.bucket_max_size(), ' ', a.max_size());
 
 		// Insert test
