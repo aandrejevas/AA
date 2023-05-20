@@ -62,7 +62,7 @@ namespace aa {
 	// Gražinamas tipas auto, nes expression, kuriame dalyvauja mažesni tipai negu int, gražinamas tipas yra int.
 	// Reikalaujama, kad T būtų unsigned, nes per shift operacijas neįmanoma pagreitinti neigiamų skaičių daugybos.
 	template<arithmetic auto X, arithmetic T>
-	AA_CONSTEXPR auto product(const T x) {
+	AA_CONSTEXPR T product(const T x) {
 		if constexpr (!std::same_as<T, const_t<X>>)		return product<static_cast<T>(X)>(x);
 		else if constexpr (X == 0)						return zero_v<T>;
 		else if constexpr (X == 1)						return x;
@@ -74,7 +74,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Remainder
 	template<arithmetic auto X, arithmetic T>
 		requires (X != 0)
-	AA_CONSTEXPR auto remainder(const T x) {
+	AA_CONSTEXPR T remainder(const T x) {
 		if constexpr (!std::same_as<T, const_t<X>>)		return remainder<static_cast<T>(X)>(x);
 		else if constexpr (X == 1)						return zero_v<T>;
 		else if constexpr (std::floating_point<T>)		return std::fmod(x, X);
@@ -86,7 +86,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Quotient
 	template<arithmetic auto X, arithmetic T>
 		requires (X != 0)
-	AA_CONSTEXPR auto quotient(const T x) {
+	AA_CONSTEXPR T quotient(const T x) {
 		if constexpr (!std::same_as<T, const_t<X>>)		return quotient<static_cast<T>(X)>(x);
 		else if constexpr (X == 1)						return x;
 		else if constexpr (std::floating_point<T>)		return product<1 / X>(x);
@@ -103,21 +103,26 @@ namespace aa {
 	// Išviso U ir T nepilnai generic, nes reiktų tada tikrinti ar su tais tipais išeitų vykdyti reikiamas operacijas.
 	// https://en.wikipedia.org/wiki/Power_of_two
 	template<arithmetic auto N, std::integral U = size_t, std::unsigned_integral T>
-	AA_CONSTEXPR auto int_exp2(const T x) {
+	AA_CONSTEXPR U int_exp2(const T x) {
 		return int_exp2<U>(product<N>(x));
 	}
 
 	// https://en.wikipedia.org/wiki/Find_first_set
 	// https://en.wikipedia.org/wiki/Binary_logarithm
 	template<arithmetic auto N, std::integral U = size_t, std::unsigned_integral T>
-	AA_CONSTEXPR auto int_log2(const T x) {
+	AA_CONSTEXPR U int_log2(const T x) {
 		return quotient<N>(int_log2<U>(x));
 	}
 
 
 
+	template<std::unsigned_integral U = size_t, std::unsigned_integral T>
+	AA_CONSTEXPR U magic_binary_number(const T x) {
+		return constant_v<U, numeric_max> / (int_exp2<U>(int_exp2(x)) | 1);
+	}
+
 	template<arithmetic T>
-	AA_CONSTEXPR auto halve(const T x) {
+	AA_CONSTEXPR T halve(const T x) {
 		return quotient<2>(x);
 	}
 
@@ -139,7 +144,7 @@ namespace aa {
 	}
 
 	template<arithmetic T>
-	AA_CONSTEXPR auto sq(const T x) {
+	AA_CONSTEXPR T sq(const T x) {
 		return x * x;
 	}
 
@@ -159,13 +164,10 @@ namespace aa {
 	// https://graphics.stanford.edu/~seander/bithacks.html#ReverseParallel
 	template<regular_unsigned_integral T>
 	AA_CONSTEXPR T bitswap(T v) {
-		T s = constant_v<T, (std::numeric_limits<T>::digits >> 1)>;
-		T mask = numeric_max;
-		do {
-			mask ^= (mask << s);
-			v = ((v >> s) & mask) | ((v << s) & ~mask);
-		} while ((s >>= 1));
-		return v;
+		return apply<int_log2(unsign(std::numeric_limits<T>::digits))>([&]<size_t... I>() -> T {
+			return ((v = ((v >> const_v<int_exp2(I)>) & const_v<magic_binary_number<T>(I)>)
+					   | ((v & const_v<magic_binary_number<T>(I)>) << const_v<int_exp2(I)>)), ...);
+		});
 	}
 
 }

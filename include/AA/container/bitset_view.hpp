@@ -10,7 +10,7 @@
 
 namespace aa {
 
-	template<std::unsigned_integral T, unsigned_integral_or_void U = void, bool REVERSED = false>
+	template<bool REVERSED, std::unsigned_integral T, unsigned_integral_or_void U = void>
 	struct bitset_view : std::ranges::view_base {
 		// Member constants
 		static AA_CONSTEXPR const bool is_offset = !same_as_void<U>;
@@ -22,10 +22,10 @@ namespace aa {
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using iterator_category = std::forward_iterator_tag;
-		using iterator = bitset_view<T, U, REVERSED>;
+		using iterator = bitset_view<REVERSED, T, U>;
 		using const_iterator = iterator;
-		using reverse_iterato = bitset_view<T, U, !REVERSED>;
-		using const_reverse_iterator = reverse_iterato;
+		using reverse_iterator = bitset_view<!REVERSED, T, U>;
+		using const_reverse_iterator = reverse_iterator;
 
 
 
@@ -44,18 +44,27 @@ namespace aa {
 		// parodyti ar nurodytas bitas yra nustatytas, nes nesutaptų realizacija su front ir back.
 		// Modifikuojančių metodų neapibrėžiame, naudotojas gali pats modifikuoti laukus kaip nori.
 
-		AA_CONSTEXPR value_type front() const { return index(unsign<value_type>(std::countr_zero(bitset)), offset); }
-		AA_CONSTEXPR value_type back() const { return index((constant_v<value_type, max_index()>) - unsign<value_type>(std::countl_zero(bitset)), offset); }
-
-
-
-		// Operations
-		AA_CONSTEXPR value_type operator*() const {
+		AA_CONSTEXPR value_type front() const {
 			if constexpr (REVERSED) {
 				return index((constant_v<value_type, max_index()>) - unsign<value_type>(std::countr_zero(bitset)), offset);
 			} else {
 				return index(unsign<value_type>(std::countr_zero(bitset)), offset);
 			}
+		}
+
+		AA_CONSTEXPR value_type back() const {
+			if constexpr (REVERSED) {
+				return index(unsign<value_type>(std::countl_zero(bitset)), offset);
+			} else {
+				return index((constant_v<value_type, max_index()>) - unsign<value_type>(std::countl_zero(bitset)), offset);
+			}
+		}
+
+
+
+		// Operations
+		AA_CONSTEXPR value_type operator*() const {
+			return front();
 		}
 
 		AA_CONSTEXPR iterator &operator++() {
@@ -91,6 +100,7 @@ namespace aa {
 		explicit AA_CONSTEXPR operator bool() const { return !empty(); }
 		AA_CONSTEXPR bool empty() const { return is_numeric_min(bitset); }
 		AA_CONSTEXPR bool full() const { return is_numeric_max(bitset); }
+		AA_CONSTEXPR bool single() const { return std::has_single_bit(bitset); }
 
 		AA_CONSTEXPR size_type size() const { return unsign<size_type>(std::popcount(bitset)); }
 		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
@@ -110,7 +120,13 @@ namespace aa {
 		[[no_unique_address]] offset_type offset;
 	};
 
-	template<class... A>
-	bitset_view(const A&...) -> bitset_view<A...>;
+	template<class A1, class... A>
+	bitset_view(const A1, const A...) -> bitset_view<false, A1, A...>;
+
+	template<bool REVERSED = false, std::unsigned_integral A1, std::unsigned_integral... A>
+		requires (sizeof...(A) < 2)
+	AA_CONSTEXPR bitset_view<REVERSED, A1, A...> make_bitset_view(const A1 a1, const A... a) {
+		return {a1, a...};
+	}
 
 }

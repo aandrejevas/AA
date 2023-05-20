@@ -142,7 +142,10 @@ namespace aa {
 	struct conditional_nttp<false, T, F> : constant<F> {};
 
 	template<bool B, auto T, auto F>
-	AA_CONSTEXPR const auto conditional_nttp_v = conditional_nttp<B, T, F>::value;
+	using conditional_nttp_t = typename conditional_nttp<B, T, F>::value_type;
+
+	template<bool B, auto T, auto F>
+	AA_CONSTEXPR const conditional_nttp_t<B, T, F> conditional_nttp_v = conditional_nttp<B, T, F>::value;
 
 
 
@@ -529,13 +532,13 @@ namespace aa {
 
 
 	template<std::integral U = size_t, std::unsigned_integral T>
-	AA_CONSTEXPR auto int_exp2(const T x) {
+	AA_CONSTEXPR U int_exp2(const T x) {
 		return one_v<U> << x;
 	}
 
 	// T yra tipas, kurio bitus skaičiuosime, U nurodo kokiu tipu pateikti rezutatus.
 	template<std::integral U = size_t, std::unsigned_integral T>
-	AA_CONSTEXPR auto int_log2(const T x) {
+	AA_CONSTEXPR U int_log2(const T x) {
 		return (constant_v<U, std::numeric_limits<std::make_signed_t<T>>::digits>) - unsign<U>(std::countl_zero(x));
 	}
 

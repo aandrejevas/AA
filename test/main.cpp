@@ -141,11 +141,17 @@ int main() {
 		static_assert(std::ranges::contiguous_range<decltype(a)>);
 	}
 	{
-		const bitset_view a = {0x00'00'00'FFu};
+		const bitset_view a = make_bitset_view(0x00'00'00'FFu);
 		printl(range_writer{a});
 		printl(range_writer{get_reversed_subrange(a)});
-		AA_TRACE_ASSERT(a.front() == 0);
-		AA_TRACE_ASSERT(a.back() == 7);
+		AA_TRACE_ASSERT(a.front() == 0, a.front());
+		AA_TRACE_ASSERT(a.back() == 7, a.back());
+
+		const bitset_view b = make_bitset_view<true>(0x00'00'00'FFu);
+		printl(range_writer{b});
+		printl(range_writer{get_reversed_subrange(b)});
+		AA_TRACE_ASSERT(b.front() == 31, b.front());
+		AA_TRACE_ASSERT(b.back() == 24, b.back());
 	}
 	{
 		std::unordered_set<size_t> b;
