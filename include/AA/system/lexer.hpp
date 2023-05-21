@@ -28,7 +28,7 @@ namespace aa {
 		using hasher_type = H;
 
 	protected:
-		template<not_const_instance_of_twttp<lexer_config>, class>
+		template<not_const_and_instance_of_twttp<lexer_config>, class>
 		friend struct lexer;
 
 
@@ -41,7 +41,7 @@ namespace aa {
 	// Lexing parameters
 	// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
 	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
-	template<not_const_instance_of_twttp<lexer_config> CONFIG, class CONSUMER>
+	template<not_const_and_instance_of_twttp<lexer_config> CONFIG, class CONSUMER>
 	struct lexer {
 		// Member types
 		using config_type = std::remove_reference_t<CONFIG>;
@@ -158,7 +158,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Lexical_analysis
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<not_const_instance_of_twttp<lexer> LEXER, char_input_stream FILE>
+	template<not_const_and_instance_of_twttp<lexer> LEXER, char_input_stream FILE>
 	AA_CONSTEXPR void lex(FILE &&file, LEXER &&lexer) {
 		// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
 		if (file.peek() == traits_type_in_use_t<FILE>::eof())

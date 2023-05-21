@@ -10,14 +10,14 @@
 
 namespace aa {
 
-	template<bool REVERSED, std::unsigned_integral T, unsigned_integral_or_void U = void>
+	template<bool REVERSED, std::unsigned_integral T, unsigned_integral_or_same_as<std::monostate> U = std::monostate>
 	struct bitset_view : std::ranges::view_base {
 		// Member constants
-		static AA_CONSTEXPR const bool is_offset = !same_as_void<U>;
+		static AA_CONSTEXPR const bool is_offset = !std::same_as<U, std::monostate>;
 
 		// Member types
 		using bitset_type = T;
-		using offset_type = std::conditional_t<is_offset, U, std::monostate>;
+		using offset_type = U;
 		using value_type = std::conditional_t<is_offset, offset_type, bitset_type>;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
@@ -120,13 +120,12 @@ namespace aa {
 		[[no_unique_address]] offset_type offset;
 	};
 
-	template<class A1, class... A>
-	bitset_view(const A1, const A...) -> bitset_view<false, A1, A...>;
+	template<class T, class U = std::monostate>
+	bitset_view(const T, const U = default_value) -> bitset_view<false, T, U>;
 
-	template<bool REVERSED = false, std::unsigned_integral A1, std::unsigned_integral... A>
-		requires (sizeof...(A) < 2)
-	AA_CONSTEXPR bitset_view<REVERSED, A1, A...> make_bitset_view(const A1 a1, const A... a) {
-		return {a1, a...};
+	template<bool REVERSED = false, class T, class U = std::monostate>
+	AA_CONSTEXPR bitset_view<REVERSED, T, U> make_bitset_view(const T t, const U u = default_value) {
+		return {t, u};
 	}
 
 }

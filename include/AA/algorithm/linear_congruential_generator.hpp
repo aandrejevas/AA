@@ -17,7 +17,8 @@ namespace aa {
 	// 3) MULTIPLIER-1 turi dalintis iš 4 jei MODULUS dalinasi iš 4.
 	// Kadangi MODULUS pirminė faktorizacija yra lygi 2^n tai mūsų atveju 3 sąlyga apima 2.
 	// https://en.wikipedia.org/wiki/Linear_congruential_generator
-	template<std::unsigned_integral T = prev_unsigned_t<size_t>, T A = 0x8088405, T C = 1>
+	// Parinktos konstantos priderintos darbui su moduliu 2^32 todėl T sakome, kad yra uint32_t.
+	template<std::unsigned_integral T = uint32_t, T A = 0x8088405, T C = 1>
 		requires (std::gcd(representable_values_v<T>, C) == 1 && !remainder<4>(A - 1))
 	struct linear_congruential_generator {
 		// Member types
@@ -114,7 +115,7 @@ namespace aa {
 		}
 	};
 
-	template<class... A>
-	linear_congruential_generator(A&&...) -> linear_congruential_generator<>;
+	template<class T = uint32_t>
+	linear_congruential_generator(const T & = default_value) -> linear_congruential_generator<>;
 
 }

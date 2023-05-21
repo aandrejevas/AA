@@ -55,46 +55,57 @@ namespace aa {
 
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
 	// https://en.wikipedia.org/wiki/Product_(mathematics)
-	// X parametras skirtas indikuoti kiek kartų turi būti padaugintas x, išties nebūtinai iš X bus dauginama.
+	// Pagal X funkcija nustato, kurį x kartotinį gražinti arba X naudoja kaip daukilį.
 	// Gražinamas tipas auto, nes expression, kuriame dalyvauja mažesni tipai negu int, gražinamas tipas yra int.
 	// Reikalaujama, kad T būtų unsigned, nes per shift operacijas neįmanoma pagreitinti neigiamų skaičių daugybos.
-	template<arithmetic auto X, arithmetic T>
+	// Bandžiau rekursijos nenaudoti, gaunasi tas pats tik vietoje X visur atsiranda cast X į T.
+	// Turime turėti du tokius pačius return sakinius, nes apjungus sąlygas X gali sąlygoje būti float.
+	template<arithmetic T, T X>
 	AA_CONSTEXPR T product(const T x) {
-		if constexpr (!std::same_as<T, const_t<X>>)		return product<static_cast<T>(X)>(x);
-		else if constexpr (X == 0)						return zero_v<T>;
-		else if constexpr (X == 1)						return x;
+			 if constexpr (is_zero(X))					return zero_v<T>;
+		else if constexpr (is_one(X))					return x;
 		else if constexpr (!std::unsigned_integral<T>)	return x * X;
 		else if constexpr (!std::has_single_bit(X))		return x * X;
 		else											return x << const_v<int_log2(X)>;
 	}
 
+	template<auto X, convertible_from<const_t<X>> T>
+	AA_CONSTEXPR T product(const T x) {
+		return product<T, cast<T>(X)>(x);
+	}
+
 	// https://en.wikipedia.org/wiki/Remainder
-	template<arithmetic auto X, arithmetic T>
-		requires (X != 0)
+	template<arithmetic T, T X>
+		requires (!is_zero(X))
 	AA_CONSTEXPR T remainder(const T x) {
-		if constexpr (!std::same_as<T, const_t<X>>)		return remainder<static_cast<T>(X)>(x);
-		else if constexpr (X == 1)						return zero_v<T>;
+			 if constexpr (is_one(X))					return zero_v<T>;
 		else if constexpr (std::floating_point<T>)		return std::fmod(x, X);
 		else if constexpr (std::signed_integral<T>)		return x % X;
 		else if constexpr (!std::has_single_bit(X))		return x % X;
 		else											return x & const_v<X - 1>;
 	}
 
+	template<auto X, convertible_from<const_t<X>> T>
+	AA_CONSTEXPR T remainder(const T x) {
+		return remainder<T, cast<T>(X)>(x);
+	}
+
 	// https://en.wikipedia.org/wiki/Quotient
-	template<arithmetic auto X, arithmetic T>
-		requires (X != 0)
+	template<arithmetic T, T X>
+		requires (!is_zero(X))
 	AA_CONSTEXPR T quotient(const T x) {
-		if constexpr (!std::same_as<T, const_t<X>>)		return quotient<static_cast<T>(X)>(x);
-		else if constexpr (X == 1)						return x;
-		else if constexpr (std::floating_point<T>)		return product<1 / X>(x);
+			 if constexpr (is_one(X))					return x;
+		else if constexpr (std::floating_point<T>)		return x * const_v<one_v<T> / X>;
 		else if constexpr (std::signed_integral<T>)		return x / X;
 		else if constexpr (!std::has_single_bit(X))		return x / X;
 		else											return x >> const_v<int_log2(X)>;
 	}
-#pragma GCC diagnostic pop
+
+	template<auto X, convertible_from<const_t<X>> T>
+	AA_CONSTEXPR T quotient(const T x) {
+		return quotient<T, cast<T>(X)>(x);
+	}
 
 
 
@@ -123,7 +134,7 @@ namespace aa {
 
 	template<arithmetic T>
 	AA_CONSTEXPR T halve(const T x) {
-		return quotient<2>(x);
+		return quotient<two_v<T>>(x);
 	}
 
 	template<class T>

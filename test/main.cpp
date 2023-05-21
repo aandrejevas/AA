@@ -97,9 +97,9 @@ int main() {
 		const auto a = safe_parse<tuple<std::string, double, prev_unsigned_t<size_t>>>
 			(make_p_ifstream("params.txt").get(), lexer_config<make_string_p_hash<TEST_1, TEST_2, "TEST_3"_fs>>{});
 
-		AA_TRACE_ASSERT(a.get<0>() == "text");
-		AA_TRACE_ASSERT(std::bit_cast<size_t>(a.get<1>()) == std::bit_cast<size_t>(22.5));
-		AA_TRACE_ASSERT(a.get<2>() == 45);
+		AA_TRACE_ASSERT(get_0(a) == "text");
+		AA_TRACE_ASSERT(std::bit_cast<size_t>(get_1(a)) == std::bit_cast<size_t>(22.5));
+		AA_TRACE_ASSERT(get_2(a) == 45);
 	}
 	{
 		array_t<int, 10> a = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, b = a;
@@ -149,7 +149,7 @@ int main() {
 
 		const bitset_view b = make_bitset_view<true>(0x00'00'00'FFu);
 		printl(range_writer{b});
-		printl(range_writer{get_reversed_subrange(b)});
+		printl(range_writer{b.rbegin()});
 		AA_TRACE_ASSERT(b.front() == 31, b.front());
 		AA_TRACE_ASSERT(b.back() == 24, b.back());
 	}

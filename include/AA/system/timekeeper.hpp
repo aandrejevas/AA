@@ -85,7 +85,7 @@ namespace aa {
 		}
 	};
 
-	template<class... A>
-	timekeeper(A&&...) -> timekeeper<>;
+	template<class T = typename std::chrono::steady_clock::rep, class U = typename std::chrono::steady_clock::rep>
+	timekeeper(const T & = default_value, const U & = default_value) -> timekeeper<>;
 
 }

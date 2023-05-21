@@ -12,20 +12,13 @@ namespace aa {
 
 	template<std::input_or_output_iterator I, std::sentinel_for<I> S = I>
 	struct unsafe_subrange : pair<I, S>, std::ranges::view_base {
-		// Member types
-	protected:
-		using b = pair<I, S>;
-
-	public:
-		using pair<I, S>::get;
-
-
-
 		// Observers
-		AA_CONSTEXPR I &begin() { return b::template get<0>(); }
-		AA_CONSTEXPR S &rbegin() { return b::template get<1>(); }
-		AA_CONSTEXPR const I &begin() const { return b::template get<0>(); }
-		AA_CONSTEXPR const S &rbegin() const { return b::template get<1>(); }
+		using unsafe_subrange::tuple_type::get;
+
+		AA_CONSTEXPR I &begin() { return get_0(*this); }
+		AA_CONSTEXPR S &rbegin() { return get_1(*this); }
+		AA_CONSTEXPR const I &begin() const { return get_0(*this); }
+		AA_CONSTEXPR const S &rbegin() const { return get_1(*this); }
 		AA_CONSTEXPR S end() const requires (std::input_or_output_iterator<S>) { return std::ranges::next(rbegin()); }
 		AA_CONSTEXPR I rend() const requires (std::bidirectional_iterator<I>) { return std::ranges::prev(begin()); }
 
@@ -69,7 +62,7 @@ namespace aa {
 		// convertible_to, nes std::ranges::subrange klasė taip pat realizuota.
 		// convertible constraint yra griežtesnis negu constructable constraint.
 		template<std::convertible_to<I> T1 = I, std::convertible_to<S> T2 = S>
-		AA_CONSTEXPR unsafe_subrange(T1 &&t1, T2 &&t2) : b{std::forward<T1>(t1), std::forward<T2>(t2)} {}
+		AA_CONSTEXPR unsafe_subrange(T1 &&t1, T2 &&t2) : unsafe_subrange::tuple_type{std::forward<T1>(t1), std::forward<T2>(t2)} {}
 
 		template<std::ranges::borrowed_range R>
 		AA_CONSTEXPR unsafe_subrange(R &&r) : unsafe_subrange{std::ranges::begin(r), get_rbegin(r)} {}

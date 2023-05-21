@@ -91,7 +91,7 @@ namespace aa {
 		// template argumentą, abu sprendimai labai nepatogūs. Na iš principo tai yra keista į spausdinimo funkciją
 		// paduoti ne const kintamąjį. Išlieka galimybė pvz. turėti mutable lambdas ir keisti range elementus.
 		template<class C, char_traits_for<C> T>
-			requires (std::invocable<F &, std::basic_ostream<C, T> &, const std::ranges::range_value_t<R> &>)
+			requires (std::invocable<const F &, std::basic_ostream<C, T> &, const std::ranges::range_value_t<R> &>)
 		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const range_writer &w) {
 			std::ranges::for_each(w.range, [&s, &w](const std::ranges::range_value_t<R> &element) -> void {
 				std::invoke(w.fun, s, element);
@@ -114,24 +114,16 @@ namespace aa {
 		[[no_unique_address]] const F fun = default_value;
 
 		template<class C, char_traits_for<C> T>
-			requires (std::invocable<F &, std::basic_ostream<C, T> &, const E &>)
+			requires (std::invocable<const F &, std::basic_ostream<C, T> &, const E &>)
 		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const writer &w) {
 			std::invoke(w.fun, s, w.element);
 			return s;
 		}
 	};
 
-	// Reikia šitų guides, nes kitaip copy elision suvalgo konstruktorius. range_writer jų nereikia, nes negali jis savyje būti.
-	template<class IE, class IF, class F = delim_r_inserter<>>
-	writer(const writer<IE, IF> &, F && = default_value) -> writer<const writer<IE, IF> &, F>;
-
-	template<class IE, class IF, class F = delim_r_inserter<>>
-	writer(writer<IE, IF> &, F && = default_value) -> writer<writer<IE, IF> &, F>;
-
-	template<class IE, class IF, class F = delim_r_inserter<>>
-	writer(const writer<IE, IF> &&, F && = default_value) -> writer<writer<IE, IF>, F>;
-
-	template<not_instance_of_twttp<writer> E, class F = delim_r_inserter<>>
+	// Anksčiau buvo apibrėžti papildomi guides, kad copy elision nesuvalgytų konstruktorių.
+	// Bet dabar sakome, kad tokiais atvejais tiesiog reiktų naudoti protingesnius inserters.
+	template<class E, class F = delim_r_inserter<>>
 	writer(E &&, F && = default_value) -> writer<E, F>;
 
 }

@@ -85,6 +85,6 @@ namespace aa {
 		= string_perfect_hash<conditional_nttp_v<fixed_string_like<const_t<A>>, A, literal_name_v<A>>...>;
 
 	template<size_t N>
-	using string_identity_hash = decltype(apply<N>([]<size_t... I>() -> make_string_p_hash<I...> { return {}; }));
+	using string_identity_hash = const_t<apply<N>([]<size_t... I>() -> make_string_p_hash<I...> { return default_value; })>;
 
 }

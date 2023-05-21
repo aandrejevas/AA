@@ -14,7 +14,7 @@
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, enable_if_t, conditional_t, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t
+#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t
 #include <concepts> // convertible_to, same_as, default_initializable, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, assignable_from, integral, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <array> // array
@@ -159,10 +159,7 @@ namespace aa {
 	concept instance_of_twttp = std::invocable<lambda_accepting_twttp<U>, T &>;
 
 	template<class T, template<class...> class U>
-	concept not_const_instance_of_twttp = not_const<T> && instance_of_twttp<T, U>;
-
-	template<class T, template<class...> class U>
-	concept not_instance_of_twttp = !instance_of_twttp<T, U>;
+	concept not_const_and_instance_of_twttp = not_const<T> && instance_of_twttp<T, U>;
 
 	template<class... A>
 	concept same_as_every = (... && std::same_as<first_t<A...>, A>);
@@ -215,8 +212,8 @@ namespace aa {
 	template<class T>
 	concept regular_unsigned_integral = std::unsigned_integral<T> && std::has_single_bit(unsign(std::numeric_limits<T>::digits));
 
-	template<class T>
-	concept unsigned_integral_or_void = std::unsigned_integral<T> || same_as_void<T>;
+	template<class T, class U>
+	concept unsigned_integral_or_same_as = std::unsigned_integral<T> || std::same_as<T, U>;
 
 	// https://en.wikipedia.org/wiki/Function_object
 	template<class T>
@@ -392,13 +389,13 @@ namespace aa {
 
 	template<class F, size_t N>
 	concept constifier_like = apply<N>([]<size_t... I>() ->
-		bool { return same_as_every<decltype(&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<I>)...>; });
+		bool { return same_as_every<const_t<&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<I>>...>; });
 
 
 
 	template<size_t N, constifier_like<N> F>
 	AA_CONSTEXPR const std::array constifier_table = apply<N>([]<size_t... I>() ->
-		std::array<decltype(&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<0>), N>
+		std::array<const_t<&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<0>>, N>
 	{ return {(&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<I>)...}; });
 
 	template<size_t N, class F, class... A>
@@ -506,28 +503,18 @@ namespace aa {
 	template<convertible_from<size_t> T>
 	AA_CONSTEXPR const T two_v = static_cast<T>(2uz);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+	template<std::equality_comparable T>
+	AA_CONSTEXPR bool is_zero(const T &x) {
+		return x == zero_v<T>;
+	}
 
-
-	template<class T, class A1, class A2, class... A>
-	struct next_type : std::type_identity<typename std::conditional_t<std::same_as<T, A1>, std::type_identity<A2>, next_type<T, A2, A...>>::type> {};
-
-	template<class T, class A1, class A2>
-	struct next_type<T, A1, A2> : std::type_identity<std::enable_if_t<std::same_as<T, A1>, A2>> {};
-
-	template<class T, class A1, class A2, class... A>
-	using next_type_t = typename next_type<T, A1, A2, A...>::type;
-
-	template<class T>
-	using next_unsigned_t = next_type_t<T, uint8_t, uint16_t, uint32_t, uint64_t>;
-
-	template<class T>
-	using prev_unsigned_t = next_type_t<T, uint64_t, uint32_t, uint16_t, uint8_t>;
-
-	template<class T>
-	using next_signed_t = next_type_t<T, int8_t, int16_t, int32_t, int64_t>;
-
-	template<class T>
-	using prev_signed_t = next_type_t<T, int64_t, int32_t, int16_t, int8_t>;
+	template<std::equality_comparable T>
+	AA_CONSTEXPR bool is_one(const T &x) {
+		return x == one_v<T>;
+	}
+#pragma GCC diagnostic pop
 
 
 
@@ -537,6 +524,7 @@ namespace aa {
 	}
 
 	// T yra tipas, kurio bitus skaičiuosime, U nurodo kokiu tipu pateikti rezutatus.
+	// [0, digits<T>) ∪ {0b(1)_digits<T>}
 	template<std::integral U = size_t, std::unsigned_integral T>
 	AA_CONSTEXPR U int_log2(const T x) {
 		return (constant_v<U, std::numeric_limits<std::make_signed_t<T>>::digits>) - unsign<U>(std::countl_zero(x));
@@ -711,16 +699,17 @@ namespace aa {
 #pragma GCC diagnostic pop
 
 	// https://ldionne.com/2015/11/29/efficient-parameter-pack-indexing/
+	// GCC bug: neleidžia vietoje decltype naudoti const_t.
 	template<size_t I, class... T>
-	struct type_pack_element : decltype(([]<class U>(const tuple_unit<I, U> &&) consteval ->
-		std::type_identity<U> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
+	struct type_pack_element : std::invoke_result_t<decltype([]<class U>(const tuple_unit<I, U> &&) consteval ->
+		std::type_identity<U> { return default_value; }), tuple_base<std::index_sequence_for<T...>, T...>> {};
 
 	template<size_t I, class... T>
 	using type_pack_element_t = typename type_pack_element<I, T...>::type;
 
 	template<class U, class... T>
-	struct type_pack_index : decltype(([]<size_t I>(const tuple_unit<I, U> &&) consteval ->
-		size_constant<I> { return {}; })(std::declval<tuple_base<std::index_sequence_for<T...>, T...>>())) {};
+	struct type_pack_index : std::invoke_result_t<decltype([]<size_t I>(const tuple_unit<I, U> &&) consteval ->
+		size_constant<I> { return default_value; }), tuple_base<std::index_sequence_for<T...>, T...>> {};
 
 	template<class U, class... T>
 	AA_CONSTEXPR const size_t type_pack_index_v = type_pack_index<U, T...>::value;
@@ -786,8 +775,8 @@ namespace aa {
 	using sextet = tuple<T1, T2, T3, T4, T5, T6>;
 
 	template<class T, size_t N>
-	using tuple_array = typename decltype(apply<N>([]<size_t... I>() ->
-		std::type_identity<tuple<tuple_unit_t<I, T>...>> { return {}; }))::type;
+	using tuple_array = typename const_t<apply<N>([]<size_t... I>() ->
+		std::type_identity<tuple<tuple_unit_t<I, T>...>> { return default_value; })>::type;
 
 
 
@@ -801,8 +790,8 @@ namespace aa {
 	struct pack_base<std::index_sequence<I...>, V...> : pack_unit<I, V>... {};
 
 	template<size_t I, auto... V>
-	struct pack_element : decltype(([]<auto A>(const pack_unit<I, A> &&) consteval ->
-		constant<A> { return {}; })(pack_base<std::index_sequence_for<const_t<V>...>, V...>{})) {};
+	struct pack_element : std::invoke_result_t<decltype([]<auto A>(const pack_unit<I, A> &&) consteval ->
+		constant<A> { return default_value; }), pack_base<std::index_sequence_for<const_t<V>...>, V...>> {};
 
 	template<size_t I, auto... V>
 	using pack_element_t = typename pack_element<I, V...>::value_type;
@@ -811,8 +800,8 @@ namespace aa {
 	AA_CONSTEXPR const pack_element_t<I, V...> pack_element_v = pack_element<I, V...>::value;
 
 	template<auto A, auto... V>
-	struct pack_index : decltype(([]<size_t I>(const pack_unit<I, A> &&) consteval ->
-		size_constant<I> { return {}; })(pack_base<std::index_sequence_for<const_t<V>...>, V...>{})) {};
+	struct pack_index : std::invoke_result_t<decltype([]<size_t I>(const pack_unit<I, A> &&) consteval ->
+		size_constant<I> { return default_value; }), pack_base<std::index_sequence_for<const_t<V>...>, V...>> {};
 
 	template<auto A, auto... V>
 	AA_CONSTEXPR const size_t pack_index_v = pack_index<A, V...>::value;
@@ -859,6 +848,23 @@ namespace aa {
 
 	template<class F>
 	using function_result_t = function_argument_t<F, numeric_max>;
+
+
+
+	template<class T, class... A>
+	using next_type_t = type_pack_element_t<type_pack_index_v<T, A...> + 1, A...>;
+
+	template<class T>
+	using next_unsigned_t = next_type_t<T, uint8_t, uint16_t, uint32_t, uint64_t>;
+
+	template<class T>
+	using prev_unsigned_t = next_type_t<T, uint64_t, uint32_t, uint16_t, uint8_t>;
+
+	template<class T>
+	using next_signed_t = next_type_t<T, int8_t, int16_t, int32_t, int64_t>;
+
+	template<class T>
+	using prev_signed_t = next_type_t<T, int64_t, int32_t, int16_t, int8_t>;
 
 }
 
