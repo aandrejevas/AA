@@ -38,7 +38,7 @@ namespace aa {
 			node_type *next;
 		};
 
-		using container_type = std::conditional_t<ERASABLE, fixed_fast_free_vector<node_type, N>, fixed_vector<node_type, N>>;
+		using container_type = type_pack_element_t<!ERASABLE, fixed_fast_free_vector<node_type, N>, fixed_vector<node_type, N>>;
 
 		template<class... A>
 		AA_CONSTEXPR node_type *emplace(A&&... args) {

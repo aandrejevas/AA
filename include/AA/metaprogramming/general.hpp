@@ -135,18 +135,6 @@ namespace aa {
 		struct lambda_accepting_twttp : decltype([]<class... A>(const U<A...> &) consteval -> void {}) {};
 	}
 
-	template<bool B, auto T, auto F>
-	struct conditional_nttp : constant<T> {};
-
-	template<auto T, auto F>
-	struct conditional_nttp<false, T, F> : constant<F> {};
-
-	template<bool B, auto T, auto F>
-	using conditional_nttp_t = typename conditional_nttp<B, T, F>::value_type;
-
-	template<bool B, auto T, auto F>
-	AA_CONSTEXPR const conditional_nttp_t<B, T, F> conditional_nttp_v = conditional_nttp<B, T, F>::value;
-
 
 
 	template<class T>

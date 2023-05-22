@@ -10,7 +10,7 @@
 
 namespace aa {
 
-	template<bool REVERSED, std::unsigned_integral T, unsigned_integral_or_same_as<std::monostate> U = std::monostate>
+	template<std::unsigned_integral T, unsigned_integral_or_same_as<std::monostate> U = std::monostate, bool REVERSED = false>
 	struct bitset_view : std::ranges::view_base {
 		// Member constants
 		static AA_CONSTEXPR const bool is_offset = !std::same_as<U, std::monostate>;
@@ -18,13 +18,13 @@ namespace aa {
 		// Member types
 		using bitset_type = T;
 		using offset_type = U;
-		using value_type = std::conditional_t<is_offset, offset_type, bitset_type>;
+		using value_type = type_pack_element_t<!is_offset, offset_type, bitset_type>;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using iterator_category = std::forward_iterator_tag;
-		using iterator = bitset_view<REVERSED, T, U>;
+		using iterator = bitset_view<T, U, REVERSED>;
 		using const_iterator = iterator;
-		using reverse_iterator = bitset_view<!REVERSED, T, U>;
+		using reverse_iterator = bitset_view<T, U, !REVERSED>;
 		using const_reverse_iterator = reverse_iterator;
 
 
@@ -111,6 +111,7 @@ namespace aa {
 
 
 		// Special member functions
+		AA_CONSTEVAL bitset_view() = default;
 		AA_CONSTEXPR bitset_view(const bitset_type b, const offset_type o = default_value) : bitset{b}, offset{o} {}
 
 
@@ -121,10 +122,10 @@ namespace aa {
 	};
 
 	template<class T, class U = std::monostate>
-	bitset_view(const T, const U = default_value) -> bitset_view<false, T, U>;
+	bitset_view(const T, const U = default_value) -> bitset_view<T, U>;
 
 	template<bool REVERSED = false, class T, class U = std::monostate>
-	AA_CONSTEXPR bitset_view<REVERSED, T, U> make_bitset_view(const T t, const U u = default_value) {
+	AA_CONSTEXPR bitset_view<T, U, REVERSED> make_bitset_view(const T t, const U u = default_value) {
 		return {t, u};
 	}
 

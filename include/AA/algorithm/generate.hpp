@@ -3,21 +3,10 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/generator.hpp"
 #include "arithmetic.hpp"
-#include <random> // uniform_real_distribution, uniform_int_distribution
 
 
 
 namespace aa {
-
-	template<arithmetic T>
-	AA_CONSTEXPR std::conditional_t<std::floating_point<T>, std::uniform_real_distribution<T>, std::uniform_int_distribution<T>>
-		make_uniform_distribution(const T a, const T b)
-	{
-		if constexpr (std::floating_point<T>)		return std::uniform_real_distribution<T>{a, b};
-		else										return std::uniform_int_distribution<T>{a, b};
-	}
-
-
 
 	// Naudotojas turėtų naudoti g(), nebent tikrai nuo 0 kažkodėl jam reiktų reikšmės.
 	// [0, MAX - MIN + 1)
