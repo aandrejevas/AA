@@ -7,7 +7,6 @@
 #include "fixed_vector.hpp"
 #include "unsafe_subrange.hpp"
 #include "bitset_view.hpp"
-#include <variant> // monostate
 #include <algorithm> // fill
 
 
