@@ -173,7 +173,6 @@ namespace aa {
 
 
 		// Modifiers
-	public:
 		AA_CONSTEXPR void clear() {
 			if (!empty()) {
 				unsafe_clear();
