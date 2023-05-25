@@ -106,7 +106,7 @@ namespace aa {
 	// Konteineris laiko savyje maišos kodus.
 	// Neturi klasė iteratoriu, nes nežinome, kurie buckets naudojami, dirty regione taip pat ne visi naudojami.
 	template<regular_unsigned_integral T, size_t N, size_t M = 0, class H = generic_hash<>>
-		requires (N >= M)
+		requires (N >= M || is_numeric_max(M))
 	struct fixed_hashes_set : fixed_hashes_set_base<T, N, H> {
 		using typename fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
 			typename base_type::bucket_type, typename base_type::bucket_pointer,
@@ -183,7 +183,7 @@ namespace aa {
 
 		AA_CONSTEXPR void unsafe_clear() {
 			do {
-				*dirty.back() = numeric_min;
+				*dirty.back() = zero_v<bucket_type>;
 				dirty.pop_back();
 			} while (!dirty.empty());
 		}
@@ -368,6 +368,80 @@ namespace aa {
 		struct dirty_region_type {
 			size_type f = numeric_max, l = numeric_min;
 		} dirty;
+	};
+
+	template<class T, size_t N, class H>
+	struct fixed_hashes_set<T, N, numeric_max, H> : fixed_hashes_set_base<T, N, H> {
+		using typename fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
+			typename base_type::bucket_type, typename base_type::bucket_pointer,
+			typename base_type::size_type, typename base_type::difference_type,
+			typename base_type::local_iterator, typename base_type::hasher_type;
+		using iterator = bucket_pointer;
+		using const_iterator = iterator;
+
+
+
+		// Capacity
+		AA_CONSTEXPR bool empty() const {
+			return unsafe_all_of(this->bins, [&](const bucket_type bin) ->
+				bool { return this->bucket(bin).empty(); });
+		}
+		AA_CONSTEXPR bool all_buckets_dirty() const {
+			return unsafe_all_of(this->bins, [&](const bucket_type bin) ->
+				bool { return this->bucket(bin); });
+		}
+		AA_CONSTEXPR bool full() const {
+			return unsafe_all_of(this->bins, [&](const bucket_type bin) ->
+				bool { return this->bucket(bin).full(); });
+		}
+
+		AA_CONSTEXPR size_type size() const {
+			size_type sum = 0;
+			unsafe_for_each(this->bins, [&](const bucket_type bin) ->
+				void { sum += this->bucket(bin).size(); });
+			return sum;
+		}
+		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
+
+		static AA_CONSTEVAL size_type max_size() {
+			return local_iterator::max_size() * max_bucket_count();
+		}
+
+
+
+		// Bucket interface
+		static AA_CONSTEVAL size_type max_bucket_index() { return N - 1; }
+		static AA_CONSTEVAL size_type last_bucket_index() { return N - 1; }
+
+		static AA_CONSTEVAL size_type max_bucket_count() { return N; }
+		static AA_CONSTEVAL size_type bucket_count() { return N; }
+
+
+
+		// Modifiers
+		AA_CONSTEXPR void clear() {
+			this->bins.fill(zero_v<bucket_type>);
+		}
+
+		AA_CONSTEXPR void clear_bucket(const size_type index) {
+			this->bins[index] = numeric_min;
+		}
+
+		AA_CONSTEXPR void fill_bucket(const size_type index) {
+			this->bins[index] = numeric_max;
+		}
+
+		template<hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR void insert(const K &key) {
+			const size_type hash = this->hash(key);
+			this->bins[this->index(hash)] |= this->mask(hash);
+		}
+
+		template<hashable_by<const hasher_type &> K>
+		AA_CONSTEXPR void erase(const K &key) {
+			const size_type hash = this->hash(key);
+			this->bins[this->index(hash)] &= ~this->mask(hash);
+		}
 	};
 
 }
