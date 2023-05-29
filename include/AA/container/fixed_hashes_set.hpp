@@ -107,6 +107,7 @@ namespace aa {
 	template<regular_unsigned_integral T, size_t N, size_t M = 0, class H = generic_hash<>>
 		requires (N >= M || is_numeric_max(M))
 	struct fixed_hashes_set : fixed_hashes_set_base<T, N, H> {
+		// Member types
 		using typename fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
 			typename base_type::bucket_type, typename base_type::bucket_pointer,
 			typename base_type::size_type, typename base_type::difference_type,
@@ -230,6 +231,7 @@ namespace aa {
 
 	template<class T, size_t N, class H>
 	struct fixed_hashes_set<T, N, 0, H> : fixed_hashes_set_base<T, N, H> {
+		// Member types
 		using typename fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
 			typename base_type::bucket_type, typename base_type::bucket_pointer,
 			typename base_type::size_type, typename base_type::difference_type,
@@ -370,6 +372,7 @@ namespace aa {
 
 	template<class T, size_t N, class H>
 	struct fixed_hashes_set<T, N, numeric_max, H> : fixed_hashes_set_base<T, N, H> {
+		// Member types
 		using typename fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
 			typename base_type::bucket_type, typename base_type::bucket_pointer,
 			typename base_type::size_type, typename base_type::difference_type,
