@@ -13,7 +13,8 @@
 
 namespace aa {
 
-	namespace {
+	// Negali namespace būti unnamed, nes metama klaida tokiu atveju -Wsubobject-linkage.
+	namespace detail {
 		template<regular_unsigned_integral T, size_t N, class H>
 		struct fixed_hashes_set_base {
 			// Member types
@@ -106,9 +107,9 @@ namespace aa {
 	// Neturi klasė iteratoriu, nes nežinome, kurie buckets naudojami, dirty regione taip pat ne visi naudojami.
 	template<regular_unsigned_integral T, size_t N, size_t M = 0, class H = generic_hash<>>
 		requires (N >= M || is_numeric_max(M))
-	struct fixed_hashes_set : fixed_hashes_set_base<T, N, H> {
+	struct fixed_hashes_set : detail::fixed_hashes_set_base<T, N, H> {
 		// Member types
-		using typename fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
+		using typename detail::fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
 			typename base_type::bucket_type, typename base_type::bucket_pointer,
 			typename base_type::size_type, typename base_type::difference_type,
 			typename base_type::local_iterator, typename base_type::hasher_type;
@@ -230,9 +231,9 @@ namespace aa {
 	};
 
 	template<class T, size_t N, class H>
-	struct fixed_hashes_set<T, N, 0, H> : fixed_hashes_set_base<T, N, H> {
+	struct fixed_hashes_set<T, N, 0, H> : detail::fixed_hashes_set_base<T, N, H> {
 		// Member types
-		using typename fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
+		using typename detail::fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
 			typename base_type::bucket_type, typename base_type::bucket_pointer,
 			typename base_type::size_type, typename base_type::difference_type,
 			typename base_type::local_iterator, typename base_type::hasher_type;
@@ -371,9 +372,9 @@ namespace aa {
 	};
 
 	template<class T, size_t N, class H>
-	struct fixed_hashes_set<T, N, numeric_max, H> : fixed_hashes_set_base<T, N, H> {
+	struct fixed_hashes_set<T, N, numeric_max, H> : detail::fixed_hashes_set_base<T, N, H> {
 		// Member types
-		using typename fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
+		using typename detail::fixed_hashes_set_base<T, N, H>::base_type, base_type::base_type,
 			typename base_type::bucket_type, typename base_type::bucket_pointer,
 			typename base_type::size_type, typename base_type::difference_type,
 			typename base_type::local_iterator, typename base_type::hasher_type;
