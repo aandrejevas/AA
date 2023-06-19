@@ -15,7 +15,7 @@
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 #include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t
-#include <concepts> // convertible_to, same_as, default_initializable, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, assignable_from, integral, signed_integral, unsigned_integral
+#include <concepts> // convertible_to, same_as, default_initializable, copy_constructible, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, assignable_from, integral, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <array> // array
 #include <bit> // countl_zero, has_single_bit, bit_cast
@@ -187,6 +187,9 @@ namespace aa {
 
 	template<class T>
 	concept wo_cvref_default_initializable = std::default_initializable<std::remove_cvref_t<T>>;
+
+	template<class T>
+	concept wo_cvref_copy_constructible = std::copy_constructible<std::remove_cvref_t<T>>;
 
 	template<class L, class R>
 	concept wo_ref_derived_from = std::derived_from<std::remove_reference_t<L>, R>;
