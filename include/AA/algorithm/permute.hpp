@@ -5,19 +5,19 @@
 #include "../metaprogramming/range.hpp"
 #include "generate.hpp"
 #include <iterator> // iter_swap, sentinel_for
-#include <ranges> // iterator_t, sentinel_t, range_value_t, begin, end
+#include <ranges> // iterator_t, sentinel_t, range_value_t, begin, end, rbegin
 
 
 
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
-	template<bool E = true, permutable_random_access_range R, differences_generator_for<std::ranges::iterator_t<R>> G>
+	template<permutable_random_access_range R, differences_generator_for<std::ranges::iterator_t<R>> G>
 	AA_CONSTEXPR void shuffle(R &&r, G &&g) {
-		if constexpr (E) {
+		if constexpr (!unusual_range<R>) {
 			partial_shuffle(r, std::ranges::end(r) - 2, g);
 		} else {
-			partial_shuffle(r, get_rbegin(r) - 1, g);
+			partial_shuffle(r, std::ranges::rbegin(r) - 1, g);
 		}
 	}
 

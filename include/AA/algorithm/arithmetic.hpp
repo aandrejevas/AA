@@ -63,7 +63,7 @@ namespace aa {
 	// Turime turėti du tokius pačius return sakinius, nes apjungus sąlygas X gali sąlygoje būti float.
 	template<arithmetic T, T X>
 	AA_CONSTEXPR T product(const T x) {
-			 if constexpr (is_zero(X))					return zero_v<T>;
+		/**/ if constexpr (is_zero(X))					return zero_v<T>;
 		else if constexpr (is_one(X))					return x;
 		else if constexpr (!std::unsigned_integral<T>)	return x * X;
 		else if constexpr (!std::has_single_bit(X))		return x * X;
@@ -79,7 +79,7 @@ namespace aa {
 	template<arithmetic T, T X>
 		requires (!is_zero(X))
 	AA_CONSTEXPR T remainder(const T x) {
-			 if constexpr (is_one(X))					return zero_v<T>;
+		/**/ if constexpr (is_one(X))					return zero_v<T>;
 		else if constexpr (std::floating_point<T>)		return std::fmod(x, X);
 		else if constexpr (std::signed_integral<T>)		return x % X;
 		else if constexpr (!std::has_single_bit(X))		return x % X;
@@ -95,7 +95,7 @@ namespace aa {
 	template<arithmetic T, T X>
 		requires (!is_zero(X))
 	AA_CONSTEXPR T quotient(const T x) {
-			 if constexpr (is_one(X))					return x;
+		/**/ if constexpr (is_one(X))					return x;
 		else if constexpr (std::floating_point<T>)		return x * const_v<one_v<T> / X>;
 		else if constexpr (std::signed_integral<T>)		return x / X;
 		else if constexpr (!std::has_single_bit(X))		return x / X;
@@ -177,7 +177,7 @@ namespace aa {
 	AA_CONSTEXPR T bitswap(T v) {
 		return apply<int_log2(unsign(std::numeric_limits<T>::digits))>([&]<size_t... I>() -> T {
 			return ((v = ((v >> const_v<int_exp2(I)>) & const_v<magic_binary_number<T>(I)>)
-					   | ((v & const_v<magic_binary_number<T>(I)>) << const_v<int_exp2(I)>)), ...);
+				/*	*/ | ((v & const_v<magic_binary_number<T>(I)>) << const_v<int_exp2(I)>)), ...);
 		});
 	}
 

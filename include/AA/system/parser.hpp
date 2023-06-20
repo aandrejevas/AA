@@ -29,8 +29,7 @@ namespace aa {
 			lex(file, lexer{config, ([&]<size_t I>(const std::string & token) -> void {
 				bitset |= const_v<int_exp2(I)>;
 				invoke<I>(eval, constant_v<getter<I>>(t), token);
-			})});
-		})));
+			})}); })));
 		if (index != std::tuple_size_v<TUPLE>) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
