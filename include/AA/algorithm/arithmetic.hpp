@@ -175,7 +175,7 @@ namespace aa {
 	// https://graphics.stanford.edu/~seander/bithacks.html#ReverseParallel
 	template<regular_unsigned_integral T>
 	AA_CONSTEXPR T bitswap(T v) {
-		return apply<int_log2(unsign(std::numeric_limits<T>::digits))>([&]<size_t... I>() -> T {
+		return apply<int_log2(unsign(std::numeric_limits<T>::digits))>([&]<size_t... I>->T {
 			return ((v = ((v >> const_v<int_exp2(I)>) & const_v<magic_binary_number<T>(I)>)
 				/*	*/ | ((v & const_v<magic_binary_number<T>(I)>) << const_v<int_exp2(I)>)), ...);
 		});

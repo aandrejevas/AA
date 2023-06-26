@@ -84,6 +84,6 @@ namespace aa {
 	using literal_name_perfect_hash = string_perfect_hash<literal_name_v<A>...>;
 
 	template<size_t N>
-	using sequence_perfect_hash = const_t AA_T(apply<N>([]<size_t... I>() -> literal_name_perfect_hash<I...> { return default_value; }));
+	using sequence_perfect_hash = const_t<apply<N>([]<size_t... I>->literal_name_perfect_hash<I...> AA_BODY(return default_value))>;
 
 }

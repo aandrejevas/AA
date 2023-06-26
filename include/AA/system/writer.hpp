@@ -16,7 +16,7 @@ namespace aa {
 		template<class S, tuple_like U>
 		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			if constexpr (std::tuple_size_v<U>) {
-				apply<(std::tuple_size_v<U>) - 1>([&]<size_t... I>() -> void {
+				apply<(std::tuple_size_v<U>) - 1>([&]<size_t... I> -> void {
 					print('{');
 					(print(s, constant_v<getter<I>>(u), ", "), ...);
 					print(s, constant_v<getter<sizeof...(I)>>(u), '}');

@@ -38,7 +38,7 @@
 #
 #
 #
-#define AA_T(...) <__VA_ARGS__>
+#define AA_BODY(...) { __VA_ARGS__; }
 #
 #
 #

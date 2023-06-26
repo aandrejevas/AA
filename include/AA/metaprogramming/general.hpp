@@ -336,7 +336,7 @@ namespace aa {
 
 	template<class T, size_t N = numeric_max>
 	concept tuple_like = (is_numeric_max(N) || std::tuple_size_v<T> == N) && apply<std::tuple_size_v<T>>(
-		[]<size_t... I>() -> bool { return (... && wo_ref_same_as<get_result_t<I, T>, std::tuple_element_t<I, T>>); });
+		[]<size_t... I> -> bool { return (... && wo_ref_same_as<get_result_t<I, T>, std::tuple_element_t<I, T>>); });
 
 	template<tuple_like T, class F, class... A>
 	AA_CONSTEXPR decltype(auto) apply(F &&f, A&&... args) {
@@ -347,11 +347,11 @@ namespace aa {
 
 	template<class T>
 	concept new_tuple_like = apply<std::remove_cvref_t<T>::tuple_size()>(
-		[]<size_t... I>() -> bool { return (... && gettable<T, I>); });
+		[]<size_t... I> -> bool { return (... && gettable<T, I>); });
 
 	template<class T, size_t N = numeric_max>
 	concept array_like = (tuple_like<T, N>
-		&& apply<T>([]<size_t... I>() -> bool { return same_as_every<get_result_t<I, T>...>; }));
+		&& apply<T>([]<size_t... I> -> bool { return same_as_every<get_result_t<I, T>...>; }));
 
 	// Nereikia N parametro, nes jei naudotojas naudotų N=0, tai tada jis žinotų, kad concept bus false ir atvirkščiai.
 	template<class T>
@@ -370,13 +370,13 @@ namespace aa {
 	concept array_similar_to = (std::same_as<array_element_t<T>, array_element_t<U>> && same_tuple_size_as<T, U>);
 
 	template<class F, size_t N>
-	concept constifier_like = apply<N>([]<size_t... I>() ->
+	concept constifier_like = apply<N>([]<size_t... I> ->
 		bool { return same_as_every<const_t<&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<I>>...>; });
 
 
 
 	template<size_t N, constifier_like<N> F>
-	AA_CONSTEXPR const std::array constifier_table = apply<N>([]<size_t... I>() ->
+	AA_CONSTEXPR const std::array constifier_table = apply<N>([]<size_t... I> ->
 		std::array<const_t<&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<0>>, N>
 	{ return {(&std::remove_cvref_t<F>::template AA_CALL_OPERATOR<I>)...}; });
 
@@ -636,7 +636,7 @@ namespace aa {
 	// Greitaveika nenukenčia padavinėjant template parametrus todėl neturime funkcijos užklojimo kito.
 	template<size_t N, class F>
 	AA_CONSTEXPR void repeat(F &&f) {
-		apply<N>([&]<size_t... I>() -> void { (aa::invoke<I>(f), ...); });
+		apply<N>([&]<size_t... I> -> void { (aa::invoke<I>(f), ...); });
 	}
 
 	template<tuple_like T, class F>
@@ -757,8 +757,8 @@ namespace aa {
 	using sextet = tuple<T1, T2, T3, T4, T5, T6>;
 
 	template<class T, size_t N>
-	using tuple_array = typename const_t AA_T(apply<N>([]<size_t... I>() ->
-		std::type_identity<tuple<tuple_unit_t<I, T>...>> { return default_value; }))::type;
+	using tuple_array = typename const_t<apply<N>([]<size_t... I> ->
+		std::type_identity<tuple<tuple_unit_t<I, T>...>> AA_BODY(return default_value))>::type;
 
 
 
@@ -835,7 +835,8 @@ namespace aa {
 	concept unary_invocable = std::invocable<F, function_argument_t<F>>;
 
 	template<class F>
-	concept unary_invocable_with_out_arg = unary_invocable<F> && lvalue_reference<function_argument_t<F>> && std::semiregular<std::remove_reference_t<function_argument_t<F>>>;
+	concept out_unary_invocable = unary_invocable<F> && lvalue_reference<function_argument_t<F>>
+		&& std::semiregular<std::remove_reference_t<function_argument_t<F>>>;
 
 
 
