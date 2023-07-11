@@ -104,7 +104,7 @@ namespace aa {
 	struct range_char_traits<T> : std::type_identity<traits_type_in_use_t<T>> {};
 
 	template<sized_contiguous_range T>
-	using range_char_traits_t = typename range_char_traits<T>::type;
+	using range_char_traits_t = type_in_use_t<range_char_traits<T>>;
 
 	template<class T, class U>
 	concept same_range_char_traits_as = sized_contiguous_range<T> && std::same_as<range_char_traits_t<T>, U>;

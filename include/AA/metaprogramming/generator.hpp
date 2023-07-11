@@ -31,7 +31,7 @@ namespace aa {
 	struct generator_modulus<G> : constant<cast<distribution_result_t<G>>(std::remove_reference_t<G>::max()) + 1> {};
 
 	template<class G>
-	using generator_modulus_t = typename generator_modulus<G>::value_type;
+	using generator_modulus_t = value_type_in_use_t<generator_modulus<G>>;
 
 	template<class G>
 	AA_CONSTEXPR const generator_modulus_t<G> generator_modulus_v = generator_modulus<G>::value;

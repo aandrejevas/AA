@@ -69,7 +69,7 @@ namespace aa {
 			constant_v<hasher_type>(config.token, [&]<size_t I> -> void {
 				if constexpr (I != std::tuple_size_v<hasher_type>) {
 					// Metodų rodyklių dydis (16 baitai) yra didesnis negu size_t tipo (8 baitai).
-					target = &consumer_type::template AA_CALL_OPERATOR<I>;
+					target = &consumer_type::template operator()<I>;
 					config.state = lexing_state::VALUE;
 				} else {
 					config.state = lexing_state::SKIP_VALUE;
