@@ -47,6 +47,12 @@ namespace aa {
 
 	AA_CONSTEXPR const default_value_t default_value;
 
+	template<std::default_initializable T>
+	AA_CONSTEXPR const T default_value_v = default_value;
+
+	template<class T>
+	AA_CONSTEXPR const size_t numeric_digits_v = std::numeric_limits<T>::digits;
+
 
 
 	template<auto V>
@@ -63,7 +69,7 @@ namespace aa {
 	// rezultato. Tai reiškia, kad šitoks sprendimas yra universalesnis.
 	//
 	// constant_t alias neturėtų prasmės, nes, kad juo naudotis jau reiktų nurodyti ką norime gauti.
-	template<class T, T V = default_value>
+	template<class T, T V>
 	AA_CONSTEXPR const T constant_v = constant<V>::value;
 
 	template<auto V>
@@ -91,7 +97,7 @@ namespace aa {
 
 	template<class T, std::convertible_to<T> X>
 	AA_CONSTEXPR T unsign_cast(X &&x) {
-		if constexpr (std::unsigned_integral<T> && std::signed_integral<X>) {
+		if constexpr (std::unsigned_integral<T> && std::signed_integral<std::remove_reference_t<X>>) {
 			return unsign<T>(x);
 		} else {
 			return cast<T>(std::forward<X>(x));
@@ -206,7 +212,7 @@ namespace aa {
 	concept wo_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
 
 	template<class T>
-	concept regular_unsigned_integral = std::unsigned_integral<T> && std::has_single_bit(unsign(std::numeric_limits<T>::digits));
+	concept regular_unsigned_integral = std::unsigned_integral<T> && std::has_single_bit(numeric_digits_v<T>);
 
 	template<class T, class U>
 	concept unsigned_integral_or_same_as = std::unsigned_integral<T> || std::same_as<T, U>;
@@ -255,14 +261,20 @@ namespace aa {
 
 	AA_CONSTEXPR const numeric_min_t numeric_min;
 
+	template<class T>
+	AA_CONSTEXPR const T numeric_max_v = numeric_max;
+
+	template<class T>
+	AA_CONSTEXPR const T numeric_min_v = numeric_min;
+
 	template<std::equality_comparable T>
 	AA_CONSTEXPR bool is_numeric_max(const T &x) {
-		return x == std::numeric_limits<T>::max();
+		return x == numeric_max_v<T>;
 	}
 
 	template<std::equality_comparable T>
 	AA_CONSTEXPR bool is_numeric_min(const T &x) {
-		return x == std::numeric_limits<T>::min();
+		return x == numeric_min_v<T>;
 	}
 
 
@@ -345,7 +357,7 @@ namespace aa {
 
 	template<size_t N, class F, class... A>
 	AA_CONSTEXPR decltype(auto) apply(F &&f, A&&... args) {
-		return constant_v<applier<std::make_index_sequence<N>>>(std::forward<F>(f), std::forward<A>(args)...);
+		return default_value_v<applier<std::make_index_sequence<N>>>(std::forward<F>(f), std::forward<A>(args)...);
 	}
 
 	template<class T, size_t N = numeric_max>
@@ -523,7 +535,7 @@ namespace aa {
 	// [0, digits<T>) ∪ {0b(1)_digits<T>}
 	template<std::integral U = size_t, std::unsigned_integral T>
 	AA_CONSTEXPR U int_log2(const T x) {
-		return (constant_v<U, std::numeric_limits<std::make_signed_t<T>>::digits>) - unsign<U>(std::countl_zero(x));
+		return (constant_v<U, numeric_digits_v<std::make_signed_t<T>>>) - unsign_cast<U>(std::countl_zero(x));
 	}
 
 
@@ -535,7 +547,7 @@ namespace aa {
 	// Vietoje byte negalime naudoti uint8_t, nes jei sistemoje baitas būtų ne 8 bitų, tas tipas nebus apibrėžtas.
 	template<uniquely_representable T>
 	AA_CONSTEXPR const size_t representable_values_v
-		= int_exp2(sizeof(T[std::numeric_limits<std::underlying_type_t<std::byte>>::digits]));
+		= int_exp2(sizeof(T[numeric_digits_v<std::underlying_type_t<std::byte>>]));
 
 
 

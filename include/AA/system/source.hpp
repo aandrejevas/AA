@@ -56,7 +56,7 @@ namespace aa {
 	// D tipas ne bet koks, nes funkcija buvo sukurta dirbti su source_data tipu.
 	template<instance_of_twnttp<source_data> D, output_stream S, class... A>
 	AA_CONSTEXPR void log(S &&s, const A&... args) {
-		if constexpr (sizeof...(A))		printl(s, constant_v<D>, ": ", args...);
+		if constexpr (sizeof...(A))		printl(s, default_value_v<D>, ": ", args...);
 		else							log<D>(s, "Info logged.");
 	}
 

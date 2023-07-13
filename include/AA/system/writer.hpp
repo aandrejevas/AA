@@ -18,8 +18,8 @@ namespace aa {
 			if constexpr (std::tuple_size_v<U>) {
 				apply<(std::tuple_size_v<U>) - 1>([&]<size_t... I> -> void {
 					print('{');
-					(print(s, constant_v<getter<I>>(u), ", "), ...);
-					print(s, constant_v<getter<sizeof...(I)>>(u), '}');
+					(print(s, default_value_v<getter<I>>(u), ", "), ...);
+					print(s, default_value_v<getter<sizeof...(I)>>(u), '}');
 				});
 			} else {
 				print("{}");
@@ -32,7 +32,7 @@ namespace aa {
 		template<class S, class U>
 		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			if constexpr (output_stream<S, U>)		print(s, u);
-			else									constant_v<tuple_inserter>(s, u);
+			else									default_value_v<tuple_inserter>(s, u);
 		}
 	};
 
@@ -40,7 +40,7 @@ namespace aa {
 	struct delim_r_inserter {
 		template<class S, class U>
 		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
-			constant_v<identity_inserter>(s, u);
+			default_value_v<identity_inserter>(s, u);
 			print(s, D);
 		}
 	};
@@ -52,7 +52,7 @@ namespace aa {
 		template<class S, class U>
 		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			print(s, D);
-			constant_v<identity_inserter>(s, u);
+			default_value_v<identity_inserter>(s, u);
 		}
 	};
 

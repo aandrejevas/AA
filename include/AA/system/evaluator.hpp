@@ -22,7 +22,7 @@ namespace aa {
 		template<size_t = 0, char_range U>
 		static AA_CONSTEXPR void operator()(T &t, const U &token) {
 			// Įvykus klaidai from_chars kintamojo nemodifikuos, bet t privalo būti modifikuotas.
-			if (std::from_chars(std::ranges::data(token), get_data_end(token), t).ec != constant_v<std::errc>) {
+			if (std::from_chars(std::ranges::data(token), get_data_end(token), t).ec != default_value_v<std::errc>) {
 				t = numeric_max;
 			}
 		}
@@ -43,7 +43,7 @@ namespace aa {
 	struct generic_evaluator {
 		template<size_t I = 0, argument_for_tdc_template<E> T, char_range U>
 		static AA_CONSTEXPR void operator()(T &t, const U &token) {
-			invoke<I>(constant_v<E<T>>, t, token);
+			invoke<I>(default_value_v<E<T>>, t, token);
 		}
 	};
 

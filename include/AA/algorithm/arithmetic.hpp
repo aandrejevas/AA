@@ -129,7 +129,7 @@ namespace aa {
 
 	template<std::unsigned_integral U = size_t, std::unsigned_integral T>
 	AA_CONSTEXPR U magic_binary_number(const T x) {
-		return constant_v<U, numeric_max> / (int_exp2<U>(int_exp2(x)) | 1);
+		return numeric_max_v<U> / (int_exp2<U>(int_exp2(x)) | 1);
 	}
 
 	template<arithmetic T>
@@ -163,22 +163,31 @@ namespace aa {
 	template<std::unsigned_integral T>
 	AA_CONSTEXPR T min(const T x, const T y) {
 		const T d = (x - y);
-		return y + (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> std::numeric_limits<std::make_signed_t<T>>::digits));
+		return y + (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> numeric_digits_v<std::make_signed_t<T>>));
 	}
 
 	template<std::unsigned_integral T>
 	AA_CONSTEXPR T max(const T x, const T y) {
 		const T d = (x - y);
-		return x - (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> std::numeric_limits<std::make_signed_t<T>>::digits));
+		return x - (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> numeric_digits_v<std::make_signed_t<T>>));
 	}
 
 	// https://graphics.stanford.edu/~seander/bithacks.html#ReverseParallel
 	template<regular_unsigned_integral T>
 	AA_CONSTEXPR T bitswap(T v) {
-		return apply<int_log2(unsign(std::numeric_limits<T>::digits))>([&]<size_t... I> -> T {
+		return apply<int_log2(numeric_digits_v<T>)>([&]<size_t... I> -> T {
 			return ((v = ((v >> const_v<int_exp2(I)>) & const_v<magic_binary_number<T>(I)>)
 				/*	*/ | ((v & const_v<magic_binary_number<T>(I)>) << const_v<int_exp2(I)>)), ...);
 		});
+	}
+
+	// https://graphics.stanford.edu/~seander/bithacks.html#SwappingBitsXOR
+	template<regular_unsigned_integral T, std::unsigned_integral I, std::unsigned_integral J>
+	AA_CONSTEXPR T byteswap(const T b, I i, J j) {
+		i = product<numeric_digits_v<std::underlying_type_t<std::byte>>>(i);
+		j = product<numeric_digits_v<std::underlying_type_t<std::byte>>>(j);
+		const T x = ((b >> i) ^ (b >> j)) & constant_v<T, numeric_max_v<std::underlying_type_t<std::byte>>>;
+		return b ^ ((x << i) | (x << j));
 	}
 
 }

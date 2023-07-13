@@ -66,7 +66,7 @@ namespace aa {
 
 		// Member functions
 		AA_CONSTEXPR void init_key() {
-			constant_v<hasher_type>(config.token, [&]<size_t I> -> void {
+			default_value_v<hasher_type>(config.token, [&]<size_t I> -> void {
 				if constexpr (I != std::tuple_size_v<hasher_type>) {
 					// Metodų rodyklių dydis (16 baitai) yra didesnis negu size_t tipo (8 baitai).
 					target = &consumer_type::template operator()<I>;

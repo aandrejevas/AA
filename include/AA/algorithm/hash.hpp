@@ -14,7 +14,7 @@ namespace aa {
 	struct generic_hash {
 		template<hashable_by_template<H> T>
 		static AA_CONSTEXPR size_t operator()(const T &t) {
-			return constant_v<H<T>>(t);
+			return default_value_v<H<T>>(t);
 		}
 
 		static AA_CONSTEVAL size_t min() { return numeric_min; }
@@ -31,7 +31,7 @@ namespace aa {
 	struct mod_generic_hash {
 		template<hashable_by_template<H> T>
 		static AA_CONSTEXPR size_t operator()(const T &t) {
-			return remainder<N>(constant_v<H<T>>(t));
+			return remainder<N>(default_value_v<H<T>>(t));
 		}
 
 		static AA_CONSTEVAL size_t min() { return 0; }
@@ -61,7 +61,7 @@ namespace aa {
 					return true;
 				} else {
 					return trie<I + 1, V>(t, std::forward<F>(f),
-						traits_type::eq(std::ranges::data(t)[I], const_v<constant_v<getter<I>>(V)>));
+						traits_type::eq(std::ranges::data(t)[I], const_v<default_value_v<getter<I>>(V)>));
 				}
 			} else return false;
 		}

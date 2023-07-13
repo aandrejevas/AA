@@ -34,7 +34,7 @@ namespace aa {
 	// [0, mag)
 	template<class T, distribution_result_convertible_to<T> G>
 	AA_CONSTEXPR T int_distribution(G &g, const distribution_result_t<G> mag) {
-		return static_cast<T>((mag * static_cast<distribution_result_t<G>>(g())) >> std::numeric_limits<generator_result_t<G>>::digits);
+		return static_cast<T>((mag * static_cast<distribution_result_t<G>>(g())) >> numeric_digits_v<generator_result_t<G>>);
 	}
 
 	template<same_as_void = void, full_range_generator G>
