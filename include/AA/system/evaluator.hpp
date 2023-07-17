@@ -5,7 +5,6 @@
 #include "../algorithm/init.hpp"
 #include <charconv> // from_chars
 #include <string> // string
-#include <system_error> // errc
 #include <ranges> // data, size
 
 
@@ -22,7 +21,7 @@ namespace aa {
 		template<size_t = 0, char_range U>
 		static AA_CONSTEXPR void operator()(T &t, const U &token) {
 			// Įvykus klaidai from_chars kintamojo nemodifikuos, bet t privalo būti modifikuotas.
-			if (std::from_chars(std::ranges::data(token), get_data_end(token), t).ec != default_value_v<std::errc>) {
+			if (!is_default_value(std::from_chars(std::ranges::data(token), get_data_end(token), t).ec)) {
 				t = numeric_max;
 			}
 		}

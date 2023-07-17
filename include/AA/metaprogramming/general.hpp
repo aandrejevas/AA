@@ -53,6 +53,11 @@ namespace aa {
 	template<class T>
 	AA_CONSTEXPR const size_t numeric_digits_v = std::numeric_limits<T>::digits;
 
+	template<std::equality_comparable T>
+	AA_CONSTEXPR bool is_default_value(const T &x) {
+		return x == default_value_v<T>;
+	}
+
 
 
 	template<auto V>
