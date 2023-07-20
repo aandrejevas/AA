@@ -374,6 +374,13 @@ namespace aa {
 		return aa::apply<std::tuple_size_v<T>>(std::forward<F>(f), std::forward<A>(args)...);
 	}
 
+	template<class F, class T, class... A>
+		requires (std::invocable<F, T &, A...>)
+	AA_CONSTEXPR T &extend(T &t, F &&f, A&&... args) {
+		std::invoke(std::forward<F>(f), t, std::forward<A>(args)...);
+		return t;
+	}
+
 
 
 	template<class T>

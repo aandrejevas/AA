@@ -137,6 +137,11 @@ namespace aa {
 		return quotient<two_v<T>>(x);
 	}
 
+	template<arithmetic T>
+	AA_CONSTEXPR T redouble(const T x) {
+		return product<two_v<T>>(x);
+	}
+
 	template<class T>
 	AA_CONSTEXPR size_t size_of(const size_t n) {
 		return product<sizeof(T)>(n);
