@@ -23,7 +23,7 @@ namespace aa {
 		AA_CONSTEXPR I rend() const requires (std::bidirectional_iterator<I>) { return std::ranges::prev(begin()); }
 
 		AA_CONSTEXPR std::iter_difference_t<I> ssize() const requires (std::sized_sentinel_for<S, I>) { return last_sindex() + 1; }
-		AA_CONSTEXPR aa::iter_size_t<I> size() const requires (std::sized_sentinel_for<S, I>) { return unsign(ssize()); }
+		AA_CONSTEXPR aa::iter_size_t<I> size() const requires (std::sized_sentinel_for<S, I>) { return last_index() + 1; }
 
 		AA_CONSTEXPR std::iter_difference_t<I> last_sindex() const requires (std::sized_sentinel_for<S, I>) { return rbegin() - begin(); }
 		AA_CONSTEXPR aa::iter_size_t<I> last_index() const requires (std::sized_sentinel_for<S, I>) { return unsign(last_sindex()); }

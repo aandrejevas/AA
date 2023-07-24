@@ -60,6 +60,8 @@ namespace aa {
 
 
 
+	using byte_t = std::underlying_type_t<std::byte>;
+
 	template<auto V>
 	using constant = std::integral_constant<decltype(V), V>;
 
@@ -558,8 +560,7 @@ namespace aa {
 	//
 	// Vietoje byte negalime naudoti uint8_t, nes jei sistemoje baitas būtų ne 8 bitų, tas tipas nebus apibrėžtas.
 	template<uniquely_representable T>
-	AA_CONSTEXPR const size_t representable_values_v
-		= int_exp2(sizeof(T[numeric_digits_v<std::underlying_type_t<std::byte>>]));
+	AA_CONSTEXPR const size_t representable_values_v = int_exp2(sizeof(T[numeric_digits_v<byte_t>]));
 
 
 

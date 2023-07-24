@@ -101,6 +101,8 @@ namespace aa {
 		};
 	}
 
+
+
 	// https://en.wikipedia.org/wiki/Perfect_hash_function
 	// https://en.wikipedia.org/wiki/Hash_table
 	// Konteineris laiko savyje maišos kodus.
@@ -229,6 +231,11 @@ namespace aa {
 	protected:
 		fixed_vector<bucket_type *, M> dirty;
 	};
+
+
+
+	template<class T, size_t N, class H>
+	using fixed_small_hashes_set = fixed_hashes_set<T, N, 0, H>;
 
 	template<class T, size_t N, class H>
 	struct fixed_hashes_set<T, N, 0, H> : detail::fixed_hashes_set_base<T, N, H> {
@@ -370,6 +377,11 @@ namespace aa {
 			size_type f = numeric_max, l = numeric_min;
 		} dirty;
 	};
+
+
+
+	template<class T, size_t N, class H>
+	using fixed_fast_hashes_set = fixed_hashes_set<T, N, numeric_max, H>;
 
 	template<class T, size_t N, class H>
 	struct fixed_hashes_set<T, N, numeric_max, H> : detail::fixed_hashes_set_base<T, N, H> {

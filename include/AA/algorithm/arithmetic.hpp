@@ -189,9 +189,9 @@ namespace aa {
 	// https://graphics.stanford.edu/~seander/bithacks.html#SwappingBitsXOR
 	template<regular_unsigned_integral T, std::unsigned_integral I, std::unsigned_integral J>
 	AA_CONSTEXPR T byteswap(const T b, I i, J j) {
-		i = product<numeric_digits_v<std::underlying_type_t<std::byte>>>(i);
-		j = product<numeric_digits_v<std::underlying_type_t<std::byte>>>(j);
-		const T x = ((b >> i) ^ (b >> j)) & constant_v<T, numeric_max_v<std::underlying_type_t<std::byte>>>;
+		i = product<numeric_digits_v<byte_t>>(i);
+		j = product<numeric_digits_v<byte_t>>(j);
+		const T x = ((b >> i) ^ (b >> j)) & constant_v<T, numeric_max_v<byte_t>>;
 		return b ^ ((x << i) | (x << j));
 	}
 

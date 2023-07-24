@@ -88,7 +88,6 @@ namespace aa {
 		// Capacity
 		static AA_CONSTEVAL bool empty() { return !N; }
 		static AA_CONSTEVAL bool single() { return N == 1; }
-		static AA_CONSTEVAL difference_type ssize() { return N; }
 		static AA_CONSTEVAL size_type size() { return N; }
 		static AA_CONSTEVAL size_type max_size() { return N; }
 		static AA_CONSTEVAL size_type tuple_size() { return N; }
