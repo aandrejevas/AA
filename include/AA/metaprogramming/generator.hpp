@@ -25,16 +25,13 @@ namespace aa {
 	using distribution_result_t = next_unsigned_t<generator_result_t<G>>;
 
 	template<bits_generator G>
-	struct generator_modulus : constant<std::remove_reference_t<G>::max() - std::remove_reference_t<G>::min() + 1> {};
+	AA_CONSTEXPR const generator_result_t<G> generator_modulus_v = (std::remove_reference_t<G>::max() - std::remove_reference_t<G>::min() + 1);
 
 	template<full_range_generator G>
-	struct generator_modulus<G> : constant<cast<distribution_result_t<G>>(std::remove_reference_t<G>::max()) + 1> {};
+	AA_CONSTEXPR const distribution_result_t<G> generator_modulus_v<G> = (cast<distribution_result_t<G>>(std::remove_reference_t<G>::max()) + 1);
 
-	template<class G>
-	using generator_modulus_t = value_type_in_use_t<generator_modulus<G>>;
-
-	template<class G>
-	AA_CONSTEXPR const generator_modulus_t<G> generator_modulus_v = generator_modulus<G>::value;
+	template<bits_generator G>
+	using generator_modulus_t = const_t<generator_modulus_v<G>>;
 
 
 

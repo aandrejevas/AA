@@ -93,14 +93,14 @@ namespace aa {
 		AA_CONSTEXPR bool single() const { return !full() && r_curr == data(); }
 		AA_CONSTEXPR bool full() const { return is_full; }
 
-		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
-		AA_CONSTEXPR size_type size() const { return full() ? N : std::bit_cast<size_type>(r_curr - r_end); }
+		AA_CONSTEXPR difference_type ssize() const { return full() ? N : (r_curr - r_end); }
+		AA_CONSTEXPR size_type size() const { return unsign(ssize()); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
 		AA_CONSTEXPR difference_type last_sindex() const { return full() ? max_index() : (r_curr - data()); }
-		AA_CONSTEXPR size_type last_index() const { return std::bit_cast<size_type>(last_sindex()); }
+		AA_CONSTEXPR size_type last_index() const { return unsign(last_sindex()); }
 
 
 

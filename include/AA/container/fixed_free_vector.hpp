@@ -138,7 +138,7 @@ namespace aa {
 		AA_CONSTEXPR size_type holes_count() const {
 			if (first_hole) {
 				size_type count = 0;
-				node_type *iter = first_hole;
+				const node_type *iter = first_hole;
 				do {
 					++count;
 				} while ((iter = std::get<hole_index>(unwrap(iter))));
@@ -152,8 +152,8 @@ namespace aa {
 		AA_CONSTEXPR bool truly_empty() const { return elements.empty(); }
 		AA_CONSTEXPR bool truly_single() const { return elements.single(); }
 
-		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
-		AA_CONSTEXPR size_type size() const { return elements.size() - holes_count(); }
+		AA_CONSTEXPR difference_type ssize() const { return sign(size()); }
+		AA_CONSTEXPR size_type size() const { return true_size() - holes_count(); }
 		AA_CONSTEXPR difference_type true_ssize() const { return elements.ssize(); }
 		AA_CONSTEXPR size_type true_size() const { return elements.size(); }
 

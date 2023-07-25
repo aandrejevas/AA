@@ -50,7 +50,7 @@ namespace aa {
 
 	// L negali būti stream, bet vis tiek mums reikia tipo dėl atvejo kai A sąrašas tuščias.
 	template<auto L = '\n', class... A>
-		requires (not_output_stream<first_t<A..., const_t<L>>>)
+		requires (not_output_stream<first_or_void_t<A...>>)
 	AA_CONSTEXPR std::ostream &printl(const A&... args) {
 		return printl<L>(std::cout, args...);
 	}

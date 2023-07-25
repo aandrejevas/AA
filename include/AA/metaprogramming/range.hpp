@@ -96,15 +96,17 @@ namespace aa {
 	concept range_using_traits_type = sized_contiguous_range<T> && uses_traits_type<T>
 		&& char_traits_for<traits_type_in_use_t<T>, std::ranges::range_value_t<T>>;
 
-	// Darome prielaidą, kad char_traits yra apibrėžtas su visais tipais.
-	template<sized_contiguous_range T>
-	struct range_char_traits : std::type_identity<std::char_traits<std::ranges::range_value_t<T>>> {};
+	namespace detail {
+		// Darome prielaidą, kad char_traits yra apibrėžtas su visais tipais.
+		template<sized_contiguous_range T>
+		struct range_char_traits : std::type_identity<std::char_traits<std::ranges::range_value_t<T>>> {};
 
-	template<range_using_traits_type T>
-	struct range_char_traits<T> : std::type_identity<traits_type_in_use_t<T>> {};
+		template<range_using_traits_type T>
+		struct range_char_traits<T> : std::type_identity<traits_type_in_use_t<T>> {};
+	}
 
 	template<sized_contiguous_range T>
-	using range_char_traits_t = type_in_use_t<range_char_traits<T>>;
+	using range_char_traits_t = type_in_use_t<detail::range_char_traits<T>>;
 
 	template<class T, class U>
 	concept same_range_char_traits_as = sized_contiguous_range<T> && std::same_as<range_char_traits_t<T>, U>;

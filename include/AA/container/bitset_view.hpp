@@ -103,7 +103,7 @@ namespace aa {
 		AA_CONSTEXPR bool single() const { return std::has_single_bit(bitset); }
 
 		AA_CONSTEXPR size_type size() const { return unsign<size_type>(std::popcount(bitset)); }
-		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
+		AA_CONSTEXPR difference_type ssize() const { return sign(size()); }
 
 		static AA_CONSTEVAL size_type max_size() { return numeric_digits_v<bitset_type>; }
 		static AA_CONSTEVAL size_type max_index() { return max_size() - 1; }

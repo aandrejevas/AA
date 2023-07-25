@@ -94,7 +94,7 @@ namespace aa {
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
 		AA_CONSTEXPR difference_type last_sindex() const { return elements.rdata() - f_begin; }
-		AA_CONSTEXPR size_type last_index() const { return std::bit_cast<size_type>(last_sindex()); }
+		AA_CONSTEXPR size_type last_index() const { return unsign(last_sindex()); }
 
 
 

@@ -168,13 +168,13 @@ namespace aa {
 	template<std::unsigned_integral T>
 	AA_CONSTEXPR T min(const T x, const T y) {
 		const T d = (x - y);
-		return y + (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> numeric_digits_v<std::make_signed_t<T>>));
+		return y + (d & unsign(sign(d) >> numeric_digits_v<std::make_signed_t<T>>));
 	}
 
 	template<std::unsigned_integral T>
 	AA_CONSTEXPR T max(const T x, const T y) {
 		const T d = (x - y);
-		return x - (d & std::bit_cast<T>(std::bit_cast<std::make_signed_t<T>>(d) >> numeric_digits_v<std::make_signed_t<T>>));
+		return x - (d & unsign(sign(d) >> numeric_digits_v<std::make_signed_t<T>>));
 	}
 
 	// https://graphics.stanford.edu/~seander/bithacks.html#ReverseParallel

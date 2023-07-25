@@ -194,9 +194,9 @@ namespace aa {
 		AA_CONSTEXPR bool single() const { return r_begin == data(); }
 
 		AA_CONSTEXPR difference_type ssize() const { return r_begin - r_end; }
-		AA_CONSTEXPR size_type size() const { return std::bit_cast<size_type>(ssize()); }
+		AA_CONSTEXPR size_type size() const { return unsign(ssize()); }
 		AA_CONSTEXPR difference_type last_sindex() const { return r_begin - data(); }
-		AA_CONSTEXPR size_type last_index() const { return std::bit_cast<size_type>(last_sindex()); }
+		AA_CONSTEXPR size_type last_index() const { return unsign(last_sindex()); }
 
 		static AA_CONSTEVAL size_type max_size() { return numeric_max; }
 		static AA_CONSTEVAL size_type max_index() { return max_size() - 1; }

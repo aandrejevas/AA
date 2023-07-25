@@ -35,7 +35,7 @@ namespace aa {
 
 			// Bucket interface
 			AA_CONSTEXPR size_type index(const bucket_pointer bin) const {
-				return std::bit_cast<size_type>(bin - bins.data());
+				return unsign(bin - bins.data());
 			}
 
 			// Neturime end atitikmenų, nes tiesiog reikia naudoti default_sentinel.
@@ -147,7 +147,7 @@ namespace aa {
 				return sum;
 			} else return 0;
 		}
-		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
+		AA_CONSTEXPR difference_type ssize() const { return sign(size()); }
 
 		// Daugybos nepaverčiame į postūmio operaciją, nes kompiliavimo metu ilgiau užtruktų nustatyti ar galime daryti
 		// postūmį negu tiesiog įvykdyti daugybos operaciją, programos veikimo laikui irgi nepadėtų tokios kostrukcijos.
@@ -276,7 +276,7 @@ namespace aa {
 				return sum;
 			} else return 0;
 		}
-		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
+		AA_CONSTEXPR difference_type ssize() const { return sign(size()); }
 
 		static AA_CONSTEVAL size_type max_size() {
 			return local_iterator::max_size() * max_bucket_count();
@@ -415,7 +415,7 @@ namespace aa {
 				void { sum += this->bucket(bin).size(); });
 			return sum;
 		}
-		AA_CONSTEXPR difference_type ssize() const { return std::bit_cast<difference_type>(size()); }
+		AA_CONSTEXPR difference_type ssize() const { return sign(size()); }
 
 		static AA_CONSTEVAL size_type max_size() {
 			return local_iterator::max_size() * max_bucket_count();
