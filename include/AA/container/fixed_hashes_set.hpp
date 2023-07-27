@@ -162,7 +162,7 @@ namespace aa {
 
 		// Bucket interface
 		static AA_CONSTEVAL size_type max_bucket_index() { return M - 1; }
-		AA_CONSTEXPR size_type last_bucket_index() const { return dirty.last_index(); }
+		AA_CONSTEXPR size_type last_bucket_index() const { return dirty.indexl(); }
 
 		static AA_CONSTEVAL size_type max_bucket_count() { return M; }
 		AA_CONSTEXPR size_type bucket_count() const { return dirty.size(); }

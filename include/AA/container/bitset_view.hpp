@@ -3,7 +3,6 @@
 #include "../metaprogramming/general.hpp"
 #include "../algorithm/arithmetic.hpp"
 #include <ranges> // view_base
-#include <variant> // monostate
 #include <iterator> // default_sentinel_t, default_sentinel, forward_iterator_tag
 
 

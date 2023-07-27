@@ -27,6 +27,11 @@ namespace aa {
 
 
 		// Element access
+		template<size_type I>
+		AA_CONSTEXPR reference get() requires (I < N) { return get(I); }
+		template<size_type I>
+		AA_CONSTEXPR const_reference get() const requires (I < N) { return get(I); }
+
 		AA_CONSTEXPR reference operator[](const size_type pos) { return get(pos); }
 		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return get(pos); }
 
@@ -92,10 +97,11 @@ namespace aa {
 		AA_CONSTEXPR size_type size() const { return unsign(ssize()); }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
+		static AA_CONSTEVAL size_type tuple_size() { return N; }
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
-		AA_CONSTEXPR difference_type last_sindex() const { return r_begin - data(); }
-		AA_CONSTEXPR size_type last_index() const { return unsign(last_sindex()); }
+		AA_CONSTEXPR difference_type sindexl() const { return r_begin - data(); }
+		AA_CONSTEXPR size_type indexl() const { return unsign(sindexl()); }
 
 
 

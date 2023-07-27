@@ -114,7 +114,7 @@ namespace aa {
 		const std::ranges::sentinel_t<R> last = get_rbegin(r);
 		while (first != last)
 			std::invoke(f1, *first++);
-		return std::invoke(f2, *first);
+		return std::invoke(std::forward<F2>(f2), *first);
 	}
 
 	template<std::ranges::input_range R,
@@ -122,7 +122,7 @@ namespace aa {
 	AA_CONSTEXPR void unsafe_for_each_peel_first(R &&r, F1 &&f1, F2 &&f2) {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		const std::ranges::sentinel_t<R> last = get_rbegin(r);
-		std::invoke(f1, *first);
+		std::invoke(std::forward<F1>(f1), *first);
 		while (first != last)
 			std::invoke(f2, *++first);
 	}

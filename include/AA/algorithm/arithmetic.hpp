@@ -36,14 +36,14 @@ namespace aa {
 		return aa::map(aa::norm(value, mag1), mag2);
 	}
 
-	template<size_t V, std::floating_point T>
-		requires (V == 0)
+	template<placeholder V, std::floating_point T>
+		requires (is_one(std::is_placeholder_v<V>))
 	AA_CONSTEXPR T norm_map(const T value, const T start1, const T mag1, const T mag2) {
 		return aa::map(aa::norm(value, start1, mag1), mag2);
 	}
 
-	template<size_t V, std::floating_point T>
-		requires (V == 1)
+	template<placeholder V, std::floating_point T>
+		requires (is_two(std::is_placeholder_v<V>))
 	AA_CONSTEXPR T norm_map(const T value, const T mag1, const T start2, const T mag2) {
 		return aa::map(aa::norm(value, mag1), start2, mag2);
 	}

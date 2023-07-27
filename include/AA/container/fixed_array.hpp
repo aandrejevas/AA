@@ -8,7 +8,7 @@
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Array_data_structure
-	template<trivially_copyable T, size_t N>
+	template<class T, size_t N>
 	struct fixed_array {
 		// Member types
 		using value_type = T;
@@ -92,7 +92,7 @@ namespace aa {
 		static AA_CONSTEVAL size_type size() { return N; }
 		static AA_CONSTEVAL size_type max_size() { return N; }
 		static AA_CONSTEVAL size_type tuple_size() { return N; }
-		static AA_CONSTEVAL size_type last_index() { return N - 1; }
+		static AA_CONSTEVAL size_type indexl() { return N - 1; }
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
 
@@ -109,7 +109,7 @@ namespace aa {
 
 	protected:
 		// Šitas kintamasis turi būti paslėptas, nes kitaip jis suteiktų galimybę naudotojui keisti const elementus.
-		value_type *const r_begin = elements.data() + last_index();
+		value_type *const r_begin = elements.data() + indexl();
 	};
 
 
@@ -190,13 +190,13 @@ namespace aa {
 
 
 		// Capacity
-		AA_CONSTEXPR bool empty() const { return r_begin == r_end; }
+		AA_CONSTEXPR bool empty() const { return r_begin < data(); }
 		AA_CONSTEXPR bool single() const { return r_begin == data(); }
 
-		AA_CONSTEXPR difference_type ssize() const { return r_begin - r_end; }
-		AA_CONSTEXPR size_type size() const { return unsign(ssize()); }
-		AA_CONSTEXPR difference_type last_sindex() const { return r_begin - data(); }
-		AA_CONSTEXPR size_type last_index() const { return unsign(last_sindex()); }
+		AA_CONSTEXPR difference_type ssize() const { return sindexl() + 1; }
+		AA_CONSTEXPR size_type size() const { return indexl() + 1; }
+		AA_CONSTEXPR difference_type sindexl() const { return r_begin - data(); }
+		AA_CONSTEXPR size_type indexl() const { return unsign(sindexl()); }
 
 		static AA_CONSTEVAL size_type max_size() { return numeric_max; }
 		static AA_CONSTEVAL size_type max_index() { return max_size() - 1; }
@@ -204,6 +204,8 @@ namespace aa {
 
 
 		// Special member functions
+		AA_CONSTEXPR fixed_array()
+			: r_begin{nullptr} {}
 		AA_CONSTEXPR fixed_array(alloc_array<value_type> &&o)
 			: elements{std::move(o.elements)}, r_begin{o.r_begin} {}
 		AA_CONSTEXPR fixed_array(const size_t size)

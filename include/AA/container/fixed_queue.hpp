@@ -87,14 +87,14 @@ namespace aa {
 		AA_CONSTEXPR bool single() const { return f_begin == elements.rdata(); }
 		AA_CONSTEXPR bool full() const { return elements.full(); }
 
-		AA_CONSTEXPR difference_type ssize() const { return last_sindex() + 1; }
-		AA_CONSTEXPR size_type size() const { return last_index() + 1; }
+		AA_CONSTEXPR difference_type ssize() const { return sindexl() + 1; }
+		AA_CONSTEXPR size_type size() const { return indexl() + 1; }
 
 		static AA_CONSTEVAL size_type max_size() { return N; }
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
-		AA_CONSTEXPR difference_type last_sindex() const { return elements.rdata() - f_begin; }
-		AA_CONSTEXPR size_type last_index() const { return unsign(last_sindex()); }
+		AA_CONSTEXPR difference_type sindexl() const { return elements.rdata() - f_begin; }
+		AA_CONSTEXPR size_type indexl() const { return unsign(sindexl()); }
 
 
 

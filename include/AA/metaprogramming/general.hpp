@@ -9,6 +9,7 @@
 // • <limits>, failas įterptas, kad išeitų lengvai nautotis pamatinių tipų savybėmis.
 // • <bit>, failas įterptas, kad išeitų lengvai manipuliuoti pamatinių tipų bitus.
 // • <functional>, failas įterptas, kad išeitų lengvai protauti apie funkcijų objektus.
+// • <variant> (<compare>), failas įterptas, kad turėti alternatyvą nesaugiems union tipams.
 // Failai paminėti skliausteliose prie įterpiamo failo nurodo kokie failai yra įterpiami pačio įterpiamo failo.
 
 #include "../preprocessor/general.hpp"
@@ -19,8 +20,9 @@
 #include <limits> // numeric_limits
 #include <array> // array
 #include <bit> // countl_zero, has_single_bit, bit_cast
-#include <utility> // declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence, index_sequence_for
-#include <functional> // function, invoke, _1
+#include <utility> // forward, declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence, index_sequence_for
+#include <functional> // function, invoke, _1, is_placeholder_v
+#include <variant> // monostate
 
 
 
@@ -37,6 +39,12 @@ namespace aa {
 
 	template<uses_value_type T>
 	using value_type_in_use_t = typename std::remove_reference_t<T>::value_type;
+
+	template<class T>
+	concept complete = requires { sizeof(T); };
+
+	template<class T>
+	concept incomplete = !complete<T>;
 
 
 
@@ -129,6 +137,9 @@ namespace aa {
 			[[no_unique_address]] value_type value;
 		};
 
+		template<size_t I, incomplete T>
+		struct tuple_unit<I, T> : tuple_unit<I, std::monostate> {};
+
 		template<class, class...>
 		struct tuple_base;
 
@@ -149,8 +160,6 @@ namespace aa {
 	template<size_t I, class T>
 	using tuple_unit_t = value_type_in_use_t<detail::tuple_unit<I, T>>;
 
-	// https://ldionne.com/2015/11/29/efficient-parameter-pack-indexing/
-	// GCC bug: neleidžia vietoje decltype naudoti const_t.
 	template<size_t I, class... T>
 	using type_pack_element_t = type_in_use_t<detail::type_pack_element<I, T...>>;
 
@@ -367,6 +376,9 @@ namespace aa {
 
 	template<class T>
 	concept same_as_void = std::is_void_v<T>;
+
+	template<class T>
+	concept placeholder = !!std::is_placeholder_v<T>;
 
 	template<class T>
 	concept pointer = std::is_pointer_v<T>;
@@ -696,6 +708,11 @@ namespace aa {
 	template<std::equality_comparable T>
 	AA_CONSTEXPR bool is_one(const T &x) {
 		return x == one_v<T>;
+	}
+
+	template<std::equality_comparable T>
+	AA_CONSTEXPR bool is_two(const T &x) {
+		return x == two_v<T>;
 	}
 #pragma GCC diagnostic pop
 

@@ -99,8 +99,8 @@ namespace aa {
 		static AA_CONSTEVAL size_type max_size() { return N; }
 		static AA_CONSTEVAL size_type max_index() { return N - 1; }
 
-		AA_CONSTEXPR difference_type last_sindex() const { return full() ? max_index() : (r_curr - data()); }
-		AA_CONSTEXPR size_type last_index() const { return unsign(last_sindex()); }
+		AA_CONSTEXPR difference_type sindexl() const { return full() ? max_index() : (r_curr - data()); }
+		AA_CONSTEXPR size_type indexl() const { return unsign(sindexl()); }
 
 
 
