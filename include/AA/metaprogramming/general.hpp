@@ -140,6 +140,15 @@ namespace aa {
 		template<size_t I, incomplete T>
 		struct tuple_unit<I, T> : tuple_unit<I, std::monostate> {};
 
+		template<size_t I, class T, T V>
+		struct tuple_unit<I, std::integral_constant<T, V>> {
+			// Member types
+			using value_type = T;
+
+			// Member objects
+			[[no_unique_address]] value_type value = V;
+		};
+
 		template<class, class...>
 		struct tuple_base;
 
@@ -156,9 +165,6 @@ namespace aa {
 		struct type_pack_element : std::invoke_result_t<decltype([]<class U>(const tuple_unit<I, U> &&) consteval ->
 			std::type_identity<U> { return default_value; }), tuple_base<std::index_sequence_for<T...>, T...>> {};
 	}
-
-	template<size_t I, class T>
-	using tuple_unit_t = value_type_in_use_t<detail::tuple_unit<I, T>>;
 
 	template<size_t I, class... T>
 	using type_pack_element_t = type_in_use_t<detail::type_pack_element<I, T...>>;
@@ -178,10 +184,10 @@ namespace aa {
 		using size_type = size_t;
 
 		template<size_type I>
-		using value_type = type_pack_element_t<I, T...>;
+		using unit_type = detail::tuple_unit<I, type_pack_element_t<I, T...>>;
 
 		template<size_type I>
-		using unit_type = detail::tuple_unit<I, value_type<I>>;
+		using value_type = value_type_in_use_t<unit_type<I>>;
 
 		// Member constants
 		template<class U>
@@ -550,9 +556,10 @@ namespace aa {
 
 
 
-	template<class T, size_t N>
-	using tuple_array = type_in_use_t<const_t<apply<N>([]<size_t... I> ->
-		std::type_identity<tuple<tuple_unit_t<I, T>...>> { return default_value; })>>;
+	// Reikia using šio, nes testavimui reikėjo sukurti tuple su 100 elementų ir nėra variantas turėti 100 usingų.
+	template<template<class...> class T, template<size_t> class F, size_t N>
+	using filled_t = type_in_use_t<const_t<apply<N>([]<size_t... I> ->
+		std::type_identity<T<F<I>...>> { return default_value; })>>;
 
 	template<class T>
 	concept new_tuple_like = apply<std::remove_cvref_t<T>::tuple_size()>(
