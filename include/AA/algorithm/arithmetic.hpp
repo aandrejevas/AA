@@ -7,6 +7,58 @@
 
 namespace aa {
 
+	template<arithmetic T>
+	struct interval {
+		// Member types
+		using value_type = T;
+		using size_type = size_t;
+		using reference = value_type &;
+		using const_reference = const value_type &;
+
+
+
+		// Operations
+		template<size_type I>
+		AA_CONSTEXPR reference get() requires (I < tuple_size()) {
+			return const_cast<reference>(std::as_const(*this).get<I>());
+		}
+		template<size_type I>
+		AA_CONSTEXPR const_reference get() const requires (I < tuple_size()) {
+			/**/ if constexpr (is_zero(I))	return min;
+			else if constexpr (is_one(I))	return max;
+		}
+
+		AA_CONSTEXPR bool empty() const {
+			return min > max;
+		}
+
+		AA_CONSTEXPR bool degenerate() const {
+			return min == max;
+		}
+
+		AA_CONSTEXPR value_type size() const {
+			return max - min;
+		}
+		static AA_CONSTEVAL size_type tuple_size() { return 2; }
+
+		AA_CONSTEXPR void expand(const value_type x) {
+			if (min > x) min = x;
+			if (max < x) max = x;
+		}
+
+		AA_CONSTEXPR void reset() {
+			min = numeric_max;
+			max = numeric_min;
+		}
+
+
+
+		// Member objects
+		value_type min = numeric_max, max = numeric_min;
+	};
+
+
+
 	template<std::floating_point T>
 	AA_CONSTEXPR T norm(const T value, const T mag) {
 		return value / mag;
@@ -36,14 +88,12 @@ namespace aa {
 		return aa::map(aa::norm(value, mag1), mag2);
 	}
 
-	template<placeholder V, std::floating_point T>
-		requires (is_one(std::is_placeholder_v<V>))
+	template<placeholder<1> V, std::floating_point T>
 	AA_CONSTEXPR T norm_map(const T value, const T start1, const T mag1, const T mag2) {
 		return aa::map(aa::norm(value, start1, mag1), mag2);
 	}
 
-	template<placeholder V, std::floating_point T>
-		requires (is_two(std::is_placeholder_v<V>))
+	template<placeholder<2> V, std::floating_point T>
 	AA_CONSTEXPR T norm_map(const T value, const T mag1, const T start2, const T mag2) {
 		return aa::map(aa::norm(value, mag1), start2, mag2);
 	}

@@ -96,38 +96,30 @@ namespace aa {
 
 		AA_CONSTEXPR pointer get(const size_type pos) { return get_elem(elements.data(pos)); }
 		AA_CONSTEXPR const_pointer get(const size_type pos) const { return get_elem(elements.data(pos)); }
-		AA_CONSTEXPR const_pointer cget(const size_type pos) const { return get(pos); }
 
 		AA_CONSTEXPR pointer rget(const size_type pos) { return get_elem(elements.rdata(pos)); }
 		AA_CONSTEXPR const_pointer rget(const size_type pos) const { return get_elem(elements.rdata(pos)); }
-		AA_CONSTEXPR const_pointer crget(const size_type pos) const { return rget(pos); }
 
 		AA_CONSTEXPR pointer front() { return get_elem(elements.data()); }
 		AA_CONSTEXPR const_pointer front() const { return get_elem(elements.data()); }
-		AA_CONSTEXPR const_pointer cfront() const { return front(); }
 
 		AA_CONSTEXPR pointer back() { return get_elem(elements.rdata()); }
 		AA_CONSTEXPR const_pointer back() const { return get_elem(elements.rdata()); }
-		AA_CONSTEXPR const_pointer cback() const { return back(); }
 
 
 
 		// Iterators
 		AA_CONSTEXPR iterator begin() { return {elements.begin()}; }
 		AA_CONSTEXPR const_iterator begin() const { return {elements.begin()}; }
-		AA_CONSTEXPR const_iterator cbegin() const { return begin(); }
 
 		AA_CONSTEXPR iterator end() { return {elements.end()}; }
 		AA_CONSTEXPR const_iterator end() const { return {elements.end()}; }
-		AA_CONSTEXPR const_iterator cend() const { return end(); }
 
 		AA_CONSTEXPR iterator rbegin() { return {elements.rbegin()}; }
 		AA_CONSTEXPR const_iterator rbegin() const { return {elements.rbegin()}; }
-		AA_CONSTEXPR const_iterator crbegin() const { return rbegin(); }
 
 		AA_CONSTEXPR iterator rend() { return {elements.rend()}; }
 		AA_CONSTEXPR const_iterator rend() const { return {elements.rend()}; }
-		AA_CONSTEXPR const_iterator crend() const { return rend(); }
 
 
 
@@ -149,7 +141,6 @@ namespace aa {
 		AA_CONSTEXPR bool empty() const { return elements.empty(); }
 		AA_CONSTEXPR bool single() const { return elements.single(); }
 
-		AA_CONSTEXPR difference_type ssize_wo_holes() const { return sign(size()); }
 		AA_CONSTEXPR size_type size_wo_holes() const { return size() - holes_count(); }
 		AA_CONSTEXPR difference_type ssize() const { return elements.ssize(); }
 		AA_CONSTEXPR size_type size() const { return elements.size(); }

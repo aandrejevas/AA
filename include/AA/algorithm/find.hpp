@@ -109,7 +109,7 @@ namespace aa {
 
 	template<std::ranges::input_range R,
 		std::indirectly_unary_invocable<std::ranges::iterator_t<R>> F1, std::indirectly_unary_invocable<std::ranges::iterator_t<R>> F2>
-	AA_CONSTEXPR std::invoke_result_t<F2 &, std::ranges::range_reference_t<R>> unsafe_for_each_peel_last(R &&r, F1 &&f1, F2 &&f2) {
+	AA_CONSTEXPR std::invoke_result_t<F2, std::ranges::range_reference_t<R>> unsafe_for_each_peel_last(R &&r, F1 &&f1, F2 &&f2) {
 		std::ranges::iterator_t<R> first = std::ranges::begin(r);
 		const std::ranges::sentinel_t<R> last = get_rbegin(r);
 		while (first != last)

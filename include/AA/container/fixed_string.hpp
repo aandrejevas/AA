@@ -44,23 +44,18 @@ namespace aa {
 
 		AA_CONSTEXPR reference get(const size_type pos) { return *data(pos); }
 		AA_CONSTEXPR const_reference get(const size_type pos) const { return *data(pos); }
-		AA_CONSTEXPR const_reference cget(const size_type pos) const { return get(pos); }
 
 		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
 		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
-		AA_CONSTEXPR const_pointer cdata(const size_type pos) const { return data(pos); }
 
 		AA_CONSTEXPR pointer data() { return elements.data(); }
 		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
-		AA_CONSTEXPR const_pointer cdata() const { return data(); }
 
 		AA_CONSTEXPR reference front() { return elements.front(); }
 		AA_CONSTEXPR const_reference front() const { return elements.front(); }
-		AA_CONSTEXPR const_reference cfront() const { return front(); }
 
 		AA_CONSTEXPR reference back() { return elements.back(); }
 		AA_CONSTEXPR const_reference back() const { return elements.back(); }
-		AA_CONSTEXPR const_reference cback() const { return back(); }
 
 		AA_CONSTEXPR operator view_type() const { return view_type{data(), N}; }
 
@@ -69,19 +64,15 @@ namespace aa {
 		// Iterators
 		AA_CONSTEXPR iterator begin() { return elements.begin(); }
 		AA_CONSTEXPR const_iterator begin() const { return elements.begin(); }
-		AA_CONSTEXPR const_iterator cbegin() const { return begin(); }
 
 		AA_CONSTEXPR iterator end() { return elements.end(); }
 		AA_CONSTEXPR const_iterator end() const { return elements.end(); }
-		AA_CONSTEXPR const_iterator cend() const { return end(); }
 
 		AA_CONSTEXPR reverse_iterator rbegin() { return elements.rbegin(); }
 		AA_CONSTEXPR const_reverse_iterator rbegin() const { return elements.rbegin(); }
-		AA_CONSTEXPR const_reverse_iterator crbegin() const { return rbegin(); }
 
 		AA_CONSTEXPR reverse_iterator rend() { return elements.rend(); }
 		AA_CONSTEXPR const_reverse_iterator rend() const { return elements.rend(); }
-		AA_CONSTEXPR const_reverse_iterator crend() const { return rend(); }
 
 
 

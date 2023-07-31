@@ -48,7 +48,6 @@ namespace aa {
 		AA_CONSTEXPR bool empty() const { return elements.empty(); }
 		AA_CONSTEXPR bool single() const { return elements.single(); }
 
-		AA_CONSTEXPR difference_type ssize_wo_holes() const { return sign(size()); }
 		AA_CONSTEXPR size_type size_wo_holes() const { return size() - holes_count(); }
 		AA_CONSTEXPR difference_type ssize() const { return elements.ssize(); }
 		AA_CONSTEXPR size_type size() const { return elements.size(); }

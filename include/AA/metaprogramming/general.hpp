@@ -377,8 +377,8 @@ namespace aa {
 	template<class T>
 	concept same_as_void = std::is_void_v<T>;
 
-	template<class T>
-	concept placeholder = !!std::is_placeholder_v<T>;
+	template<class T, size_t I = numeric_max>
+	concept placeholder = (is_numeric_max(I) ? (!!std::is_placeholder_v<T>) : (std::is_placeholder_v<T> == I));
 
 	template<class T>
 	concept pointer = std::is_pointer_v<T>;

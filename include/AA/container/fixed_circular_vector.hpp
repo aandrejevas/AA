@@ -29,62 +29,48 @@ namespace aa {
 
 		AA_CONSTEXPR reference get(const size_type pos) { return *data(pos); }
 		AA_CONSTEXPR const_reference get(const size_type pos) const { return *data(pos); }
-		AA_CONSTEXPR const_reference cget(const size_type pos) const { return get(pos); }
 
 		AA_CONSTEXPR reference rget(const size_type pos) { return *rdata(pos); }
 		AA_CONSTEXPR const_reference rget(const size_type pos) const { return *rdata(pos); }
-		AA_CONSTEXPR const_reference crget(const size_type pos) const { return rget(pos); }
 
 		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
 		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
-		AA_CONSTEXPR const_pointer cdata(const size_type pos) const { return data(pos); }
 
 		AA_CONSTEXPR pointer rdata(const size_type pos) { return rdata() - pos; }
 		AA_CONSTEXPR const_pointer rdata(const size_type pos) const { return rdata() - pos; }
-		AA_CONSTEXPR const_pointer crdata(const size_type pos) const { return rdata(pos); }
 
 		AA_CONSTEXPR pointer data() { return elements.data(); }
 		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
-		AA_CONSTEXPR const_pointer cdata() const { return data(); }
 
 		AA_CONSTEXPR pointer rdata() { return full() ? r_begin : r_curr; }
 		AA_CONSTEXPR const_pointer rdata() const { return full() ? r_begin : r_curr; }
-		AA_CONSTEXPR const_pointer crdata() const { return rdata(); }
 
 		AA_CONSTEXPR pointer tdata() { return r_curr; }
 		AA_CONSTEXPR const_pointer tdata() const { return r_curr; }
-		AA_CONSTEXPR const_pointer ctdata() const { return tdata(); }
 
 		AA_CONSTEXPR reference front() { return *data(); }
 		AA_CONSTEXPR const_reference front() const { return *data(); }
-		AA_CONSTEXPR const_reference cfront() const { return front(); }
 
 		AA_CONSTEXPR reference back() { return *rdata(); }
 		AA_CONSTEXPR const_reference back() const { return *rdata(); }
-		AA_CONSTEXPR const_reference cback() const { return back(); }
 
 		AA_CONSTEXPR reference top() { return *tdata(); }
 		AA_CONSTEXPR const_reference top() const { return *tdata(); }
-		AA_CONSTEXPR const_reference ctop() const { return top(); }
 
 
 
 		// Iterators
 		AA_CONSTEXPR iterator begin() { return data(); }
 		AA_CONSTEXPR const_iterator begin() const { return data(); }
-		AA_CONSTEXPR const_iterator cbegin() const { return begin(); }
 
 		AA_CONSTEXPR iterator end() { return rdata() + 1; }
 		AA_CONSTEXPR const_iterator end() const { return rdata() + 1; }
-		AA_CONSTEXPR const_iterator cend() const { return end(); }
 
 		AA_CONSTEXPR iterator rbegin() { return rdata(); }
 		AA_CONSTEXPR const_iterator rbegin() const { return rdata(); }
-		AA_CONSTEXPR const_iterator crbegin() const { return rbegin(); }
 
 		AA_CONSTEXPR iterator rend() { return r_end; }
 		AA_CONSTEXPR const_iterator rend() const { return r_end; }
-		AA_CONSTEXPR const_iterator crend() const { return rend(); }
 
 
 
