@@ -174,6 +174,7 @@ namespace aa {
 		size_constant<I> { return default_value; }), detail::tuple_base<std::index_sequence_for<T...>, T...>>::value;
 
 	// https://danlark.org/2020/04/13/why-is-stdpair-broken/
+	// https://en.wikipedia.org/wiki/Tuple
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpadded"
 	template<class... T>
@@ -189,6 +190,12 @@ namespace aa {
 		template<size_type I>
 		using value_type = value_type_in_use_t<unit_type<I>>;
 
+		template<size_type I>
+		using reference = value_type<I> &;
+
+		template<size_type I>
+		using const_reference = const value_type<I> &;
+
 		// Member constants
 		template<class U>
 		static AA_CONSTEXPR const size_type index = type_pack_index_v<U, T...>;
@@ -200,16 +207,16 @@ namespace aa {
 
 		// Element access
 		template<size_type I>
-		AA_CONSTEXPR value_type<I> &get() { return unit_type<I>::value; }
+		AA_CONSTEXPR reference<I> get() { return unit_type<I>::value; }
 
 		template<size_type I>
-		AA_CONSTEXPR const value_type<I> &get() const { return unit_type<I>::value; }
+		AA_CONSTEXPR const_reference<I> get() const { return unit_type<I>::value; }
 
 		template<class U>
-		AA_CONSTEXPR value_type<index<U>> &get() { return get<index<U>>(); }
+		AA_CONSTEXPR reference<index<U>> get() { return get<index<U>>(); }
 
 		template<class U>
-		AA_CONSTEXPR const value_type<index<U>> &get() const { return get<index<U>>(); }
+		AA_CONSTEXPR const_reference<index<U>> get() const { return get<index<U>>(); }
 	};
 
 	template<class... T>
@@ -556,10 +563,10 @@ namespace aa {
 
 
 
-	// Reikia using šio, nes testavimui reikėjo sukurti tuple su 100 elementų ir nėra variantas turėti 100 usingų.
-	template<template<class...> class T, template<size_t> class F, size_t N>
+	// Reikia using šio, nes testavimui reikėjo sukurti tuple su 100 elementų ir nėra variantas turėti 100 using'ų.
+	template<template<class...> class T, auto F, size_t N>
 	using filled_t = type_in_use_t<const_t<apply<N>([]<size_t... I> ->
-		std::type_identity<T<F<I>...>> { return default_value; })>>;
+		std::type_identity<T<type_in_use_t<const_t<invoke<I>(F)>>...>> { return default_value; })>>;
 
 	template<class T>
 	concept new_tuple_like = apply<std::remove_cvref_t<T>::tuple_size()>(
