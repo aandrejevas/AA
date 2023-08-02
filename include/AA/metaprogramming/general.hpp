@@ -14,7 +14,7 @@
 
 #include "../preprocessor/general.hpp"
 #include <cstddef> // byte, size_t
-#include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
+#include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t, uintptr_t
 #include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t
 #include <concepts> // convertible_to, same_as, default_initializable, semiregular, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, assignable_from, integral, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
@@ -46,6 +46,9 @@ namespace aa {
 	template<class T>
 	concept incomplete = !complete<T>;
 
+	template<class T>
+	concept pointer = std::is_pointer_v<T>;
+
 
 
 	namespace detail {
@@ -56,7 +59,10 @@ namespace aa {
 
 		struct numeric_max_getter {
 			template<class T>
-			AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::max(); }
+			AA_CONSTEVAL operator T() const {
+				if constexpr (pointer<T>)	return std::bit_cast<T>(cast<uintptr_t>(*this));
+				else						return std::numeric_limits<T>::max();
+			}
 		};
 
 		struct numeric_min_getter {
@@ -394,9 +400,6 @@ namespace aa {
 	concept placeholder = (is_numeric_max(I) ? (!!std::is_placeholder_v<T>) : (std::is_placeholder_v<T> == I));
 
 	template<class T>
-	concept pointer = std::is_pointer_v<T>;
-
-	template<class T>
 	concept lvalue_reference = std::is_lvalue_reference_v<T>;
 
 	template<class T>
@@ -404,6 +407,9 @@ namespace aa {
 
 	template<class T>
 	concept arithmetic = std::is_arithmetic_v<T>;
+
+	template<class T>
+	concept regular_scalar = arithmetic<T> || pointer<T>;
 
 	template<class T>
 	concept not_const_arithmetic = not_const<T> && arithmetic<T>;

@@ -107,7 +107,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Hash_table
 	// Konteineris laiko savyje maišos kodus.
 	// Neturi klasė iteratoriu, nes nežinome, kurie buckets naudojami, dirty regione taip pat ne visi naudojami.
-	template<regular_unsigned_integral T, size_t N, size_t M = 0, class H = generic_hash<>>
+	template<regular_unsigned_integral T, size_t N, size_t M, class H = generic_hash<>>
 		requires (N >= M || is_numeric_max(M))
 	struct fixed_hashes_set : detail::fixed_hashes_set_base<T, N, H> {
 		// Member types
@@ -234,7 +234,7 @@ namespace aa {
 
 
 
-	template<class T, size_t N, class H>
+	template<class T, size_t N, class H = generic_hash<>>
 	using fixed_small_hashes_set = fixed_hashes_set<T, N, 0, H>;
 
 	template<class T, size_t N, class H>
@@ -251,10 +251,10 @@ namespace aa {
 
 		// Capacity
 		AA_CONSTEXPR bool empty() const {
-			return is_numeric_min(dirty.l);
+			return dirty.empty();
 		}
 		AA_CONSTEXPR bool single_bucket_dirty() const {
-			return dirty.f == dirty.l;
+			return dirty.degenerate();
 		}
 		AA_CONSTEXPR bool single() const {
 			return single_bucket_dirty() && bucket(this->bins[dirty.f]).size() == 1;
@@ -373,14 +373,12 @@ namespace aa {
 
 		// Member objects
 	protected:
-		struct dirty_region_type {
-			size_type f = numeric_max, l = numeric_min;
-		} dirty;
+		interval<size_type, 0, max_bucket_index()> dirty;
 	};
 
 
 
-	template<class T, size_t N, class H>
+	template<class T, size_t N, class H = generic_hash<>>
 	using fixed_fast_hashes_set = fixed_hashes_set<T, N, numeric_max, H>;
 
 	template<class T, size_t N, class H>

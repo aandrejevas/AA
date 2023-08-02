@@ -197,13 +197,14 @@ namespace aa {
 
 
 	// https://en.wikipedia.org/wiki/Interval_(mathematics)
-	template<arithmetic T, T MIN = numeric_min, T MAX = numeric_max>
+	template<regular_scalar T, T MIN = numeric_min, T MAX = numeric_max>
 		requires (MIN < MAX)
 	struct interval : pair<constant<MAX>, constant<MIN>> {
 		// Member types
 		using value_type = T;
 		using reference = value_type &;
 		using const_reference = const value_type &;
+		using difference_type = type_pack_element_t<!pointer<value_type>, ptrdiff_t, value_type>;
 
 
 
@@ -213,14 +214,22 @@ namespace aa {
 		AA_CONSTEXPR const_reference min() const { return get_0(*this); }
 		AA_CONSTEXPR const_reference max() const { return get_1(*this); }
 
+		AA_CONSTEXPR bool min_eq(const value_type x) const { return min() == x; }
+		AA_CONSTEXPR bool max_eq(const value_type x) const { return max() == x; }
+
+		AA_CONSTEXPR bool open_contains(const value_type x) const { return min() < x && x < max(); }
+		AA_CONSTEXPR bool closed_contains(const value_type x) const { return min() <= x && x <= max(); }
+		AA_CONSTEXPR bool left_open_contains(const value_type x) const { return min() < x && x <= max(); }
+		AA_CONSTEXPR bool right_open_contains(const value_type x) const { return min() <= x && x < max(); }
+
 		AA_CONSTEXPR bool empty() const { return min() > max(); }
 		AA_CONSTEXPR bool degenerate() const { return min() == max(); }
 		AA_CONSTEXPR bool left_full() const { return min() == MIN; }
 		AA_CONSTEXPR bool right_full() const { return max() == MAX; }
 		AA_CONSTEXPR bool full() const { return left_full() && right_full(); }
 
-		AA_CONSTEXPR value_type diameter() const { return max() - min(); }
-		AA_CONSTEXPR value_type radius() const { return halve(diameter()); }
+		AA_CONSTEXPR difference_type diameter() const { return max() - min(); }
+		AA_CONSTEXPR difference_type radius() const { return halve(diameter()); }
 		AA_CONSTEXPR value_type centre() const { return std::midpoint(min(), max()); }
 
 
@@ -228,6 +237,10 @@ namespace aa {
 		// Modifiers
 		AA_CONSTEXPR bool left_shrink(const value_type x) { return (min() < x) ? (min() = x, true) : false; }
 		AA_CONSTEXPR bool right_shrink(const value_type x) { return (x < max()) ? (max() = x, true) : false; }
+
+		AA_CONSTEXPR bool shrink(const value_type x1, const value_type x2) {
+			return left_shrink(x1) | right_shrink(x2);
+		}
 
 		AA_CONSTEXPR bool left_expand(const value_type x) { return (x < min()) ? (min() = x, true) : false; }
 		AA_CONSTEXPR bool right_expand(const value_type x) { return (max() < x) ? (max() = x, true) : false; }
