@@ -304,10 +304,10 @@ namespace aa {
 				dirty.reset(this->bins.data(), this->bins.rdata());
 
 			} else if (f_not_dirty) {
-				while (!this->bucket(++dirty.min()).empty());
+				while (this->bucket(++dirty.min()).empty());
 
 			} else if (l_not_dirty) {
-				while (!this->bucket(--dirty.max()).empty());
+				while (this->bucket(--dirty.max()).empty());
 			}
 		}
 
