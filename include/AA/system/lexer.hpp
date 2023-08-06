@@ -4,6 +4,7 @@
 #include "../metaprogramming/io.hpp"
 #include "../algorithm/hash.hpp"
 #include <string> // string
+#include <istream> // istream
 
 
 
@@ -14,8 +15,7 @@ namespace aa {
 		VALUE, SKIP_VALUE
 	};
 
-	template<instance_of_twnttp<string_perfect_hash> H>
-	struct lexer_config : H::pack_type {
+	struct lexer_config {
 		// Special member functions
 		AA_CONSTEXPR lexer_config(const size_t r1 = 64, const size_t r2 = 64) {
 			token.reserve(r1);
@@ -24,61 +24,40 @@ namespace aa {
 
 
 
-		// Member types
-		using hasher_type = H;
-
-	protected:
-		template<not_const_and_instance_of_twttp<lexer_config>, class>
-		friend struct lexer;
-
-
-
 		// Member objects
 		lexing_state state = lexing_state::BEFORE_KEY;
 		std::string token, whitespace;
 	};
 
-	// Lexing parameters
+	// https://en.wikipedia.org/wiki/Lexical_analysis
 	// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
 	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
-	template<not_const_and_instance_of_twttp<lexer_config> CONFIG, class CONSUMER>
-	struct lexer {
-		// Member types
-		using config_type = std::remove_reference_t<CONFIG>;
-		using consumer_type = std::remove_cvref_t<CONSUMER>;
-		using hasher_type = typename config_type::hasher_type;
+	//
+	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
+	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
+	template<instance_of<string_perfect_hash<>> auto H, ref_convertible_to<std::istream &> FILE, wo_ref_same_as<lexer_config> CONFIG, invocable_constifier<std::tuple_size_v<const_t<H>>, const std::string &> CONSUMER>
+	AA_CONSTEXPR void lex(FILE &&_file, CONFIG &&config, CONSUMER &&consumer) {
+		// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
+		std::istream &file = cast<std::istream &>(_file);
+		if (file.peek() == traits_type_in_use_t<std::istream>::eof())
+			return;
 
+		// Lexing parameters
+		constifier_func_t<CONSUMER> target;
 
-
-		// Special member functions
-		template<constructible_to<CONFIG> C1 = CONFIG, constructible_to<CONSUMER> C2 = CONSUMER>
-		AA_CONSTEXPR lexer(C1 &&c1, C2 &&c2 = default_value) : config{std::forward<C1>(c1)}, consumer{std::forward<C2>(c2)} {}
-
-
-
-		// Member objects
-	protected:
-		CONFIG config;
-		[[no_unique_address]] const CONSUMER consumer;
-		void(consumer_type:: *target)(const std::string &) const;
-
-
-
-		// Member functions
-		AA_CONSTEXPR void init_key() {
-			default_value_v<hasher_type>(config.token, [&]<size_t I> -> void {
-				if constexpr (I != std::tuple_size_v<hasher_type>) {
+		const auto init_key = [&]() -> void {
+			H(config.token, [&]<size_t I> -> void {
+				if constexpr (I != std::tuple_size_v<const_t<H>>) {
 					// Metodų rodyklių dydis (16 baitai) yra didesnis negu size_t tipo (8 baitai).
-					target = &consumer_type::template operator()<I>;
+					target = constifier_func_v<CONSUMER, I>;
 					config.state = lexing_state::VALUE;
 				} else {
 					config.state = lexing_state::SKIP_VALUE;
 				}
 			});
-		}
+		};
 
-	public:
-		AA_CONSTEXPR void operator()(const int character) {
+		const auto lexer = [&](const int character) -> void {
 			switch (config.state) {
 				case lexing_state::BEFORE_KEY:
 					switch (character) {
@@ -147,65 +126,50 @@ namespace aa {
 				default:
 					std::unreachable();
 			}
-		}
-	};
-
-	template<class C1, class C2>
-	lexer(C1 &&, C2 &&) -> lexer<C1, C2>;
-
-
-
-	// https://en.wikipedia.org/wiki/Lexical_analysis
-	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
-	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<not_const_and_instance_of_twttp<lexer> LEXER, char_input_stream FILE>
-	AA_CONSTEXPR void lex(FILE &&file, LEXER &&lexer) {
-		// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
-		if (file.peek() == traits_type_in_use_t<FILE>::eof())
-			return;
+		};
 
 		// Lexing comments
-		enum struct lexing_state : size_t {
+		enum struct preprocessing_state : size_t {
 			NONE,
 			CHECK,
 			COMMENT,
 			MULTILINE,
 			CHECKMULTI
-		} state = lexing_state::NONE;
+		} state = preprocessing_state::NONE;
 
 		do {
-			const int_type_in_use_t<FILE> character = file.get();
+			const int_type_in_use_t<std::istream> character = file.get();
 
 			switch (state) {
-				case lexing_state::NONE:
+				case preprocessing_state::NONE:
 					switch (character) {
 						case '/':
-							state = lexing_state::CHECK;
+							state = preprocessing_state::CHECK;
 							continue;
 						default:
 							lexer(character);
 							continue;
 					}
 
-				case lexing_state::CHECK:
+				case preprocessing_state::CHECK:
 					switch (character) {
 						case '/':
-							state = lexing_state::COMMENT;
+							state = preprocessing_state::COMMENT;
 							continue;
 						case '*':
-							state = lexing_state::MULTILINE;
+							state = preprocessing_state::MULTILINE;
 							continue;
 						default:
-							state = lexing_state::NONE;
+							state = preprocessing_state::NONE;
 							lexer('/');
 							lexer(character);
 							continue;
 					}
 
-				case lexing_state::COMMENT:
+				case preprocessing_state::COMMENT:
 					switch (character) {
 						case '\n':
-							state = lexing_state::NONE;
+							state = preprocessing_state::NONE;
 							// Pasibaigus paprastam komentarui vis tiek į lekserį turime nusiųsti '\n' simbolį,
 							// nes kitaip gali lekseris nepastebėti, kad pasibaigė parametro reikšmės leksema.
 							lexer('\n');
@@ -214,29 +178,29 @@ namespace aa {
 							continue;
 					}
 
-				case lexing_state::MULTILINE:
+				case preprocessing_state::MULTILINE:
 					switch (character) {
 						case '*':
-							state = lexing_state::CHECKMULTI;
+							state = preprocessing_state::CHECKMULTI;
 							continue;
 						default:
 							continue;
 					}
 
-				case lexing_state::CHECKMULTI:
+				case preprocessing_state::CHECKMULTI:
 					switch (character) {
 						case '/':
-							state = lexing_state::NONE;
+							state = preprocessing_state::NONE;
 							continue;
 						default:
-							state = lexing_state::MULTILINE;
+							state = preprocessing_state::MULTILINE;
 							continue;
 					}
 
 				default:
 					std::unreachable();
 			}
-		} while (file.peek() != traits_type_in_use_t<FILE>::eof());
+		} while (file.peek() != traits_type_in_use_t<std::istream>::eof());
 		// Parametro apibrėžimo forma: PARAMETRO_VARDAS =PARAMETRO_REIKŠMĖ'\n'
 		// Svarbu nepamiršti, kad jei parametrą bandoma apibrėžti failo pabaigoje,
 		// tai failo paskutinis simbolis turės būti '\n', kitaip parametras nebus apibrėžtas.

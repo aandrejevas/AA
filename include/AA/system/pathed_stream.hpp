@@ -5,24 +5,23 @@
 #include "../preprocessor/assert.hpp"
 #include "source.hpp"
 #include <fstream> // ofstream, ifstream
-#include <ostream> // basic_ostream, ostream
-#include <istream> // basic_istream
 #include <ios> // openmode, out, in
 
 
 
 namespace aa {
 
-	template<class P, stream_like S>
+	template<stream_insertable P, stream_like S>
 	struct pathed_stream {
 		// Member types
 		using path_type = P;
 		using stream_type = S;
-		using char_type = typename stream_type::char_type;
-		using traits_type = typename stream_type::traits_type;
-		using int_type = typename stream_type::int_type;
-		using pos_type = typename stream_type::pos_type;
-		using off_type = typename stream_type::off_type;
+		using base_type = stream_t<stream_type> &;
+		using char_type = char_type_in_use_t<stream_type>;
+		using traits_type = traits_type_in_use_t<stream_type>;
+		using int_type = int_type_in_use_t<stream_type>;
+		using pos_type = pos_type_in_use_t<stream_type>;
+		using off_type = off_type_in_use_t<stream_type>;
 
 
 
@@ -41,35 +40,18 @@ namespace aa {
 
 
 
-		// Input/output
-		template<insertable_into<stream_type> U>
-		AA_CONSTEXPR apply_traits_t<std::basic_ostream, stream_type> &operator<<(const U &u) {
-			return stream << u;
-		}
-
-		template<extractable_from<stream_type> U>
-		AA_CONSTEXPR apply_traits_t<std::basic_istream, stream_type> &operator>>(U &&u) {
-			return stream >> std::forward<U>(u);
-		}
-
-
-
 		// Special member functions
 		template<constructible_to<path_type> T = path_type, invoke_result_constructible_to<stream_type, const path_type &> F>
-		AA_CONSTEXPR pathed_stream(T &&t, F &&f) : path{std::forward<T>(t)}, stream{std::invoke(std::forward<F>(f), path)} {
-			if constexpr (insertable_into<path_type &, std::ostream>) {
-				AA_TRACE_ASSERT(!stream.fail(), type_name_v<stream_type>, " (", path, ") in fail state after construction.");
-			} else {
-				AA_TRACE_ASSERT(!stream.fail(), type_name_v<stream_type>, " in fail state after construction.");
-			}
+		AA_CONSTEXPR pathed_stream(T &&t, F &&f)
+			: path{std::forward<T>(t)}, stream{std::invoke(std::forward<F>(f), std::as_const(path))}
+		{
+			AA_TRACE_ASSERT(!cast<base_type>(stream).fail(), "Stream ",
+				type_name_v<stream_type>, '(', path, ") in fail state after construction.");
 		}
 
 		AA_CONSTEXPR ~pathed_stream() {
-			if constexpr (insertable_into<path_type &, std::ostream>) {
-				AA_TRACE_ASSERT(!stream.fail(), type_name_v<stream_type>, " (", path, ") in fail state before destruction.");
-			} else {
-				AA_TRACE_ASSERT(!stream.fail(), type_name_v<stream_type>, " in fail state before destruction.");
-			}
+			AA_TRACE_ASSERT(!cast<base_type>(stream).fail(), "Stream ",
+				type_name_v<stream_type>, '(', path, ") in fail state before destruction.");
 		}
 
 

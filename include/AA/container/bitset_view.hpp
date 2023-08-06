@@ -45,7 +45,7 @@ namespace aa {
 
 		AA_CONSTEXPR value_type front() const {
 			if constexpr (REVERSED) {
-				return index((constant_v<value_type, max_index()>) - unsign<value_type>(std::countr_zero(bitset)), offset);
+				return index((value_v<value_type, max_index()>) - unsign<value_type>(std::countr_zero(bitset)), offset);
 			} else {
 				return index(unsign<value_type>(std::countr_zero(bitset)), offset);
 			}
@@ -55,7 +55,7 @@ namespace aa {
 			if constexpr (REVERSED) {
 				return index(unsign<value_type>(std::countl_zero(bitset)), offset);
 			} else {
-				return index((constant_v<value_type, max_index()>) - unsign<value_type>(std::countl_zero(bitset)), offset);
+				return index((value_v<value_type, max_index()>) - unsign<value_type>(std::countl_zero(bitset)), offset);
 			}
 		}
 

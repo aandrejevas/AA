@@ -174,6 +174,8 @@ namespace aa {
 		AA_CONSTEXPR fixed_vector(const std::default_sentinel_t) : r_begin{elements.data()} {}
 #pragma GCC diagnostic pop
 		AA_CONSTEXPR fixed_vector(const size_type count) : r_begin{r_end + count} {}
+		// Nereikia konstruktoriaus, kuriame būtų naudojama fill, nes šį funkcionalumą
+		// galima simuliuoti naudojant šį konstruktorių pavyzdžiui su repeat_view.
 		template<std::ranges::input_range R>
 		AA_CONSTEXPR fixed_vector(R &&r) : r_begin{std::ranges::copy(r, elements.data()).out - 1} {}
 #pragma GCC diagnostic pop

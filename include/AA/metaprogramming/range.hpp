@@ -93,8 +93,8 @@ namespace aa {
 	concept char_range = sized_contiguous_range<T> && std::same_as<std::ranges::range_value_t<T>, char>;
 
 	template<class T>
-	concept range_using_traits_type = sized_contiguous_range<T> && uses_traits_type<T>
-		&& char_traits_for<traits_type_in_use_t<T>, std::ranges::range_value_t<T>>;
+	concept range_using_traits_type = sized_contiguous_range<T> &&
+		std::same_as<char_type_in_use_t<traits_type_in_use_t<T>>, std::ranges::range_value_t<T>>;
 
 	namespace detail {
 		// Darome prielaidą, kad char_traits yra apibrėžtas su visais tipais.
@@ -109,7 +109,7 @@ namespace aa {
 	using range_char_traits_t = type_in_use_t<detail::range_char_traits<T>>;
 
 	template<class T, class U>
-	concept same_range_char_traits_as = sized_contiguous_range<T> && std::same_as<range_char_traits_t<T>, U>;
+	concept same_range_char_traits_as = std::same_as<range_char_traits_t<T>, U>;
 
 	template<class T, size_t N = numeric_max>
 	concept fixed_string_like = range_using_traits_type<T> && array_like<T, N>;
@@ -120,7 +120,7 @@ namespace aa {
 	// tai nėra neįprasta, konteineriai ir iteratoriai turi tokių pačių aliases ir iš sandarto buvo pašalintas tipas
 	// std::iterator, kuris buvo naudojamas tokiu pačiu principu, tai reiškia nerekomenduojama tokia realizacija.
 	struct string_equal_to {
-		template<sized_contiguous_range L, same_range_char_traits_as<range_char_traits_t<L>> R>
+		template<class L, same_range_char_traits_as<range_char_traits_t<L>> R>
 		static AA_CONSTEXPR bool operator()(const L &l, const R &r) {
 			const size_t count = std::ranges::size(l);
 			return count == std::ranges::size(r) &&

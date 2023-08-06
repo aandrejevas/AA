@@ -46,7 +46,7 @@ namespace aa {
 		}
 	};
 
-	generic_evaluator()->generic_evaluator<>;
+	generic_evaluator() -> generic_evaluator<>;
 
 
 

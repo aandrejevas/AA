@@ -41,7 +41,7 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR void resume() {
-			begin -= std::exchange(end, zero_v<rep>);
+			begin -= std::exchange(end, value_v<rep, 0>);
 			begin += now();
 		}
 

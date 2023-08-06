@@ -156,13 +156,13 @@ namespace aa {
 		// Modifiers
 		AA_CONSTEXPR void clear() { elements.clear(); first_hole = nullptr; }
 
-		template<invocable_ref<pointer> F>
+		template<ref_invocable<pointer> F>
 		AA_CONSTEXPR void clear(F &&f) {
 			if (!elements.empty())
 				unsafe_clear(f);
 		}
 
-		template<invocable_ref<pointer> F>
+		template<ref_invocable<pointer> F>
 		AA_CONSTEXPR void unsafe_clear(F &&f) {
 			do {
 				std::invoke(f, back());

@@ -23,7 +23,7 @@ namespace aa {
 		using is_transparent = void;
 	};
 
-	generic_hash()->generic_hash<>;
+	generic_hash() -> generic_hash<>;
 
 
 

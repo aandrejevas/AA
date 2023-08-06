@@ -2,6 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include <memory> // unique_ptr, make_unique_for_overwrite
+#include <algorithm> // copy
 
 
 
@@ -87,8 +88,8 @@ namespace aa {
 
 		// Special member functions
 		AA_CONSTEXPR fixed_array() {}
-		template<constructible_to<container_type> U = container_type>
-		AA_CONSTEXPR fixed_array(U &&u) : elements{std::forward<U>(u)} {}
+		template<std::ranges::input_range R>
+		AA_CONSTEXPR fixed_array(R &&r) { std::ranges::copy(r, elements.data()); }
 
 
 

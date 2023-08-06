@@ -13,7 +13,8 @@ namespace aa {
 	template<std::input_or_output_iterator I, std::sentinel_for<I> S = I>
 	struct unsafe_subrange : pair<I, S>, std::ranges::view_base {
 		// Observers
-		using unsafe_subrange::tuple_type::get;
+		using typename pair<I, S>::tuple_type;
+		using tuple_type::get;
 
 		AA_CONSTEXPR I &begin() { return get_0(*this); }
 		AA_CONSTEXPR S &rbegin() { return get_1(*this); }
@@ -62,7 +63,7 @@ namespace aa {
 		// convertible_to, nes std::ranges::subrange klasė taip pat realizuota.
 		// convertible constraint yra griežtesnis negu constructable constraint.
 		template<std::convertible_to<I> T1 = I, std::convertible_to<S> T2 = S>
-		AA_CONSTEXPR unsafe_subrange(T1 &&t1, T2 &&t2) : unsafe_subrange::tuple_type{std::forward<T1>(t1), std::forward<T2>(t2)} {}
+		AA_CONSTEXPR unsafe_subrange(T1 &&t1, T2 &&t2) : tuple_type{std::forward<T1>(t1), std::forward<T2>(t2)} {}
 
 		template<std::ranges::borrowed_range R>
 		AA_CONSTEXPR unsafe_subrange(R &&r) : unsafe_subrange{std::ranges::begin(r), get_rbegin(r)} {}

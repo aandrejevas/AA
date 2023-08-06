@@ -13,10 +13,10 @@ namespace aa {
 
 	// Nors tai labai nepatogu, traits tipas turi būti antras, nes standarte visos tokio tipo klasės apibrėžtos panašiai.
 	// https://en.wikipedia.org/wiki/Null-terminated_string
-	template<trivially_copyable C, char_traits_for<C> T, size_t N>
+	template<char_traits_like T, size_t N>
 	struct basic_fixed_string {
 		// Member types
-		using value_type = C;
+		using value_type = char_type_in_use_t<T>;
 		using traits_type = T;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
@@ -28,6 +28,9 @@ namespace aa {
 		using const_iterator = const_pointer;
 		using reverse_iterator = std::reverse_iterator<iterator>;
 		using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+		template<class A>
+		using string_type = std::basic_string<value_type, traits_type, A>;
 		using view_type = std::basic_string_view<value_type, traits_type>;
 		using ostream_type = std::basic_ostream<value_type, traits_type>;
 
@@ -102,7 +105,7 @@ namespace aa {
 		}
 
 		template<size_type N2>
-		friend AA_CONSTEVAL bool operator==(const basic_fixed_string &, const basic_fixed_string<value_type, traits_type, N2> &) {
+		friend AA_CONSTEVAL bool operator==(const basic_fixed_string &, const basic_fixed_string<traits_type, N2> &) {
 			return false;
 		}
 
@@ -134,7 +137,7 @@ namespace aa {
 
 
 	template<trivially_copyable C, size_t N>
-	using semibasic_fixed_string = basic_fixed_string<C, std::char_traits<C>, N>;
+	using semibasic_fixed_string = basic_fixed_string<std::char_traits<C>, N>;
 
 	template<size_t N>
 	using fixed_string = semibasic_fixed_string<char, N>;
@@ -161,24 +164,24 @@ namespace aa {
 
 namespace std {
 
-	template<class C, class T, size_t N>
-	struct formatter<aa::basic_fixed_string<C, T, N>, C>
-		: std::formatter<std::basic_string_view<C, T>, C> {};
+	template<class T, size_t N>
+	struct formatter<aa::basic_fixed_string<T, N>, aa::char_type_in_use_t<T>>
+		: std::formatter<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>, aa::char_type_in_use_t<T>> {};
 
 
 
-	template<class C, class T, size_t N>
-	struct hash<aa::basic_fixed_string<C, T, N>>
-		: std::hash<std::basic_string_view<C, T>> {};
+	template<class T, size_t N>
+	struct hash<aa::basic_fixed_string<T, N>>
+		: std::hash<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>> {};
 
 
 
-	template<class C, class T, class A, size_t N, template<class> class TQUAL, template<class> class QQUAL>
-	struct basic_common_reference<aa::basic_fixed_string<C, T, N>, std::basic_string<C, T, A>, TQUAL, QQUAL>
-		: std::type_identity<std::basic_string_view<C, T>> {};
+	template<class T, class A, size_t N, template<class> class TQUAL, template<class> class QQUAL>
+	struct basic_common_reference<aa::basic_fixed_string<T, N>, std::basic_string<aa::char_type_in_use_t<T>, T, A>, TQUAL, QQUAL>
+		: std::type_identity<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>> {};
 
-	template<class C, class T, class A, size_t N, template<class> class TQUAL, template<class> class QQUAL>
-	struct basic_common_reference<std::basic_string<C, T, A>, aa::basic_fixed_string<C, T, N>, TQUAL, QQUAL>
-		: std::type_identity<std::basic_string_view<C, T>> {};
+	template<class T, class A, size_t N, template<class> class TQUAL, template<class> class QQUAL>
+	struct basic_common_reference<std::basic_string<aa::char_type_in_use_t<T>, T, A>, aa::basic_fixed_string<T, N>, TQUAL, QQUAL>
+		: std::type_identity<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>> {};
 
 }

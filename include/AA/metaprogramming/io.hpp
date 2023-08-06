@@ -1,49 +1,41 @@
 #pragma once
 
 #include "general.hpp"
-#include <ostream> // basic_ostream
-#include <istream> // basic_istream
-#include <ios> // basic_ios
+#include <ostream> // ostream
+#include <istream> // istream
+#include <ios> // ios
 
 
 
 namespace aa {
 
 	template<class T>
-	concept stream_like = wo_ref_derived_from<T, apply_traits_t<std::basic_ios, T>>;
-
-
-
-	// Kintamojo tipas T&, o ne T&&, nes standarte naudojamas toks tipas operator<< užklojimuose.
-	template<class U, class T>
-	concept insertable_into = (wo_ref_derived_from<T, apply_traits_t<std::basic_ostream, T>>
-		&& requires(apply_traits_t<std::basic_ostream, T> &t, const U & u)
-		/**/ { { t << u } -> std::same_as<apply_traits_t<std::basic_ostream, T> &>; });
-
-	template<class U, class T>
-	concept extractable_from = (wo_ref_derived_from<T, apply_traits_t<std::basic_istream, T>>
-		&& requires(apply_traits_t<std::basic_istream, T> &t, U && u)
-		/**/ { { t >> std::forward<U>(u) } -> std::same_as<apply_traits_t<std::basic_istream, T> &>; });
-
-	// Fuck dynamic polymorphism. Nors C++ standarto funkcijos (pvz. endl) remiasi juo, yra minusų tokios realizacijos.
-	// Pirma reiktų divejų užklojimų funkcijos, kad palaikyti & ir && argumentus. Templates nepadeda išspręsti šios problemos.
-	// Antra dinaminis polimorfizmas yra lėtas ir jis neturėtų būti skatinamas.
-	template<class T, class... A>
-	concept output_stream = wo_ref_derived_from<T, apply_traits_t<std::basic_ostream, T>> && (... && insertable_into<A, T>);
-
-	template<class T, class... A>
-	concept input_stream = wo_ref_derived_from<T, apply_traits_t<std::basic_istream, T>> && (... && extractable_from<A, T>);
+	using stream_t = traits_type_filled_t<T, std::ios>;
 
 	template<class T>
-	concept not_output_stream = !output_stream<T>;
+	using ostream_t = traits_type_filled_t<T, std::ostream>;
 
 	template<class T>
-	concept not_input_stream = !input_stream<T>;
+	using istream_t = traits_type_filled_t<T, std::istream>;
 
-	template<class T, class... A>
-	concept char_input_stream = (input_stream<T, A...> && std::same_as<char_type_in_use_t<T>, char>);
+	template<class T>
+	concept stream_like = ref_convertible_to<T, stream_t<T> &>;
 
-	template<class T, class... A>
-	concept char_output_stream = (output_stream<T, A...> && std::same_as<char_type_in_use_t<T>, char>);
+	template<class T>
+	concept ostream_like = ref_convertible_to<T, ostream_t<T> &>;
+
+	template<class T>
+	concept istream_like = ref_convertible_to<T, istream_t<T> &>;
+
+	template<class U, class T = std::ostream>
+	concept stream_insertable = requires(ostream_t<T> &os, const U &u) {
+		{ os << u } -> std::same_as<ostream_t<T> &>;
+	};
+
+	// https://en.cppreference.com/w/cpp/ranges/basic_istream_view
+	template<class U, class T = std::istream>
+	concept stream_extractable = requires(istream_t<T> &is, U &u) {
+		{ is >> u } -> std::same_as<istream_t<T> &>;
+	};
 
 }

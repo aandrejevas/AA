@@ -62,53 +62,53 @@ namespace aa {
 	// Turime turėti du tokius pačius return sakinius, nes apjungus sąlygas X gali sąlygoje būti float.
 	template<arithmetic T, T X>
 	AA_CONSTEXPR T product(const T x) {
-		/**/ if constexpr (is_zero(X))					return zero_v<T>;
-		else if constexpr (is_one(X))					return x;
+		/**/ if constexpr (is_value<0>(X))				return value_v<T, 0>;
+		else if constexpr (is_value<1>(X))				return x;
 		else if constexpr (!std::unsigned_integral<T>)	return x * X;
 		else if constexpr (!std::has_single_bit(X))		return x * X;
 		else											return x << const_v<int_log2(X)>;
 	}
 
-	template<auto X, convertible_from<const_t<X>> T>
+	template<auto X, arithmetic T>
 	AA_CONSTEXPR T product(const T x) {
-		return product<T, cast<T>(X)>(x);
+		return product<T, value_v<T, X>>(x);
 	}
 
 	// https://en.wikipedia.org/wiki/Remainder
 	template<arithmetic T, T X>
-		requires (!is_zero(X))
+		requires (!is_value<0>(X))
 	AA_CONSTEXPR T remainder(const T x) {
-		/**/ if constexpr (is_one(X))					return zero_v<T>;
+		/**/ if constexpr (is_value<1>(X))				return value_v<T, 0>;
 		else if constexpr (std::floating_point<T>)		return std::fmod(x, X);
 		else if constexpr (std::signed_integral<T>)		return x % X;
 		else if constexpr (!std::has_single_bit(X))		return x % X;
 		else											return x & const_v<X - 1>;
 	}
 
-	template<auto X, convertible_from<const_t<X>> T>
+	template<auto X, arithmetic T>
 	AA_CONSTEXPR T remainder(const T x) {
-		return remainder<T, cast<T>(X)>(x);
+		return remainder<T, value_v<T, X>>(x);
 	}
 
 	// https://en.wikipedia.org/wiki/Quotient
 	template<arithmetic T, T X>
-		requires (!is_zero(X))
+		requires (!is_value<0>(X))
 	AA_CONSTEXPR T quotient(const T x) {
-		/**/ if constexpr (is_one(X))					return x;
-		else if constexpr (std::floating_point<T>)		return x * const_v<one_v<T> / X>;
+		/**/ if constexpr (is_value<1>(X))				return x;
+		else if constexpr (std::floating_point<T>)		return x * const_v<value_v<T, 1> / X>;
 		else if constexpr (std::signed_integral<T>)		return x / X;
 		else if constexpr (!std::has_single_bit(X))		return x / X;
 		else											return x >> const_v<int_log2(X)>;
 	}
 
-	template<auto X, convertible_from<const_t<X>> T>
+	template<auto X, arithmetic T>
 	AA_CONSTEXPR T quotient(const T x) {
-		return quotient<T, cast<T>(X)>(x);
+		return quotient<T, value_v<T, X>>(x);
 	}
 
 
 
-	// Pagal nutylėjimą, one_v yra U tipo, o ne T tipo, nes būtų neteisinga gauti rezultato tipą iš dešinės pusės tipo.
+	// Pagal nutylėjimą, value_v yra U tipo, o ne T tipo, nes būtų neteisinga gauti rezultato tipą iš dešinės pusės tipo.
 	// x turi būti unsigned, nes undefined behavior jei dešinysis operandas neigiamas << ir >> operatoriuose.
 	// Išviso U ir T nepilnai generic, nes reiktų tada tikrinti ar su tais tipais išeitų vykdyti reikiamas operacijas.
 	// https://en.wikipedia.org/wiki/Power_of_two
@@ -133,12 +133,12 @@ namespace aa {
 
 	template<arithmetic T>
 	AA_CONSTEXPR T halve(const T x) {
-		return quotient<two_v<T>>(x);
+		return quotient<2>(x);
 	}
 
 	template<arithmetic T>
 	AA_CONSTEXPR T redouble(const T x) {
-		return product<two_v<T>>(x);
+		return product<2>(x);
 	}
 
 	template<class T>
@@ -190,7 +190,7 @@ namespace aa {
 	AA_CONSTEXPR T byteswap(const T b, I i, J j) {
 		i = product<numeric_digits_v<byte_t>>(i);
 		j = product<numeric_digits_v<byte_t>>(j);
-		const T x = ((b >> i) ^ (b >> j)) & constant_v<T, numeric_max_v<byte_t>>;
+		const T x = ((b >> i) ^ (b >> j)) & value_v<T, numeric_max_v<byte_t>>;
 		return b ^ ((x << i) | (x << j));
 	}
 
@@ -198,13 +198,16 @@ namespace aa {
 
 	// https://en.wikipedia.org/wiki/Interval_(mathematics)
 	template<regular_scalar T, T MIN = numeric_min, T MAX = numeric_max>
-		requires (MIN < MAX)
-	struct interval : pair<constant<MAX>, constant<MIN>> {
+	struct interval : pair<T> {
 		// Member types
+		using typename pair<T>::tuple_type;
 		using value_type = T;
 		using reference = value_type &;
 		using const_reference = const value_type &;
 		using difference_type = type_pack_element_t<!pointer<value_type>, ptrdiff_t, value_type>;
+
+		// Member constants
+		static AA_CONSTEXPR const bool subinterval = MIN < MAX;
 
 
 
@@ -216,6 +219,7 @@ namespace aa {
 
 		AA_CONSTEXPR bool min_eq(const value_type x) const { return min() == x; }
 		AA_CONSTEXPR bool max_eq(const value_type x) const { return max() == x; }
+		AA_CONSTEXPR bool eq(const value_type x1, const value_type x2) const { return min_eq(x1) && max_eq(x2); }
 
 		AA_CONSTEXPR bool open_contains(const value_type x) const { return min() < x && x < max(); }
 		AA_CONSTEXPR bool closed_contains(const value_type x) const { return min() <= x && x <= max(); }
@@ -224,9 +228,9 @@ namespace aa {
 
 		AA_CONSTEXPR bool empty() const { return min() > max(); }
 		AA_CONSTEXPR bool degenerate() const { return min() == max(); }
-		AA_CONSTEXPR bool left_full() const { return min() == MIN; }
-		AA_CONSTEXPR bool right_full() const { return max() == MAX; }
-		AA_CONSTEXPR bool full() const { return left_full() && right_full(); }
+		AA_CONSTEXPR bool left_full() const requires (subinterval) { return min() == MIN; }
+		AA_CONSTEXPR bool right_full() const requires (subinterval) { return max() == MAX; }
+		AA_CONSTEXPR bool full() const requires (subinterval) { return left_full() && right_full(); }
 
 		AA_CONSTEXPR difference_type diameter() const { return max() - min(); }
 		AA_CONSTEXPR difference_type radius() const { return halve(diameter()); }
@@ -246,6 +250,7 @@ namespace aa {
 		AA_CONSTEXPR bool right_expand(const value_type x) { return (max() < x) ? (max() = x, true) : false; }
 
 		AA_CONSTEXPR bool expand(const value_type x) {
+			// Patikrinau, čia greičiausia teisinga realizacija.
 			return left_expand(x) | right_expand(x);
 		}
 
@@ -254,15 +259,24 @@ namespace aa {
 		}
 
 		// Logiška nenaudoti numeric_*, nes dabar yra galimybė, kad išplėčiant vieno endpoint nereikės pakeisti.
-		AA_CONSTEXPR void reset() {
-			min() = MAX;
-			max() = MIN;
+		AA_CONSTEXPR void reset() requires (subinterval) {
+			min() = MAX;	max() = MIN;
 		}
 
 		AA_CONSTEXPR void reset(const value_type x) {
-			min() = x;
-			max() = x;
+			min() = x;		max() = x;
 		}
+
+		AA_CONSTEXPR void reset(const value_type x1, const value_type x2) {
+			min() = x2;		max() = x1;
+		}
+
+
+
+		// Special member functions
+		AA_CONSTEXPR interval() requires (subinterval) : tuple_type{MAX, MIN} {}
+		AA_CONSTEXPR interval(const value_type x) : tuple_type{x, x} {}
+		AA_CONSTEXPR interval(const value_type x1, const value_type x2) : tuple_type{x2, x1} {}
 	};
 
 }

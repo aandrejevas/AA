@@ -4,7 +4,6 @@
 #include "../metaprogramming/io.hpp"
 #include "print.hpp"
 #include <ranges> // input_range, range_value_t
-#include <ostream> // basic_ostream
 #include <algorithm> // for_each
 #include <iomanip> // setw
 
@@ -13,7 +12,7 @@
 namespace aa {
 
 	struct tuple_inserter {
-		template<class S, tuple_like U>
+		template<ostream_like S, tuple_like U>
 		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			if constexpr (std::tuple_size_v<U>) {
 				apply<(std::tuple_size_v<U>) - 1>([&]<size_t... I> -> void {
@@ -29,38 +28,38 @@ namespace aa {
 
 	// Nors čia ant S tipo galėtų nebūti constraint uždėtas, jis ten padėtas tam, kad pažymėti, kad S tipas nėra bet koks.
 	struct identity_inserter {
-		template<class S, class U>
+		template<ostream_like S, class U>
 		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
-			if constexpr (output_stream<S, U>)		print(s, u);
+			if constexpr (stream_insertable<U, S>)	print(s, u);
 			else									default_value_v<tuple_inserter>(s, u);
 		}
 	};
 
 	template<auto D = ' '>
 	struct delim_r_inserter {
-		template<class S, class U>
+		template<ostream_like S, class U>
 		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			default_value_v<identity_inserter>(s, u);
 			print(s, D);
 		}
 	};
 
-	delim_r_inserter()->delim_r_inserter<>;
+	delim_r_inserter() -> delim_r_inserter<>;
 
 	template<auto D = ' '>
 	struct delim_l_inserter {
-		template<class S, class U>
+		template<ostream_like S, class U>
 		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			print(s, D);
 			default_value_v<identity_inserter>(s, u);
 		}
 	};
 
-	delim_l_inserter()->delim_l_inserter<>;
+	delim_l_inserter() -> delim_l_inserter<>;
 
 	template<int N>
 	struct width_inserter {
-		template<class S, class U>
+		template<ostream_like S, class U>
 		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
 			print(s, std::setw(N), u);
 		}
@@ -90,9 +89,9 @@ namespace aa {
 		// Čia writeris galėtų ateiti ir ne const, bet tada reiktų arba kelių užklojimų funkcijos arba pridėti dar vieną
 		// template argumentą, abu sprendimai labai nepatogūs. Na iš principo tai yra keista į spausdinimo funkciją
 		// paduoti ne const kintamąjį. Išlieka galimybė pvz. turėti mutable lambdas ir keisti range elementus.
-		template<class C, char_traits_for<C> T>
-			requires (std::invocable<const F &, std::basic_ostream<C, T> &, const std::ranges::range_value_t<R> &>)
-		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const range_writer &w) {
+		template<char_traits_like T>
+			requires (std::invocable<const F &, ostream_t<T> &, const std::ranges::range_value_t<R> &>)
+		friend AA_CONSTEXPR ostream_t<T> &operator<<(ostream_t<T> &s, const range_writer &w) {
 			std::ranges::for_each(w.range, [&s, &w](const std::ranges::range_value_t<R> &element) -> void {
 				std::invoke(w.fun, s, element);
 			});
@@ -113,9 +112,9 @@ namespace aa {
 		[[no_unique_address]] const E element;
 		[[no_unique_address]] const F fun = default_value;
 
-		template<class C, char_traits_for<C> T>
-			requires (std::invocable<const F &, std::basic_ostream<C, T> &, const E &>)
-		friend AA_CONSTEXPR std::basic_ostream<C, T> &operator<<(std::basic_ostream<C, T> &s, const writer &w) {
+		template<char_traits_like T>
+			requires (std::invocable<const F &, ostream_t<T> &, const E &>)
+		friend AA_CONSTEXPR ostream_t<T> &operator<<(ostream_t<T> &s, const writer &w) {
 			std::invoke(w.fun, s, w.element);
 			return s;
 		}

@@ -83,7 +83,7 @@ namespace aa {
 
 
 			// Lookup
-			template<invocable_ref<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
+			template<ref_invocable<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
 			AA_CONSTEXPR void query_range(const P1 &tl, const P2 &br, F &&f, const fixed_grid &t) const {
 				if (!empty(t)) {
 					const node_type *iter = first;
@@ -96,7 +96,7 @@ namespace aa {
 				}
 			}
 
-			template<invocable_ref<reference> F>
+			template<ref_invocable<reference> F>
 			AA_CONSTEXPR void query(F &f, const fixed_grid &t) const {
 				if (!empty(t)) {
 					const node_type *iter = first;
@@ -165,14 +165,14 @@ namespace aa {
 				leaves[unsign_cast<size_type>(get_y(pos) / get_h(leaf_size))][unsign_cast<size_type>(get_x(pos) / get_w(leaf_size))];
 		}
 
-		template<invocable_ref<leaf &> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
+		template<ref_invocable<leaf &> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
 		AA_CONSTEXPR void find_leaves(const P1 &tl, const P2 &br, F &&f) {
 			std::as_const(*this).find_leaves(tl, br, [&](const leaf &l) -> void {
 				std::invoke(f, const_cast<leaf &>(l));
 			});
 		}
 
-		template<invocable_ref<const leaf &> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
+		template<ref_invocable<const leaf &> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
 		AA_CONSTEXPR void find_leaves(const P1 &tl, const P2 &br, F &&f) const {
 			if (get_x(br) < min_loc || get_y(br) < min_loc || get_x(max_loc) < get_x(tl) || get_y(max_loc) < get_y(tl)) return;
 
@@ -197,14 +197,14 @@ namespace aa {
 			});
 		}
 
-		template<invocable_ref<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
+		template<ref_invocable<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
 		AA_CONSTEXPR void query_range(const P1 &tl, const P2 &br, F &&f) const {
 			find_leaves(tl, br, [&](const leaf &l) -> void {
 				l.query_range(tl, br, f, *this);
 			});
 		}
 
-		template<invocable_ref<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
+		template<ref_invocable<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
 		AA_CONSTEXPR void query_loose_range(const P1 &tl, const P2 &br, F &&f) const {
 			find_leaves(tl, br, [&](const leaf &l) -> void {
 				l.query(f, *this);

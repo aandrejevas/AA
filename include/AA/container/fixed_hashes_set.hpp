@@ -4,10 +4,12 @@
 #include "../algorithm/arithmetic.hpp"
 #include "../algorithm/hash.hpp"
 #include "../algorithm/find.hpp"
+#include "fixed_array.hpp"
 #include "fixed_vector.hpp"
 #include "unsafe_subrange.hpp"
 #include "bitset_view.hpp"
 #include <algorithm> // fill
+#include <ranges> // repeat
 
 
 
@@ -25,7 +27,7 @@ namespace aa {
 			using value_type = size_type;
 			using hasher_type = H;
 			using bucket_pointer = const bucket_type *;
-			using container_type = std::array<bucket_type, N>;
+			using container_type = fixed_array<bucket_type, N>;
 			using base_type = fixed_hashes_set_base;
 			using local_iterator = bitset_view<bucket_type, value_type>;
 			using const_local_iterator = local_iterator;
@@ -34,6 +36,12 @@ namespace aa {
 
 
 			// Bucket interface
+			static AA_CONSTEVAL size_type max_bucket_index() { return N - 1; }
+			static AA_CONSTEVAL size_type last_bucket_index() { return N - 1; }
+
+			static AA_CONSTEVAL size_type max_bucket_count() { return N; }
+			static AA_CONSTEVAL size_type bucket_count() { return N; }
+
 			AA_CONSTEXPR size_type index(const bucket_pointer bin) const {
 				return unsign(bin - bins.data());
 			}
@@ -94,7 +102,7 @@ namespace aa {
 
 			// Member objects
 		protected:
-			container_type bins = default_value;
+			container_type bins = {std::views::repeat(value_v<bucket_type, 0>, N)};
 
 		public:
 			[[no_unique_address]] const hasher_type hasher;
@@ -155,17 +163,14 @@ namespace aa {
 		// Šis konteineris gali talpinti tik pavyzdžiui mažesnius sveikuosius skaičius už max_size
 		// nebent būtų naudojamas ne tas hasher, kuris yra naudojamas pagal nutylėjimą.
 		static AA_CONSTEVAL size_type max_size() {
-			return local_iterator::max_size() * max_bucket_count();
+			return local_iterator::max_size() * max_dirty_bucket_count();
 		}
 
 
 
 		// Bucket interface
-		static AA_CONSTEVAL size_type max_bucket_index() { return M - 1; }
-		AA_CONSTEXPR size_type last_bucket_index() const { return dirty.indexl(); }
-
-		static AA_CONSTEVAL size_type max_bucket_count() { return M; }
-		AA_CONSTEXPR size_type bucket_count() const { return dirty.size(); }
+		static AA_CONSTEVAL size_type max_dirty_bucket_count() { return M; }
+		AA_CONSTEXPR size_type dirty_bucket_count() const { return dirty.size(); }
 
 
 
@@ -185,7 +190,7 @@ namespace aa {
 
 		AA_CONSTEXPR void unsafe_clear() {
 			do {
-				*dirty.back() = zero_v<bucket_type>;
+				*dirty.back() = value<0>;
 				dirty.pop_back();
 			} while (!dirty.empty());
 		}
@@ -257,10 +262,10 @@ namespace aa {
 			return dirty.degenerate();
 		}
 		AA_CONSTEXPR bool single() const {
-			return single_bucket_dirty() && bucket(this->bins[dirty.f]).size() == 1;
+			return single_bucket_dirty() && bucket(dirty.min()).size() == 1;
 		}
 		AA_CONSTEXPR bool all_buckets_dirty() const {
-			return dirty.f == 0 && dirty.l == max_bucket_index();
+			return dirty.eq(this->bins.data(), this->bins.rdata());
 		}
 		AA_CONSTEXPR bool dirty_buckets_full() const {
 			return empty() || unsafe_all_of(dirty_subrange(), [&](const bucket_type bin) ->
@@ -284,52 +289,26 @@ namespace aa {
 
 
 
-		// Bucket interface
-		static AA_CONSTEVAL size_type max_bucket_index() { return N - 1; }
-		static AA_CONSTEVAL size_type last_bucket_index() { return N - 1; }
-
-		static AA_CONSTEVAL size_type max_bucket_count() { return N; }
-		static AA_CONSTEVAL size_type bucket_count() { return N; }
-
-
-
 		// Observers
-		AA_CONSTEXPR size_type first_dirty_index() const { return dirty.f; }
-		AA_CONSTEXPR size_type last_dirty_index() const { return dirty.l; }
-
 		AA_CONSTEXPR aa::unsafe_subrange<const_iterator> dirty_subrange() const {
-			return {this->bins.data() + dirty.f, this->bins.data() + dirty.l};
+			return {dirty.min(), dirty.max()};
 		}
 
 
 
 		// Modifiers
 	protected:
-		AA_CONSTEXPR void mark_not_dirty() {
-			dirty.f = numeric_max;
-			dirty.l = numeric_min;
-		}
+		AA_CONSTEXPR void shrink_dirty_region(const bucket_pointer bin) {
+			const bool f_not_dirty = dirty.min_eq(bin), l_not_dirty = dirty.max_eq(bin);
+			if (f_not_dirty && l_not_dirty) {
+				dirty.reset(this->bins.data(), this->bins.rdata());
 
-		AA_CONSTEXPR void contract_dirty_region(const size_type index) {
-			const bool f_not_dirty = (index == dirty.f), l_not_dirty = (index == dirty.l);
-			if (f_not_dirty && l_not_dirty) mark_not_dirty();
-			else if (f_not_dirty) {
-				bucket_pointer f = this->bins.data() + (dirty.f + 1);
-				do {
-					if (!this->bucket(f).empty()) { dirty.f = this->index(f); return; }
-				} while ((++f, true));
+			} else if (f_not_dirty) {
+				while (!this->bucket(++dirty.min()).empty());
+
 			} else if (l_not_dirty) {
-				bucket_pointer l = this->bins.data() + (dirty.l - 1);
-				do {
-					if (!this->bucket(l).empty()) { dirty.l = this->index(l); return; }
-				} while ((--l, true));
+				while (!this->bucket(--dirty.max()).empty());
 			}
-		}
-
-		AA_CONSTEXPR void expand_dirty_region(const size_type index) {
-			// Patikrinau, čia greičiausia teisinga realizacija.
-			if (dirty.f > index) dirty.f = index;
-			if (dirty.l < index) dirty.l = index;
 		}
 
 	public:
@@ -340,40 +319,43 @@ namespace aa {
 		}
 
 		AA_CONSTEXPR void unsafe_clear() {
-			std::ranges::fill(this->bins.data() + dirty.f,
-				std::as_const(this->bins).data() + dirty.l + 1, zero_v<bucket_type>);
-			mark_not_dirty();
+			std::ranges::fill(dirty.min(), dirty.max() + 1, value_v<bucket_type, 0>);
+			dirty.reset(this->bins.data(), this->bins.rdata());
 		}
 
 		AA_CONSTEXPR void clear_bucket(const size_type index) {
-			this->bins[index] = numeric_min;
-			contract_dirty_region(index);
+			bucket_type &bin = this->bins[index];
+			bin = numeric_min;
+			shrink_dirty_region(&bin);
 		}
 
 		AA_CONSTEXPR void fill_bucket(const size_type index) {
-			expand_dirty_region(index);
-			this->bins[index] = numeric_max;
+			bucket_type &bin = this->bins[index];
+			dirty.expand(&bin);
+			bin = numeric_max;
 		}
 
 		template<hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR void insert(const K &key) {
-			const size_type hash = this->hash(key), index = this->index(hash);
-			expand_dirty_region(index);
-			this->bins[index] |= this->mask(hash);
+			const size_type hash = this->hash(key);
+			bucket_type &bin = this->bins[this->index(hash)];
+			dirty.expand(&bin);
+			bin |= this->mask(hash);
 		}
 
 		template<hashable_by<const hasher_type &> K>
 		AA_CONSTEXPR void erase(const K &key) {
-			const size_type hash = this->hash(key), index = this->index(hash);
-			if (!(this->bins[index] &= ~this->mask(hash)))
-				contract_dirty_region(index);
+			const size_type hash = this->hash(key);
+			bucket_type &bin = this->bins[this->index(hash)];
+			if (!(bin &= ~this->mask(hash)))
+				shrink_dirty_region(&bin);
 		}
 
 
 
 		// Member objects
 	protected:
-		interval<size_type, 0, max_bucket_index()> dirty;
+		interval<bucket_type *> dirty = {this->bins.data(), this->bins.rdata()};
 	};
 
 
@@ -421,18 +403,9 @@ namespace aa {
 
 
 
-		// Bucket interface
-		static AA_CONSTEVAL size_type max_bucket_index() { return N - 1; }
-		static AA_CONSTEVAL size_type last_bucket_index() { return N - 1; }
-
-		static AA_CONSTEVAL size_type max_bucket_count() { return N; }
-		static AA_CONSTEVAL size_type bucket_count() { return N; }
-
-
-
 		// Modifiers
 		AA_CONSTEXPR void clear() {
-			this->bins.fill(zero_v<bucket_type>);
+			std::ranges::fill(this->bins, value_v<bucket_type, 0>);
 		}
 
 		AA_CONSTEXPR void clear_bucket(const size_type index) {

@@ -16,7 +16,7 @@
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t, uintptr_t
 #include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t
-#include <concepts> // convertible_to, same_as, default_initializable, semiregular, relation, invocable, derived_from, totally_ordered_with, equality_comparable, equality_comparable_with, constructible_from, assignable_from, integral, signed_integral, unsigned_integral
+#include <concepts> // convertible_to, same_as, semiregular, regular, relation, invocable, totally_ordered_with, equality_comparable_with, constructible_from, assignable_from, integral, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <array> // array
 #include <bit> // countl_zero, has_single_bit, bit_cast
@@ -29,13 +29,13 @@
 namespace aa {
 
 	template<class T>
-	concept uses_type = (requires { typename std::remove_reference_t<T>::type; });
+	concept uses_type = requires { typename std::remove_reference_t<T>::type; };
 
 	template<uses_type T>
 	using type_in_use_t = typename std::remove_reference_t<T>::type;
 
 	template<class T>
-	concept uses_value_type = (requires { typename std::remove_reference_t<T>::value_type; });
+	concept uses_value_type = requires { typename std::remove_reference_t<T>::value_type; };
 
 	template<uses_value_type T>
 	using value_type_in_use_t = typename std::remove_reference_t<T>::value_type;
@@ -46,30 +46,88 @@ namespace aa {
 	template<class T>
 	concept incomplete = !complete<T>;
 
-	template<class T>
-	concept pointer = std::is_pointer_v<T>;
 
 
+	template<class T, std::convertible_to<T> X>
+	AA_CONSTEXPR T cast(X &&x) {
+		return static_cast<T>(std::forward<X>(x));
+	}
+
+	template<std::unsigned_integral X>
+	AA_CONSTEXPR std::make_signed_t<X> sign(const X x) {
+		return std::bit_cast<std::make_signed_t<X>>(x);
+	}
+
+	template<std::signed_integral X>
+	AA_CONSTEXPR std::make_unsigned_t<X> unsign(const X x) {
+		return std::bit_cast<std::make_unsigned_t<X>>(x);
+	}
+
+	template<std::unsigned_integral T, std::signed_integral X>
+	AA_CONSTEXPR T unsign(const X x) {
+		return cast<T>(unsign(x));
+	}
+
+	template<class T, std::convertible_to<T> X>
+	AA_CONSTEXPR T unsign_cast(X &&x) {
+		if constexpr (std::unsigned_integral<T> && std::signed_integral<std::remove_reference_t<X>>) {
+			return unsign<T>(x);
+		} else {
+			return cast<T>(std::forward<X>(x));
+		}
+	}
+
+
+
+	template<std::semiregular T, auto V>
+	AA_CONSTEXPR const T value_v = cast<T>(V);
+
+	// Negalime pašalinti priskyrimo, nes const kintamieji turi būti inicializuoti.
+	template<std::semiregular T>
+	AA_CONSTEXPR const T default_value_v = T{};
+
+	template<std::semiregular T>
+	AA_CONSTEXPR const T numeric_max_v = std::numeric_limits<T>::max();
+
+	template<std::semiregular T>
+	AA_CONSTEXPR const T numeric_min_v = std::numeric_limits<T>::min();
+
+	template<std::semiregular T>
+	AA_CONSTEXPR const size_t numeric_digits_v = std::numeric_limits<T>::digits;
 
 	namespace detail {
+		template<auto V>
+		struct value_getter {
+			template<std::semiregular T>
+			AA_CONSTEVAL operator const T &() const { return value_v<T, V>; }
+			template<std::semiregular T>
+			AA_CONSTEVAL operator T() const { return value_v<T, V>; }
+		};
+
 		struct default_value_getter {
-			template<std::default_initializable T>
-			AA_CONSTEVAL operator T() const { return T{}; }
+			template<std::semiregular T>
+			AA_CONSTEVAL operator const T &() const { return default_value_v<T>; }
+			template<std::semiregular T>
+			AA_CONSTEVAL operator T() const { return default_value_v<T>; }
 		};
 
 		struct numeric_max_getter {
-			template<class T>
-			AA_CONSTEVAL operator T() const {
-				if constexpr (pointer<T>)	return std::bit_cast<T>(cast<uintptr_t>(*this));
-				else						return std::numeric_limits<T>::max();
-			}
+			template<std::semiregular T>
+			AA_CONSTEVAL operator const T &() const { return numeric_max_v<T>; }
+			template<std::semiregular T>
+			AA_CONSTEVAL operator T() const { return numeric_max_v<T>; }
 		};
 
 		struct numeric_min_getter {
-			template<class T>
-			AA_CONSTEVAL operator T() const { return std::numeric_limits<T>::min(); }
+			template<std::semiregular T>
+			AA_CONSTEVAL operator const T &() const { return numeric_min_v<T>; }
+			template<std::semiregular T>
+			AA_CONSTEVAL operator T() const { return numeric_min_v<T>; }
 		};
 	}
+
+	template<auto V>
+	AA_CONSTEXPR const detail::value_getter<V> value;
 
 	AA_CONSTEXPR const detail::default_value_getter default_value;
 
@@ -77,32 +135,28 @@ namespace aa {
 
 	AA_CONSTEXPR const detail::numeric_min_getter numeric_min;
 
-	template<std::default_initializable T>
-	AA_CONSTEXPR const T default_value_v = default_value;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+	template<auto V, std::regular T>
+	AA_CONSTEXPR bool is_value(const T &x) {
+		return x == value_v<T, V>;
+	}
 
-	template<class T>
-	AA_CONSTEXPR const T numeric_max_v = numeric_max;
-
-	template<class T>
-	AA_CONSTEXPR const T numeric_min_v = numeric_min;
-
-	template<class T>
-	AA_CONSTEXPR const size_t numeric_digits_v = std::numeric_limits<T>::digits;
-
-	template<std::equality_comparable T>
+	template<std::regular T>
 	AA_CONSTEXPR bool is_default_value(const T &x) {
 		return x == default_value_v<T>;
 	}
 
-	template<std::equality_comparable T>
+	template<std::regular T>
 	AA_CONSTEXPR bool is_numeric_max(const T &x) {
 		return x == numeric_max_v<T>;
 	}
 
-	template<std::equality_comparable T>
+	template<std::regular T>
 	AA_CONSTEXPR bool is_numeric_min(const T &x) {
 		return x == numeric_min_v<T>;
 	}
+#pragma GCC diagnostic pop
 
 
 
@@ -122,14 +176,11 @@ namespace aa {
 	// rezultato. Tai reiškia, kad šitoks sprendimas yra universalesnis.
 	//
 	// constant_t alias neturėtų prasmės, nes, kad juo naudotis jau reiktų nurodyti ką norime gauti.
-	template<class T, T V>
-	AA_CONSTEXPR const T constant_v = constant<V>::value;
-
 	template<auto V>
 	using const_t = value_type_in_use_t<constant<V>>;
 
 	template<auto V>
-	AA_CONSTEXPR const const_t<V> const_v = constant<V>::value;
+	AA_CONSTEXPR const const_t<V> const_v = V;
 
 
 
@@ -298,40 +349,23 @@ namespace aa {
 
 
 
-	template<class T, std::convertible_to<T> X>
-	AA_CONSTEXPR T cast(X &&x) {
-		return static_cast<T>(std::forward<X>(x));
-	}
-
-	template<std::unsigned_integral X>
-	AA_CONSTEXPR std::make_signed_t<X> sign(const X x) {
-		return std::bit_cast<std::make_signed_t<X>>(x);
-	}
-
-	template<std::signed_integral X>
-	AA_CONSTEXPR std::make_unsigned_t<X> unsign(const X x) {
-		return std::bit_cast<std::make_unsigned_t<X>>(x);
-	}
-
-	template<std::unsigned_integral T, std::signed_integral X>
-	AA_CONSTEXPR T unsign(const X x) {
-		return static_cast<T>(unsign(x));
-	}
-
-	template<class T, std::convertible_to<T> X>
-	AA_CONSTEXPR T unsign_cast(X &&x) {
-		if constexpr (std::unsigned_integral<T> && std::signed_integral<std::remove_reference_t<X>>) {
-			return unsign<T>(x);
-		} else {
-			return cast<T>(std::forward<X>(x));
-		}
-	}
-
-
+	template<class T>
+	concept uses_char_type = requires { typename std::remove_reference_t<T>::char_type; };
 
 	template<class T>
-	concept char_traits_like = requires {
-		typename T::char_type; typename T::int_type; typename T::off_type; typename T::pos_type; typename T::state_type; };
+	concept uses_int_type = requires { typename std::remove_reference_t<T>::int_type; };
+
+	template<class T>
+	concept uses_off_type = requires { typename std::remove_reference_t<T>::off_type; };
+
+	template<class T>
+	concept uses_pos_type = requires { typename std::remove_reference_t<T>::pos_type; };
+
+	template<class T>
+	concept uses_state_type = requires { typename std::remove_reference_t<T>::state_type; };
+
+	template<class T>
+	concept char_traits_like = uses_char_type<T> && uses_int_type<T> && uses_off_type<T> && uses_pos_type<T> && uses_state_type<T>;
 
 	// Netikriname ar tipo reikšmės using yra toks pat kaip jo traits char_type, nes skirtingi tipai gali skirtingų
 	// pavadinimų reikšmės using'us turėti ar gali išviso tokio using neturėti. Patiems tipams paliekama tikrintis ar
@@ -343,16 +377,49 @@ namespace aa {
 	template<uses_traits_type T>
 	using traits_type_in_use_t = typename std::remove_reference_t<T>::traits_type;
 
-	template<uses_traits_type T>
-	using char_type_in_use_t = typename traits_type_in_use_t<T>::char_type;
+	template<uses_char_type T>
+	using char_type_in_use_t = typename std::remove_reference_t<T>::char_type;
 
-	template<uses_traits_type T>
-	using int_type_in_use_t = typename traits_type_in_use_t<T>::int_type;
+	template<uses_int_type T>
+	using int_type_in_use_t = typename std::remove_reference_t<T>::int_type;
 
-	template<template<class...> class F, uses_traits_type T>
-	using apply_traits_t = F<char_type_in_use_t<T>, traits_type_in_use_t<T>>;
+	template<uses_off_type T>
+	using off_type_in_use_t = typename std::remove_reference_t<T>::off_type;
 
+	template<uses_pos_type T>
+	using pos_type_in_use_t = typename std::remove_reference_t<T>::pos_type;
 
+	template<uses_state_type T>
+	using state_type_in_use_t = typename std::remove_reference_t<T>::state_type;
+
+	template<class T>
+	concept uses_traits_type_or_char_traits_like = uses_traits_type<T> || char_traits_like<T>;
+
+	namespace detail {
+		template<uses_traits_type_or_char_traits_like, class>
+		struct traits_type_filled;
+
+		template<char_traits_like T, template<class, class> class F, class A1, class A2>
+		struct traits_type_filled<T, F<A1, A2>> : std::type_identity<F<char_type_in_use_t<T>, T>> {};
+
+		template<uses_traits_type T, template<class, class> class F, class A1, class A2>
+		struct traits_type_filled<T, F<A1, A2>> : traits_type_filled<traits_type_in_use_t<T>, F<A1, A2>> {};
+
+		template<char_traits_like T, template<class> class F, class A1>
+		struct traits_type_filled<T, F<A1>> : std::type_identity<F<T>> {};
+
+		template<uses_traits_type T, template<class> class F, class A1>
+		struct traits_type_filled<T, F<A1>> : traits_type_filled<traits_type_in_use_t<T>, F<A1>> {};
+	}
+
+	template<class T, class U>
+	using traits_type_filled_t = type_in_use_t<detail::traits_type_filled<std::remove_reference_t<T>, U>>;
+
+	template<class T>
+	concept uses_view_type = requires { typename std::remove_reference_t<T>::view_type; };
+
+	template<uses_view_type T>
+	using view_type_in_use_t = typename std::remove_reference_t<T>::view_type;
 
 	// Constraint negali būti pakeistas į concept, nes pirmas parametras concept'o nebūtų tipas.
 	template<template<class...> class T, class... A>
@@ -366,26 +433,8 @@ namespace aa {
 	template<class... A>
 	using first_or_void_t = first_t<A..., void>;
 
-	// TODO: GCC bug, can't use decltype(lambda) directly.
-	namespace {
-		template<template<auto...> class U>
-		struct lambda_accepting_twnttp : decltype([]<auto... A>(const U<A...> &) consteval -> void {}) {};
-
-		template<template<class...> class U>
-		struct lambda_accepting_twttp : decltype([]<class... A>(const U<A...> &) consteval -> void {}) {};
-	}
-
 	template<class T>
-	concept not_const = !std::is_const_v<T>;
-
-	template<class T, template<auto...> class U>
-	concept instance_of_twnttp = std::invocable<lambda_accepting_twnttp<U>, T &>;
-
-	template<class T, template<class...> class U>
-	concept instance_of_twttp = std::invocable<lambda_accepting_twttp<U>, T &>;
-
-	template<class T, template<class...> class U>
-	concept not_const_and_instance_of_twttp = not_const<T> && instance_of_twttp<T, U>;
+	concept not_const = !std::is_const_v<std::remove_reference_t<T>>;
 
 	template<class... A>
 	concept same_as_every = (... && std::same_as<first_t<A...>, A>);
@@ -398,6 +447,9 @@ namespace aa {
 
 	template<class T, size_t I = numeric_max>
 	concept placeholder = (is_numeric_max(I) ? (!!std::is_placeholder_v<T>) : (std::is_placeholder_v<T> == I));
+
+	template<class T>
+	concept pointer = std::is_pointer_v<T>;
 
 	template<class T>
 	concept lvalue_reference = std::is_lvalue_reference_v<T>;
@@ -427,7 +479,7 @@ namespace aa {
 	concept trivially_default_constructible = std::is_trivially_default_constructible_v<T>;
 
 	template<class L, class R>
-	concept wo_ref_derived_from = std::derived_from<std::remove_reference_t<L>, R>;
+	concept ref_convertible_to = std::convertible_to<L &, R>;
 
 	template<class L, class R>
 	concept wo_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
@@ -443,7 +495,7 @@ namespace aa {
 	concept functor = requires { &T::operator(); };
 
 	template<class F, class... A>
-	concept invocable_ref = std::invocable<F &, A...>;
+	concept ref_invocable = std::invocable<F &, A...>;
 
 	template<class F, class R, class... A>
 	concept invocable_r = std::is_invocable_r_v<R, F, A...>;
@@ -463,6 +515,32 @@ namespace aa {
 	template<class T>
 	concept convertible_from_floating_point =
 		(std::convertible_to<float, T> && std::convertible_to<double, T> && std::convertible_to<long double, T>);
+
+
+
+	template<class>
+	AA_CONSTEXPR const bool is_template_v = false;
+
+	template<template<class...> class F, class... A>
+	AA_CONSTEXPR const bool is_template_v<F<A...>> = true;
+
+	template<template<auto...> class F, auto... A>
+	AA_CONSTEXPR const bool is_template_v<F<A...>> = true;
+
+	template<class T>
+	concept not_template = !is_template_v<T>;
+
+	template<class, class>
+	AA_CONSTEXPR const bool is_instance_of_v = false;
+
+	template<template<class...> class F, class... A1, class... A2>
+	AA_CONSTEXPR const bool is_instance_of_v<F<A1...>, F<A2...>> = true;
+
+	template<template<auto...> class F, auto... A1, auto... A2>
+	AA_CONSTEXPR const bool is_instance_of_v<F<A1...>, F<A2...>> = true;
+
+	template<class T, class U>
+	concept instance_of = is_instance_of_v<std::remove_reference_t<T>, U>;
 
 
 
@@ -569,6 +647,10 @@ namespace aa {
 
 
 
+	// Nenaudojame dangling, nes ta klasė naudojama ranges kontekste.
+	template<class T, class U = void>
+	using borrowed_t = type_pack_element_t<!lvalue_reference<T>, type_pack_element_t<!same_as_void<U>, T, U>, void>;
+
 	// Reikia using šio, nes testavimui reikėjo sukurti tuple su 100 elementų ir nėra variantas turėti 100 using'ų.
 	template<template<class...> class T, auto F, size_t N>
 	using filled_t = type_in_use_t<const_t<apply<N>([]<size_t... I> ->
@@ -593,23 +675,31 @@ namespace aa {
 	concept arithmetic_array_like = (array_like<T, N> && arithmetic<array_element_t<T>>);
 
 	template<class T, class U>
-	concept same_tuple_size_as = std::tuple_size_v<T> == std::tuple_size_v<U>;
+	concept same_tuple_size_as = tuple_like<T> && (std::tuple_size_v<T> == std::tuple_size_v<U>);
 
 	template<class T, class U>
 	concept array_similar_to = (std::same_as<array_element_t<T>, array_element_t<U>> && same_tuple_size_as<T, U>);
 
+	template<class F, size_t I = 0>
+	using constifier_func_t = const_t<&std::remove_cvref_t<F>::template operator()<I>>;
+
+	template<class F, size_t I>
+	AA_CONSTEXPR const constifier_func_t<F, I> constifier_func_v = &std::remove_cvref_t<F>::template operator()<I>;
+
 	template<class F, size_t N>
-	concept constifier_like = apply<N>([]<size_t... I> ->
-		bool { return same_as_every<const_t<&std::remove_cvref_t<F>::template operator()<I>>...>; });
+	concept constifier_like = apply<N>([]<size_t... I> -> bool { return same_as_every<constifier_func_t<F, I>...>; });
+
+	template<class F, size_t N, class... A>
+	concept invocable_constifier = (constifier_like<F, N> && std::invocable<constifier_func_t<F>, A...>);
 
 
 
 	template<size_t N, constifier_like<N> F>
 	AA_CONSTEXPR const std::array constifier_table = apply<N>([]<size_t... I> ->
-		std::array<const_t<&std::remove_cvref_t<F>::template operator()<0>>, N>
-	{ return {(&std::remove_cvref_t<F>::template operator()<I>)...}; });
+		std::array<constifier_func_t<F>, N> { return {constifier_func_v<F, I>...}; });
 
 	template<size_t N, class F, class... A>
+		requires (invocable_constifier<F, N, A...>)
 	AA_CONSTEXPR decltype(auto) constify(const size_t i, F &&f, A&&... args) {
 		return (std::forward<F>(f).*constifier_table<N, F>[i])(std::forward<A>(args)...);
 	}
@@ -661,9 +751,6 @@ namespace aa {
 	template<class T, class... U>
 	concept hasher_for = (... && hashable_by<U, const T &>);
 
-	template<class T, class U>
-	concept char_traits_for = char_traits_like<T> && std::same_as<typename T::char_type, U>;
-
 	template<class T, class U, size_t N = numeric_max>
 	concept arithmetic_array_getter = (std::invocable<const T &, const U &>
 		&& arithmetic_array_like<std::remove_cvref_t<std::invoke_result_t<const T &, const U &>>, N>);
@@ -709,45 +796,16 @@ namespace aa {
 
 
 
-	template<convertible_from<size_t> T>
-	AA_CONSTEXPR const T zero_v = static_cast<T>(0uz);
-
-	template<convertible_from<size_t> T>
-	AA_CONSTEXPR const T one_v = static_cast<T>(1uz);
-
-	template<convertible_from<size_t> T>
-	AA_CONSTEXPR const T two_v = static_cast<T>(2uz);
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_zero(const T &x) {
-		return x == zero_v<T>;
-	}
-
-	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_one(const T &x) {
-		return x == one_v<T>;
-	}
-
-	template<std::equality_comparable T>
-	AA_CONSTEXPR bool is_two(const T &x) {
-		return x == two_v<T>;
-	}
-#pragma GCC diagnostic pop
-
-
-
 	template<std::integral U = size_t, std::unsigned_integral T>
 	AA_CONSTEXPR U int_exp2(const T x) {
-		return one_v<U> << x;
+		return value_v<U, 1> << x;
 	}
 
 	// T yra tipas, kurio bitus skaičiuosime, U nurodo kokiu tipu pateikti rezutatus.
 	// [0, digits<T>) ∪ {0b(1)_digits<T>}
 	template<std::integral U = size_t, std::unsigned_integral T>
 	AA_CONSTEXPR U int_log2(const T x) {
-		return (constant_v<U, numeric_digits_v<std::make_signed_t<T>>>) - unsign_cast<U>(std::countl_zero(x));
+		return (value_v<U, numeric_digits_v<std::make_signed_t<T>>>) - unsign_cast<U>(std::countl_zero(x));
 	}
 
 
@@ -844,12 +902,12 @@ namespace aa {
 
 
 	// Lyginimas su 0 yra greitesnė operacija negu lyginimas su kokia kita konstanta.
-	template<invocable_ref F>
+	template<ref_invocable F>
 	AA_CONSTEXPR void unsafe_repeat(size_t e_S1, F &&f) {
 		do { std::invoke(f); if (e_S1 != 0) --e_S1; else return; } while (true);
 	}
 
-	template<invocable_ref<size_t> F>
+	template<ref_invocable<size_t> F>
 	AA_CONSTEXPR void unsafe_repeat(size_t e_S1, F &&f) {
 		do { std::invoke(f, std::as_const(e_S1)); if (e_S1 != 0) --e_S1; else return; } while (true);
 	}
@@ -857,12 +915,12 @@ namespace aa {
 	// Funkcijos nepilnai generic kaip iota_view, nes neegzistuoja weakly_decrementable concept.
 	// Jei reikia normalių indeksų, tada jau reikia naudoti nebe šias funkcijas, o pavyzdžiui iota_view su for_each.
 	// Galėtume kažkokius argumentus kiekvieną iteraciją paduoti į funkciją, bet niekur taip nėra realizuoti algoritmai.
-	template<invocable_ref F>
+	template<ref_invocable F>
 	AA_CONSTEXPR void repeat(const size_t e, F &&f) {
 		unsafe_repeat(e - 1, f);
 	}
 
-	template<invocable_ref<size_t> F>
+	template<ref_invocable<size_t> F>
 	AA_CONSTEXPR void repeat(const size_t e, F &&f) {
 		unsafe_repeat(e - 1, f);
 	}

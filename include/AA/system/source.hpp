@@ -6,6 +6,7 @@
 #include "print.hpp"
 #include <cstdlib> // exit, EXIT_FAILURE
 #include <iostream> // cerr, clog
+#include <ostream> // ostream
 
 
 
@@ -33,15 +34,14 @@ namespace aa {
 
 	// Klasės reikia, nes source_location klasės negalima naudoti kaip non type template parameter
 	// ir taip pat yra truputį keista man, kad minėtos klasės duomenys pasiekiami tik per metodus.
-	template<size_t COL, size_t LINE, basic_fixed_string FILE, basic_fixed_string FUNC>
-		requires (std::same_as<traits_type_in_use_t<const_t<FILE>>, traits_type_in_use_t<const_t<FUNC>>>)
+	//
+	// fixed_string tipas naudojamas, nes source_location file_name, function_name metodai gražina const char*.
+	template<size_t COL, size_t LINE, fixed_string FILE, fixed_string FUNC>
 	struct source_data {
-		using ostream_type = typename const_t<FILE>::ostream_type;
-
 		// Naudojamas ostream stream, nes fixed_string galima naudoti tik su tokiu stream, o
 		// fixed_string turime naudoti dėl constantų tipo, kuriomis ši klasė inicializuojama.
 		// Input/output
-		friend AA_CONSTEXPR ostream_type &operator<<(ostream_type &s, const source_data &) {
+		friend AA_CONSTEXPR std::ostream &operator<<(std::ostream &s, const source_data &) {
 			print(s, FILE, ':', LINE);
 			if constexpr (!is_numeric_max(COL)) {
 				print(s, ':', COL);
@@ -52,21 +52,20 @@ namespace aa {
 
 
 
-	// S constrained, nes kitaip gali būti paduotas ne stream tipas.
-	// D tipas ne bet koks, nes funkcija buvo sukurta dirbti su source_data tipu.
-	template<instance_of_twnttp<source_data> D, output_stream S, class... A>
-	AA_CONSTEXPR void log(S &&s, const A&... args) {
-		if constexpr (sizeof...(A))		printl(s, default_value_v<D>, ": ", args...);
-		else							log<D>(s, "Info logged.");
+	// source_location neišeitų naudoti, nes turime naudoti parameter pack.
+	// ostream naudojame, nes funkcija turi galėti išspausdinti source_data.
+	template<stream_insertable auto D, ref_convertible_to<std::ostream &> S, stream_insertable... A>
+	AA_CONSTEXPR borrowed_t<S, std::ostream &> log(S &&s, const A&... args) {
+		if constexpr (sizeof...(A))		return printl(s, D, ": ", args...);
+		else							return log<D>(s, "Info logged.");
 	}
 
-	template<instance_of_twnttp<source_data> D, class... A>
-		requires (not_output_stream<first_or_void_t<A...>>)
-	AA_CONSTEXPR void log(const A&... args) {
-		log<D>(std::clog, args...);
+	template<stream_insertable auto D, stream_insertable... A>
+	AA_CONSTEXPR std::ostream &log(const A&... args) {
+		return log<D>(std::clog, args...);
 	}
 
-	template<instance_of_twnttp<source_data> D, output_stream S, class... A>
+	template<stream_insertable auto D, ref_convertible_to<std::ostream &> S, stream_insertable... A>
 	[[noreturn]] AA_CONSTEXPR void abort(S &&s, const A&... args) {
 		if constexpr (sizeof...(A))		log<D>(s, args...);
 		else							log<D>(s, "Program aborted.");
@@ -74,8 +73,7 @@ namespace aa {
 		std::exit(EXIT_FAILURE);
 	}
 
-	template<instance_of_twnttp<source_data> D, class... A>
-		requires (not_output_stream<first_or_void_t<A...>>)
+	template<stream_insertable auto D, stream_insertable... A>
 	[[noreturn]] AA_CONSTEXPR void abort(const A&... args) {
 		abort<D>(std::cerr, args...);
 	}
