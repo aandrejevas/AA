@@ -50,7 +50,7 @@ namespace aa {
 
 
 
-	template<class T, size_t I = 0, char_range U, class EVAL = generic_evaluator<>>
+	template<class T, size_t I = 0, char_range U, class EVAL = const generic_evaluator<>>
 	AA_CONSTEXPR std::remove_cvref_t<T> evaluate(const U &token, EVAL &&eval = default_value) {
 		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void {
 			invoke<I>(std::forward<EVAL>(eval), t, token);

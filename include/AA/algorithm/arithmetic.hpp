@@ -37,12 +37,12 @@ namespace aa {
 		return aa::map(aa::norm(value, mag1), mag2);
 	}
 
-	template<placeholder<1>, std::floating_point T>
+	template<placeholder<1> auto, std::floating_point T>
 	AA_CONSTEXPR T norm_map(const T value, const T start1, const T mag1, const T mag2) {
 		return aa::map(aa::norm(value, start1, mag1), mag2);
 	}
 
-	template<placeholder<2>, std::floating_point T>
+	template<placeholder<2> auto, std::floating_point T>
 	AA_CONSTEXPR T norm_map(const T value, const T mag1, const T start2, const T mag2) {
 		return aa::map(aa::norm(value, mag1), start2, mag2);
 	}
@@ -217,14 +217,16 @@ namespace aa {
 		AA_CONSTEXPR const_reference min() const { return get_0(*this); }
 		AA_CONSTEXPR const_reference max() const { return get_1(*this); }
 
-		AA_CONSTEXPR bool min_eq(const value_type x) const { return min() == x; }
-		AA_CONSTEXPR bool max_eq(const value_type x) const { return max() == x; }
-		AA_CONSTEXPR bool eq(const value_type x1, const value_type x2) const { return min_eq(x1) && max_eq(x2); }
+		AA_CONSTEXPR bool min_eq(propagate_const_t<value_type> x) const { return min() == x; }
+		AA_CONSTEXPR bool max_eq(propagate_const_t<value_type> x) const { return max() == x; }
+		AA_CONSTEXPR bool eq(propagate_const_t<value_type> x1, propagate_const_t<value_type> x2) const {
+			return min_eq(x1) && max_eq(x2);
+		}
 
-		AA_CONSTEXPR bool open_contains(const value_type x) const { return min() < x && x < max(); }
-		AA_CONSTEXPR bool closed_contains(const value_type x) const { return min() <= x && x <= max(); }
-		AA_CONSTEXPR bool left_open_contains(const value_type x) const { return min() < x && x <= max(); }
-		AA_CONSTEXPR bool right_open_contains(const value_type x) const { return min() <= x && x < max(); }
+		AA_CONSTEXPR bool open_contains(propagate_const_t<value_type> x) const { return min() < x && x < max(); }
+		AA_CONSTEXPR bool closed_contains(propagate_const_t<value_type> x) const { return min() <= x && x <= max(); }
+		AA_CONSTEXPR bool left_open_contains(propagate_const_t<value_type> x) const { return min() < x && x <= max(); }
+		AA_CONSTEXPR bool right_open_contains(propagate_const_t<value_type> x) const { return min() <= x && x < max(); }
 
 		AA_CONSTEXPR bool empty() const { return min() > max(); }
 		AA_CONSTEXPR bool degenerate() const { return min() == max(); }
@@ -241,14 +243,12 @@ namespace aa {
 		// Modifiers
 		AA_CONSTEXPR bool left_shrink(const value_type x) { return (min() < x) ? (min() = x, true) : false; }
 		AA_CONSTEXPR bool right_shrink(const value_type x) { return (x < max()) ? (max() = x, true) : false; }
-
 		AA_CONSTEXPR bool shrink(const value_type x1, const value_type x2) {
 			return left_shrink(x1) | right_shrink(x2);
 		}
 
 		AA_CONSTEXPR bool left_expand(const value_type x) { return (x < min()) ? (min() = x, true) : false; }
 		AA_CONSTEXPR bool right_expand(const value_type x) { return (max() < x) ? (max() = x, true) : false; }
-
 		AA_CONSTEXPR bool expand(const value_type x) {
 			// Patikrinau, čia greičiausia teisinga realizacija.
 			return left_expand(x) | right_expand(x);

@@ -690,7 +690,7 @@ namespace aa {
 	concept constifier_like = apply<N>([]<size_t... I> -> bool { return same_as_every<constifier_func_t<F, I>...>; });
 
 	template<class F, size_t N, class... A>
-	concept invocable_constifier = (constifier_like<F, N> && std::invocable<constifier_func_t<F>, A...>);
+	concept invocable_constifier = (constifier_like<F, N> && std::invocable<constifier_func_t<F>, F, A...>);
 
 
 

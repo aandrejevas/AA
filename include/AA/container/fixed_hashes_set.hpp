@@ -95,7 +95,7 @@ namespace aa {
 
 
 			// Special member functions
-			template<constructible_to<hasher_type> U = hasher_type>
+			template<constructible_to<hasher_type> U = const hasher_type>
 			AA_CONSTEXPR fixed_hashes_set_base(U &&h = default_value) : hasher{std::forward<U>(h)} {}
 
 
@@ -284,7 +284,7 @@ namespace aa {
 		AA_CONSTEXPR difference_type ssize() const { return sign(size()); }
 
 		static AA_CONSTEVAL size_type max_size() {
-			return local_iterator::max_size() * max_bucket_count();
+			return local_iterator::max_size() * base_type::max_bucket_count();
 		}
 
 
@@ -398,7 +398,7 @@ namespace aa {
 		AA_CONSTEXPR difference_type ssize() const { return sign(size()); }
 
 		static AA_CONSTEVAL size_type max_size() {
-			return local_iterator::max_size() * max_bucket_count();
+			return local_iterator::max_size() * base_type::max_bucket_count();
 		}
 
 

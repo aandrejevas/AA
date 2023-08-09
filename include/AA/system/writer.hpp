@@ -4,6 +4,7 @@
 #include "../metaprogramming/io.hpp"
 #include "print.hpp"
 #include <ranges> // input_range, range_value_t
+#include <ostream> // basic_ostream
 #include <algorithm> // for_each
 #include <iomanip> // setw
 
@@ -83,6 +84,9 @@ namespace aa {
 	template<std::ranges::input_range R, class F = delim_r_inserter<>>
 	struct range_writer {
 #pragma GCC diagnostic pop
+		template<char_traits_like T>
+		using ostream_type = std::basic_ostream<char_type_in_use_t<T>, T>;
+
 		[[no_unique_address]] const R range;
 		[[no_unique_address]] const F fun = default_value;
 
@@ -90,8 +94,8 @@ namespace aa {
 		// template argumentą, abu sprendimai labai nepatogūs. Na iš principo tai yra keista į spausdinimo funkciją
 		// paduoti ne const kintamąjį. Išlieka galimybė pvz. turėti mutable lambdas ir keisti range elementus.
 		template<char_traits_like T>
-			requires (std::invocable<const F &, ostream_t<T> &, const std::ranges::range_value_t<R> &>)
-		friend AA_CONSTEXPR ostream_t<T> &operator<<(ostream_t<T> &s, const range_writer &w) {
+			requires (std::invocable<const F &, ostream_type<T> &, const std::ranges::range_value_t<R> &>)
+		friend AA_CONSTEXPR ostream_type<T> &operator<<(ostream_type<T> &s, const range_writer &w) {
 			std::ranges::for_each(w.range, [&s, &w](const std::ranges::range_value_t<R> &element) -> void {
 				std::invoke(w.fun, s, element);
 			});
@@ -99,7 +103,7 @@ namespace aa {
 		}
 	};
 
-	template<class R, class F = delim_r_inserter<>>
+	template<class R, class F = const delim_r_inserter<>>
 	range_writer(R &&, F && = default_value) -> range_writer<R, F>;
 
 
@@ -109,12 +113,15 @@ namespace aa {
 	template<class E, class F = delim_r_inserter<>>
 	struct writer {
 #pragma GCC diagnostic pop
+		template<char_traits_like T>
+		using ostream_type = std::basic_ostream<char_type_in_use_t<T>, T>;
+
 		[[no_unique_address]] const E element;
 		[[no_unique_address]] const F fun = default_value;
 
 		template<char_traits_like T>
-			requires (std::invocable<const F &, ostream_t<T> &, const E &>)
-		friend AA_CONSTEXPR ostream_t<T> &operator<<(ostream_t<T> &s, const writer &w) {
+			requires (std::invocable<const F &, ostream_type<T> &, const E &>)
+		friend AA_CONSTEXPR ostream_type<T> &operator<<(ostream_type<T> &s, const writer &w) {
 			std::invoke(w.fun, s, w.element);
 			return s;
 		}
@@ -122,7 +129,7 @@ namespace aa {
 
 	// Anksčiau buvo apibrėžti papildomi guides, kad copy elision nesuvalgytų konstruktorių.
 	// Bet dabar sakome, kad tokiais atvejais tiesiog reiktų naudoti protingesnius inserters.
-	template<class E, class F = delim_r_inserter<>>
+	template<class E, class F = const delim_r_inserter<>>
 	writer(E &&, F && = default_value) -> writer<E, F>;
 
 }
