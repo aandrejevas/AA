@@ -35,7 +35,7 @@ namespace aa {
 	//
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<instance_of<string_perfect_hash<>> auto H, ref_convertible_to<std::istream &> FILE, wo_ref_same_as<lexer_config> CONFIG, invocable_constifier<std::tuple_size_v<const_t<H>>, const std::string &> CONSUMER>
+	template<instance_of<string_perfect_hash<>> auto H, invocable_constifier<std::tuple_size_v<const_t<H>>, const std::string &> CONSUMER, ref_convertible_to<std::istream &> FILE, wo_ref_same_as<lexer_config> CONFIG = lexer_config>
 	AA_CONSTEXPR void lex(FILE &&_file, CONFIG &&config, CONSUMER &&consumer) {
 		// Konstruktorius nenustato eofbit jei failas tuščias todėl reikia šio tikrinimo.
 		std::istream &file = cast<std::istream &>(_file);
