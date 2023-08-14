@@ -15,7 +15,7 @@ namespace aa {
 
 	template<auto I, out_unary_invocable F>
 	AA_CONSTEXPR std::remove_reference_t<function_argument_t<F>> make_with_invocable(F &&f = default_value) {
-		std::remove_reference_t<function_argument_t<F>> d = const_v<cast<std::remove_reference_t<function_argument_t<F>>>(I)>;
+		std::remove_reference_t<function_argument_t<F>> d = value_v<std::remove_reference_t<function_argument_t<F>>, I>;
 		std::invoke(std::forward<F>(f), d);
 		return d;
 	}
