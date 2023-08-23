@@ -28,133 +28,133 @@ namespace aa {
 
 		// Element access
 		template<size_type I>
-		AA_CONSTEXPR reference get() requires (I < N) { return get(I); }
+		constexpr reference get() requires (I < N) { return get(I); }
 		template<size_type I>
-		AA_CONSTEXPR const_reference get() const requires (I < N) { return get(I); }
+		constexpr const_reference get() const requires (I < N) { return get(I); }
 
-		AA_CONSTEXPR reference operator[](const size_type pos) { return get(pos); }
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return get(pos); }
+		constexpr reference operator[](const size_type pos) { return get(pos); }
+		constexpr const_reference operator[](const size_type pos) const { return get(pos); }
 
-		AA_CONSTEXPR reference get(const size_type pos) { return *data(pos); }
-		AA_CONSTEXPR const_reference get(const size_type pos) const { return *data(pos); }
+		constexpr reference get(const size_type pos) { return *data(pos); }
+		constexpr const_reference get(const size_type pos) const { return *data(pos); }
 
-		AA_CONSTEXPR reference rget(const size_type pos) { return *rdata(pos); }
-		AA_CONSTEXPR const_reference rget(const size_type pos) const { return *rdata(pos); }
+		constexpr reference rget(const size_type pos) { return *rdata(pos); }
+		constexpr const_reference rget(const size_type pos) const { return *rdata(pos); }
 
-		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
-		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
+		constexpr pointer data(const size_type pos) { return data() + pos; }
+		constexpr const_pointer data(const size_type pos) const { return data() + pos; }
 
-		AA_CONSTEXPR pointer rdata(const size_type pos) { return rdata() - pos; }
-		AA_CONSTEXPR const_pointer rdata(const size_type pos) const { return rdata() - pos; }
+		constexpr pointer rdata(const size_type pos) { return rdata() - pos; }
+		constexpr const_pointer rdata(const size_type pos) const { return rdata() - pos; }
 
-		AA_CONSTEXPR pointer data() { return elements.data(); }
-		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
+		constexpr pointer data() { return elements.data(); }
+		constexpr const_pointer data() const { return elements.data(); }
 
-		AA_CONSTEXPR pointer rdata() { return r_begin; }
-		AA_CONSTEXPR const_pointer rdata() const { return r_begin; }
+		constexpr pointer rdata() { return r_begin; }
+		constexpr const_pointer rdata() const { return r_begin; }
 
-		AA_CONSTEXPR reference front() { return *data(); }
-		AA_CONSTEXPR const_reference front() const { return *data(); }
+		constexpr reference front() { return *data(); }
+		constexpr const_reference front() const { return *data(); }
 
-		AA_CONSTEXPR reference back() { return *rdata(); }
-		AA_CONSTEXPR const_reference back() const { return *rdata(); }
+		constexpr reference back() { return *rdata(); }
+		constexpr const_reference back() const { return *rdata(); }
 
 
 
 		// Iterators
-		AA_CONSTEXPR iterator begin() { return data(); }
-		AA_CONSTEXPR const_iterator begin() const { return data(); }
+		constexpr iterator begin() { return data(); }
+		constexpr const_iterator begin() const { return data(); }
 
-		AA_CONSTEXPR iterator end() { return rdata() + 1; }
-		AA_CONSTEXPR const_iterator end() const { return rdata() + 1; }
+		constexpr iterator end() { return rdata() + 1; }
+		constexpr const_iterator end() const { return rdata() + 1; }
 
-		AA_CONSTEXPR iterator rbegin() { return rdata(); }
-		AA_CONSTEXPR const_iterator rbegin() const { return rdata(); }
+		constexpr iterator rbegin() { return rdata(); }
+		constexpr const_iterator rbegin() const { return rdata(); }
 
-		AA_CONSTEXPR iterator rend() { return r_end; }
-		AA_CONSTEXPR const_iterator rend() const { return r_end; }
+		constexpr iterator rend() { return r_end; }
+		constexpr const_iterator rend() const { return r_end; }
 
 
 
 		// Capacity
-		AA_CONSTEXPR bool empty() const { return r_begin == r_end; }
-		AA_CONSTEXPR bool single() const { return r_begin == data(); }
-		AA_CONSTEXPR bool full() const { return size() == max_size(); }
+		constexpr bool empty() const { return r_begin == r_end; }
+		constexpr bool single() const { return r_begin == data(); }
+		constexpr bool full() const { return size() == max_size(); }
 
-		AA_CONSTEXPR difference_type ssize() const { return r_begin - r_end; }
-		AA_CONSTEXPR size_type size() const { return unsign(ssize()); }
+		constexpr difference_type ssize() const { return r_begin - r_end; }
+		constexpr size_type size() const { return unsign(ssize()); }
 
-		static AA_CONSTEVAL size_type max_size() { return N; }
-		static AA_CONSTEVAL size_type tuple_size() { return N; }
-		static AA_CONSTEVAL size_type max_index() { return N - 1; }
+		static consteval size_type max_size() { return N; }
+		static consteval size_type tuple_size() { return N; }
+		static consteval size_type max_index() { return N - 1; }
 
-		AA_CONSTEXPR difference_type sindexl() const { return r_begin - data(); }
-		AA_CONSTEXPR size_type indexl() const { return unsign(sindexl()); }
+		constexpr difference_type sindexl() const { return r_begin - data(); }
+		constexpr size_type indexl() const { return unsign(sindexl()); }
 
 
 
 		// Anksčiau buvo, bet dabar nebėra elemento įdėjimo metodų overload'ų, kurie priimtų
 		// value_type&&, nes move semantics neturi prasmės trivially copyable tipams.
 		// Modifiers
-		AA_CONSTEXPR void clear() { r_begin = r_end; }
+		constexpr void clear() { r_begin = r_end; }
 
-		AA_CONSTEXPR iterator resize(const size_type count) { return r_begin = r_end + count; }
-		AA_CONSTEXPR iterator resize(const const_iterator pos) { return r_begin = const_cast<iterator>(pos); }
+		constexpr iterator resize(const size_type count) { return r_begin = r_end + count; }
+		constexpr iterator resize(const const_iterator pos) { return r_begin = const_cast<iterator>(pos); }
 
-		AA_CONSTEXPR iterator pop_back() { return --r_begin; }
-		AA_CONSTEXPR iterator push_back() { return ++r_begin; }
+		constexpr iterator pop_back() { return --r_begin; }
+		constexpr iterator push_back() { return ++r_begin; }
 
-		AA_CONSTEXPR iterator pop_back(const size_type count) { return r_begin -= count; }
-		AA_CONSTEXPR iterator push_back(const size_type count) { return r_begin += count; }
+		constexpr iterator pop_back(const size_type count) { return r_begin -= count; }
+		constexpr iterator push_back(const size_type count) { return r_begin += count; }
 
 		// Neišeina emplace_back ir push_back apjungti, nes įsivaizduokime tokį svenarijų, visi masyvo elementai
 		// pradžioje sukonstruojami ir mes norime tiesiog rodyklę pastumti, emplace_back iš naujo sukonstruotų elementą.
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		AA_CONSTEXPR iterator emplace_back(A&&... args) {
+		constexpr iterator emplace_back(A&&... args) {
 			return std::ranges::construct_at(push_back(), std::forward<A>(args)...);
 		}
 
 		template<assignable_to<reference> V>
-		AA_CONSTEXPR void insert_back(V &&value) { *push_back() = std::forward<V>(value); }
+		constexpr void insert_back(V &&value) { *push_back() = std::forward<V>(value); }
 
-		AA_CONSTEXPR void push(const const_iterator pos) {
+		constexpr void push(const const_iterator pos) {
 			++r_begin;
 			std::ranges::copy_backward(pos, const_cast<const_iterator>(r_begin), r_begin + 1);
 		}
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		AA_CONSTEXPR iterator emplace(const const_iterator pos, A&&... args) {
+		constexpr iterator emplace(const const_iterator pos, A&&... args) {
 			push(pos);
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
 		template<assignable_to<reference> V>
-		AA_CONSTEXPR void insert(const const_iterator pos, V &&value) {
+		constexpr void insert(const const_iterator pos, V &&value) {
 			push(pos);
 			*const_cast<iterator>(pos) = std::forward<V>(value);
 		}
 
-		AA_CONSTEXPR void erase(const const_iterator pos) {
+		constexpr void erase(const const_iterator pos) {
 			std::ranges::copy_n(pos + 1, r_begin - pos, const_cast<iterator>(pos));
 			--r_begin;
 		}
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		AA_CONSTEXPR iterator fast_emplace(const const_iterator pos, A&&... args) {
+		constexpr iterator fast_emplace(const const_iterator pos, A&&... args) {
 			insert_back(*pos);
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
 
 		template<assignable_to<reference> V>
-		AA_CONSTEXPR void fast_insert(const const_iterator pos, V &&value) {
+		constexpr void fast_insert(const const_iterator pos, V &&value) {
 			insert_back(*pos);
 			*const_cast<iterator>(pos) = std::forward<V>(value);
 		}
 
-		AA_CONSTEXPR void fast_erase(const const_iterator pos) {
+		constexpr void fast_erase(const const_iterator pos) {
 			*const_cast<iterator>(pos) = *r_begin--;
 		}
 
@@ -166,18 +166,18 @@ namespace aa {
 #pragma GCC diagnostic ignored "-Warray-bounds"
 		// Nedarome = default, nes konstrukrotius vis tiek nebus trivial,
 		// nes klasė turi kintamųjų su numatytais inicializatoriais.
-		AA_CONSTEXPR fixed_vector() {}
+		constexpr fixed_vector() {}
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuninitialized"
 		// Negalime turėti konstruktoriaus, kuris priimtų rodyklę, nes
 		// tik po konstruktoriaus įvykdymo galima gauti rodykles.
-		AA_CONSTEXPR fixed_vector(const std::default_sentinel_t) : r_begin{elements.data()} {}
+		constexpr fixed_vector(const std::default_sentinel_t) : r_begin{elements.data()} {}
 #pragma GCC diagnostic pop
-		AA_CONSTEXPR fixed_vector(const size_type count) : r_begin{r_end + count} {}
+		constexpr fixed_vector(const size_type count) : r_begin{r_end + count} {}
 		// Nereikia konstruktoriaus, kuriame būtų naudojama fill, nes šį funkcionalumą
 		// galima simuliuoti naudojant šį konstruktorių pavyzdžiui su repeat_view.
 		template<std::ranges::input_range R>
-		AA_CONSTEXPR fixed_vector(R &&r) : r_begin{std::ranges::copy(r, elements.data()).out - 1} {}
+		constexpr fixed_vector(R &&r) : r_begin{std::ranges::copy(r, elements.data()).out - 1} {}
 #pragma GCC diagnostic pop
 
 

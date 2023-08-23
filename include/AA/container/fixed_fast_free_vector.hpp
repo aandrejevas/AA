@@ -31,9 +31,9 @@ namespace aa {
 
 		// Capacity
 	public:
-		AA_CONSTEXPR bool has_holes() const { return first_hole; }
+		constexpr bool has_holes() const { return first_hole; }
 
-		AA_CONSTEXPR size_type holes_count() const {
+		constexpr size_type holes_count() const {
 			if (first_hole) {
 				size_type count = 0;
 				const node_type *iter = first_hole;
@@ -44,28 +44,28 @@ namespace aa {
 			} else return 0;
 		}
 
-		AA_CONSTEXPR bool full() const { return elements.full(); }
-		AA_CONSTEXPR bool empty() const { return elements.empty(); }
-		AA_CONSTEXPR bool single() const { return elements.single(); }
+		constexpr bool full() const { return elements.full(); }
+		constexpr bool empty() const { return elements.empty(); }
+		constexpr bool single() const { return elements.single(); }
 
-		AA_CONSTEXPR size_type size_wo_holes() const { return size() - holes_count(); }
-		AA_CONSTEXPR difference_type ssize() const { return elements.ssize(); }
-		AA_CONSTEXPR size_type size() const { return elements.size(); }
+		constexpr size_type size_wo_holes() const { return size() - holes_count(); }
+		constexpr difference_type ssize() const { return elements.ssize(); }
+		constexpr size_type size() const { return elements.size(); }
 
-		static AA_CONSTEVAL size_type max_size() { return N; }
-		static AA_CONSTEVAL size_type max_index() { return N - 1; }
+		static consteval size_type max_size() { return N; }
+		static consteval size_type max_index() { return N - 1; }
 
-		AA_CONSTEXPR difference_type sindexl() const { return elements.sindexl(); }
-		AA_CONSTEXPR size_type indexl() const { return elements.indexl(); }
+		constexpr difference_type sindexl() const { return elements.sindexl(); }
+		constexpr size_type indexl() const { return elements.indexl(); }
 
 
 
 		// Modifiers
-		AA_CONSTEXPR void clear() { elements.clear(); first_hole = nullptr; }
+		constexpr void clear() { elements.clear(); first_hole = nullptr; }
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		AA_CONSTEXPR pointer emplace(A&&... args) {
+		constexpr pointer emplace(A&&... args) {
 			if (first_hole) {
 				node_type &hole = *first_hole;
 				first_hole = hole.next;
@@ -76,7 +76,7 @@ namespace aa {
 		}
 
 		template<assignable_to<reference> V>
-		AA_CONSTEXPR void insert(V &&value) {
+		constexpr void insert(V &&value) {
 			if (first_hole) {
 				node_type &hole = *first_hole;
 				first_hole = hole.next;
@@ -86,7 +86,7 @@ namespace aa {
 			}
 		}
 
-		AA_CONSTEXPR void erase(const pointer pos) {
+		constexpr void erase(const pointer pos) {
 			node_type *const hole = std::bit_cast<node_type *>(pos);
 			hole->next = first_hole;
 			first_hole = hole;
@@ -95,7 +95,7 @@ namespace aa {
 
 
 		// Special member functions
-		AA_CONSTEXPR fixed_fast_free_vector() {}
+		constexpr fixed_fast_free_vector() {}
 
 
 

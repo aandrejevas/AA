@@ -13,7 +13,7 @@ namespace aa {
 
 	// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
 	template<permutable_random_access_range R, differences_generator_for<std::ranges::iterator_t<R>> G>
-	AA_CONSTEXPR void shuffle(R &&r, G &&g) {
+	constexpr void shuffle(R &&r, G &&g) {
 		if constexpr (!unusual_range<R>) {
 			partial_shuffle(r, std::ranges::end(r) - 2, g);
 		} else {
@@ -22,7 +22,7 @@ namespace aa {
 	}
 
 	template<permutable_random_access_range R, std::sentinel_for<std::ranges::iterator_t<R>> S, differences_generator_for<std::ranges::iterator_t<R>> G>
-	AA_CONSTEXPR void partial_shuffle(R &&r, const S &m, G &&g) {
+	constexpr void partial_shuffle(R &&r, const S &m, G &&g) {
 		std::ranges::iterator_t<R> b = std::ranges::begin(r);
 		const std::ranges::sentinel_t<R> e = std::ranges::end(r);
 		do {
@@ -35,7 +35,7 @@ namespace aa {
 
 	// https://en.wikipedia.org/wiki/Counting_sort
 	template<permutable_random_access_range R, key_bool_iterator_for<std::ranges::iterator_t<R>> B>
-	AA_CONSTEXPR void counting_sort(R &&r, const B &selected) {
+	constexpr void counting_sort(R &&r, const B &selected) {
 		std::ranges::iterator_t<R> b = std::ranges::begin(r);
 		const std::ranges::sentinel_t<R> e_S1 = get_rbegin(r);
 
@@ -55,7 +55,7 @@ namespace aa {
 	}
 
 	template<permutable_random_access_range R, std::sentinel_for<std::ranges::iterator_t<R>> S, differences_generator_for<std::ranges::iterator_t<R>> G, key_bool_iterator_for<std::ranges::iterator_t<R>> B>
-	AA_CONSTEXPR void partial_shuffle_counting_sort(R &&r, const S &m, G &&g, const B &selected) {
+	constexpr void partial_shuffle_counting_sort(R &&r, const S &m, G &&g, const B &selected) {
 		std::ranges::iterator_t<R> b = std::ranges::begin(r);
 		const std::ranges::sentinel_t<R> e = std::ranges::end(r);
 

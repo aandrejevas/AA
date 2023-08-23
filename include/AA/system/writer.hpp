@@ -14,12 +14,12 @@ namespace aa {
 
 	struct tuple_inserter {
 		template<ostream_like S, tuple_like U>
-		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
+		static constexpr void operator()(S &&s, const U &u) {
 			if constexpr (std::tuple_size_v<U>) {
 				apply<(std::tuple_size_v<U>) - 1>([&]<size_t... I> -> void {
 					print('{');
-					(print(s, default_value_v<getter<I>>(u), ", "), ...);
-					print(s, default_value_v<getter<sizeof...(I)>>(u), '}');
+					(print(s, getter_v<I>(u), ", "), ...);
+					print(s, getter_v<sizeof...(I)>(u), '}');
 				});
 			} else {
 				print("{}");
@@ -30,7 +30,7 @@ namespace aa {
 	// Nors čia ant S tipo galėtų nebūti constraint uždėtas, jis ten padėtas tam, kad pažymėti, kad S tipas nėra bet koks.
 	struct identity_inserter {
 		template<ostream_like S, class U>
-		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
+		static constexpr void operator()(S &&s, const U &u) {
 			if constexpr (stream_insertable<U, S>)	print(s, u);
 			else									default_value_v<tuple_inserter>(s, u);
 		}
@@ -39,7 +39,7 @@ namespace aa {
 	template<auto D = ' '>
 	struct delim_r_inserter {
 		template<ostream_like S, class U>
-		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
+		static constexpr void operator()(S &&s, const U &u) {
 			default_value_v<identity_inserter>(s, u);
 			print(s, D);
 		}
@@ -50,7 +50,7 @@ namespace aa {
 	template<auto D = ' '>
 	struct delim_l_inserter {
 		template<ostream_like S, class U>
-		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
+		static constexpr void operator()(S &&s, const U &u) {
 			print(s, D);
 			default_value_v<identity_inserter>(s, u);
 		}
@@ -61,7 +61,7 @@ namespace aa {
 	template<int N>
 	struct width_inserter {
 		template<ostream_like S, class U>
-		static AA_CONSTEXPR void operator()(S &&s, const U &u) {
+		static constexpr void operator()(S &&s, const U &u) {
 			print(s, std::setw(N), u);
 		}
 	};
@@ -95,7 +95,7 @@ namespace aa {
 		// paduoti ne const kintamąjį. Išlieka galimybė pvz. turėti mutable lambdas ir keisti range elementus.
 		template<char_traits_like T>
 			requires (std::invocable<const F &, ostream_type<T> &, const std::ranges::range_value_t<R> &>)
-		friend AA_CONSTEXPR ostream_type<T> &operator<<(ostream_type<T> &s, const range_writer &w) {
+		friend constexpr ostream_type<T> &operator<<(ostream_type<T> &s, const range_writer &w) {
 			std::ranges::for_each(w.range, [&s, &w](const std::ranges::range_value_t<R> &element) -> void {
 				std::invoke(w.fun, s, element);
 			});
@@ -121,7 +121,7 @@ namespace aa {
 
 		template<char_traits_like T>
 			requires (std::invocable<const F &, ostream_type<T> &, const E &>)
-		friend AA_CONSTEXPR ostream_type<T> &operator<<(ostream_type<T> &s, const writer &w) {
+		friend constexpr ostream_type<T> &operator<<(ostream_type<T> &s, const writer &w) {
 			std::invoke(w.fun, s, w.element);
 			return s;
 		}

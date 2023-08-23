@@ -27,31 +27,31 @@ namespace aa {
 
 
 		// Member functions
-		static AA_CONSTEXPR rep now() {
+		static constexpr rep now() {
 			return clock_type::now().time_since_epoch().count();
 		}
 
-		AA_CONSTEXPR void reset() {
+		constexpr void reset() {
 			begin = 0;
 			end = 0;
 		}
 
-		AA_CONSTEXPR void start() {
+		constexpr void start() {
 			begin = now();
 		}
 
-		AA_CONSTEXPR void resume() {
+		constexpr void resume() {
 			begin -= std::exchange(end, value_v<rep, 0>);
 			begin += now();
 		}
 
-		AA_CONSTEXPR void stop() {
+		constexpr void stop() {
 			end = now();
 		}
 
 		template<class F, class... A>
 			requires (std::invocable<F, A...>)
-		AA_CONSTEXPR void measure(F &&f, A&&... args) {
+		constexpr void measure(F &&f, A&&... args) {
 			start();
 			std::invoke(std::forward<F>(f), std::forward<A>(args)...);
 			stop();
@@ -59,7 +59,7 @@ namespace aa {
 
 		template<class F, class... A>
 			requires (std::invocable<F, A...>)
-		AA_CONSTEXPR void append(F &&f, A&&... args) {
+		constexpr void append(F &&f, A&&... args) {
 			resume();
 			std::invoke(std::forward<F>(f), std::forward<A>(args)...);
 			stop();
@@ -67,20 +67,20 @@ namespace aa {
 
 		template<class F, class... A>
 			requires (std::invocable<F, A...>)
-		AA_CONSTEXPR void exclude(F &&f, A&&... args) {
+		constexpr void exclude(F &&f, A&&... args) {
 			stop();
 			std::invoke(std::forward<F>(f), std::forward<A>(args)...);
 			resume();
 		}
 
 		// Negali tikrinimas būti (end == 0), nes reset() metodą iškvietus rodytų, kad running.
-		AA_CONSTEXPR bool is_running() const {
+		constexpr bool is_running() const {
 			return end < begin;
 		}
 
 		// Pagal nutylėjimą, laikas pateikiamas sekundėmis.
 		template<class D = std::chrono::duration<double>>
-		AA_CONSTEXPR typename D::rep elapsed() const {
+		constexpr typename D::rep elapsed() const {
 			return std::chrono::duration_cast<D>(duration{end - begin}).count();
 		}
 	};

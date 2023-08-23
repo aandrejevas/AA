@@ -30,7 +30,7 @@ namespace aa {
 	//
 	// Nėra atitinkamos funkcijos rend iteratoriui, nes jis nėra svarbus.
 	template<unusual_or_bidirectional_or_common_range R>
-	AA_CONSTEXPR std::ranges::sentinel_t<R> get_rbegin(R &&r) {
+	constexpr std::ranges::sentinel_t<R> get_rbegin(R &&r) {
 		if constexpr (unusual_range<R>) {
 			return std::ranges::rbegin(r);
 		} else if constexpr (std::ranges::bidirectional_range<R>) {
@@ -41,7 +41,7 @@ namespace aa {
 	}
 
 	template<std::ranges::contiguous_range R>
-	AA_CONSTEXPR range_pointer_t<R> get_data_end(R &&r) {
+	constexpr range_pointer_t<R> get_data_end(R &&r) {
 		if constexpr (std::same_as<range_pointer_t<R>, iter_pointer_t<std::ranges::sentinel_t<R>>>) {
 			return std::to_address(std::ranges::end(r));
 		} else {
@@ -50,7 +50,7 @@ namespace aa {
 	}
 
 	template<std::ranges::range R>
-	AA_CONSTEXPR auto get_reversed_subrange(R &&r) {
+	constexpr auto get_reversed_subrange(R &&r) {
 		if constexpr (unusual_range<R> && std::ranges::bidirectional_range<R>) {
 			return std::ranges::subrange{std::make_reverse_iterator(std::ranges::end(r)), std::make_reverse_iterator(std::ranges::begin(r))};
 		} else {
@@ -96,17 +96,14 @@ namespace aa {
 	concept range_using_traits_type = sized_contiguous_range<T> &&
 		std::same_as<char_type_in_use_t<traits_type_in_use_t<T>>, std::ranges::range_value_t<T>>;
 
-	namespace detail {
-		// Darome prielaidą, kad char_traits yra apibrėžtas su visais tipais.
-		template<sized_contiguous_range T>
-		struct range_char_traits : std::type_identity<std::char_traits<std::ranges::range_value_t<T>>> {};
-
-		template<range_using_traits_type T>
-		struct range_char_traits<T> : std::type_identity<traits_type_in_use_t<T>> {};
-	}
-
 	template<sized_contiguous_range T>
-	using range_char_traits_t = type_in_use_t<detail::range_char_traits<T>>;
+	using range_char_traits_t = type_in_use_t<const_t<([] {
+		if constexpr (range_using_traits_type<T>)
+			return default_value_v<std::type_identity<traits_type_in_use_t<T>>>;
+		else
+			// Darome prielaidą, kad char_traits yra apibrėžtas su visais tipais.
+			return default_value_v<std::type_identity<std::char_traits<std::ranges::range_value_t<T>>>>;
+	})()>>;
 
 	template<class T, class U>
 	concept same_range_char_traits_as = std::same_as<range_char_traits_t<T>, U>;
@@ -121,7 +118,7 @@ namespace aa {
 	// std::iterator, kuris buvo naudojamas tokiu pačiu principu, tai reiškia nerekomenduojama tokia realizacija.
 	struct string_equal_to {
 		template<class L, same_range_char_traits_as<range_char_traits_t<L>> R>
-		static AA_CONSTEXPR bool operator()(const L &l, const R &r) {
+		static constexpr bool operator()(const L &l, const R &r) {
 			const size_t count = std::ranges::size(l);
 			return count == std::ranges::size(r) &&
 				!range_char_traits_t<L>::compare(std::ranges::data(l), std::ranges::data(r), count);

@@ -13,12 +13,12 @@ namespace aa {
 	template<template<class> class H = std::hash>
 	struct generic_hash {
 		template<hashable_by_template<H> T>
-		static AA_CONSTEXPR size_t operator()(const T &t) {
+		static constexpr size_t operator()(const T &t) {
 			return default_value_v<H<T>>(t);
 		}
 
-		static AA_CONSTEVAL size_t min() { return numeric_min; }
-		static AA_CONSTEVAL size_t max() { return numeric_max; }
+		static consteval size_t min() { return numeric_min; }
+		static consteval size_t max() { return numeric_max; }
 
 		using is_transparent = void;
 	};
@@ -30,12 +30,12 @@ namespace aa {
 	template<size_t N, template<class> class H = std::hash>
 	struct mod_generic_hash {
 		template<hashable_by_template<H> T>
-		static AA_CONSTEXPR size_t operator()(const T &t) {
+		static constexpr size_t operator()(const T &t) {
 			return remainder<N>(default_value_v<H<T>>(t));
 		}
 
-		static AA_CONSTEVAL size_t min() { return 0; }
-		static AA_CONSTEVAL size_t max() { return N - 1; }
+		static consteval size_t min() { return 0; }
+		static consteval size_t max() { return N - 1; }
 
 		using is_transparent = void;
 	};
@@ -54,21 +54,21 @@ namespace aa {
 
 	protected:
 		template<size_t I, auto V, class T, class F>
-		static AA_CONSTEXPR bool trie(const T &t, F &&f, const bool c) {
+		static constexpr bool trie(const T &t, F &&f, const bool c) {
 			if (c) {
 				if constexpr (I == std::tuple_size_v<const_t<V>>) {
 					invoke<pack_index_v<V, A...>>(std::forward<F>(f));
 					return true;
 				} else {
 					return trie<I + 1, V>(t, std::forward<F>(f),
-						traits_type::eq(std::ranges::data(t)[I], const_v<default_value_v<getter<I>>(V)>));
+						traits_type::eq(std::ranges::data(t)[I], const_v<getter_v<I>(V)>));
 				}
 			} else return false;
 		}
 
 	public:
 		template<class T, class F>
-		static AA_CONSTEXPR void operator()(const T &t, F &&f) {
+		static constexpr void operator()(const T &t, F &&f) {
 			if constexpr (same_range_char_traits_as<T, traits_type>) {
 				if ((... || trie<0, A>(t, std::forward<F>(f), std::ranges::size(t) == std::tuple_size_v<const_t<A>>)))
 					return;
@@ -76,8 +76,8 @@ namespace aa {
 			invoke<max()>(std::forward<F>(f));
 		}
 
-		static AA_CONSTEVAL size_t min() { return 0; }
-		static AA_CONSTEVAL size_t max() { return sizeof...(A); }
+		static consteval size_t min() { return 0; }
+		static consteval size_t max() { return sizeof...(A); }
 	};
 
 	template<auto... A>

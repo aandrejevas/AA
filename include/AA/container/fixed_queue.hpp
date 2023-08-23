@@ -26,107 +26,107 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR reference operator[](const size_type pos) { return get(pos); }
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return get(pos); }
+		constexpr reference operator[](const size_type pos) { return get(pos); }
+		constexpr const_reference operator[](const size_type pos) const { return get(pos); }
 
-		AA_CONSTEXPR reference get(const size_type pos) { return *data(pos); }
-		AA_CONSTEXPR const_reference get(const size_type pos) const { return *data(pos); }
+		constexpr reference get(const size_type pos) { return *data(pos); }
+		constexpr const_reference get(const size_type pos) const { return *data(pos); }
 
-		AA_CONSTEXPR reference rget(const size_type pos) { return elements.rget(pos); }
-		AA_CONSTEXPR const_reference rget(const size_type pos) const { return elements.rget(pos); }
+		constexpr reference rget(const size_type pos) { return elements.rget(pos); }
+		constexpr const_reference rget(const size_type pos) const { return elements.rget(pos); }
 
-		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
-		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
+		constexpr pointer data(const size_type pos) { return data() + pos; }
+		constexpr const_pointer data(const size_type pos) const { return data() + pos; }
 
-		AA_CONSTEXPR pointer rdata(const size_type pos) { return elements.rdata(pos); }
-		AA_CONSTEXPR const_pointer rdata(const size_type pos) const { return elements.rdata(pos); }
+		constexpr pointer rdata(const size_type pos) { return elements.rdata(pos); }
+		constexpr const_pointer rdata(const size_type pos) const { return elements.rdata(pos); }
 
-		AA_CONSTEXPR pointer data() { return f_begin; }
-		AA_CONSTEXPR const_pointer data() const { return f_begin; }
+		constexpr pointer data() { return f_begin; }
+		constexpr const_pointer data() const { return f_begin; }
 
-		AA_CONSTEXPR pointer rdata() { return elements.rdata(); }
-		AA_CONSTEXPR const_pointer rdata() const { return elements.rdata(); }
+		constexpr pointer rdata() { return elements.rdata(); }
+		constexpr const_pointer rdata() const { return elements.rdata(); }
 
-		AA_CONSTEXPR reference front() { return *data(); }
-		AA_CONSTEXPR const_reference front() const { return *data(); }
+		constexpr reference front() { return *data(); }
+		constexpr const_reference front() const { return *data(); }
 
-		AA_CONSTEXPR reference back() { return elements.back(); }
-		AA_CONSTEXPR const_reference back() const { return elements.back(); }
+		constexpr reference back() { return elements.back(); }
+		constexpr const_reference back() const { return elements.back(); }
 
 
 
 		// Iterators
-		AA_CONSTEXPR iterator begin() { return data(); }
-		AA_CONSTEXPR const_iterator begin() const { return data(); }
+		constexpr iterator begin() { return data(); }
+		constexpr const_iterator begin() const { return data(); }
 
-		AA_CONSTEXPR iterator end() { return elements.end(); }
-		AA_CONSTEXPR const_iterator end() const { return elements.end(); }
+		constexpr iterator end() { return elements.end(); }
+		constexpr const_iterator end() const { return elements.end(); }
 
-		AA_CONSTEXPR iterator rbegin() { return elements.rbegin(); }
-		AA_CONSTEXPR const_iterator rbegin() const { return elements.rbegin(); }
+		constexpr iterator rbegin() { return elements.rbegin(); }
+		constexpr const_iterator rbegin() const { return elements.rbegin(); }
 
-		AA_CONSTEXPR iterator rend() { return data() - 1; }
-		AA_CONSTEXPR const_iterator rend() const { return data() - 1; }
+		constexpr iterator rend() { return data() - 1; }
+		constexpr const_iterator rend() const { return data() - 1; }
 
 
 
 		// Capacity
-		AA_CONSTEXPR bool empty() const { return elements.empty(); }
-		AA_CONSTEXPR bool single() const { return f_begin == elements.rdata(); }
-		AA_CONSTEXPR bool full() const { return elements.full(); }
+		constexpr bool empty() const { return elements.empty(); }
+		constexpr bool single() const { return f_begin == elements.rdata(); }
+		constexpr bool full() const { return elements.full(); }
 
-		AA_CONSTEXPR difference_type ssize() const { return sindexl() + 1; }
-		AA_CONSTEXPR size_type size() const { return indexl() + 1; }
+		constexpr difference_type ssize() const { return sindexl() + 1; }
+		constexpr size_type size() const { return indexl() + 1; }
 
-		static AA_CONSTEVAL size_type max_size() { return N; }
-		static AA_CONSTEVAL size_type max_index() { return N - 1; }
+		static consteval size_type max_size() { return N; }
+		static consteval size_type max_index() { return N - 1; }
 
-		AA_CONSTEXPR difference_type sindexl() const { return elements.rdata() - f_begin; }
-		AA_CONSTEXPR size_type indexl() const { return unsign(sindexl()); }
+		constexpr difference_type sindexl() const { return elements.rdata() - f_begin; }
+		constexpr size_type indexl() const { return unsign(sindexl()); }
 
 
 
 		// Modifiers
-		AA_CONSTEXPR void clear() { elements.clear(); f_begin = elements.data(); }
+		constexpr void clear() { elements.clear(); f_begin = elements.data(); }
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		AA_CONSTEXPR iterator emplace_back(A&&... args) { return elements.emplace_back(std::forward<A>(args)...); }
+		constexpr iterator emplace_back(A&&... args) { return elements.emplace_back(std::forward<A>(args)...); }
 
 		template<assignable_to<reference> V>
-		AA_CONSTEXPR void insert_back(V &&value) { elements.insert_back(std::forward<V>(value)); }
+		constexpr void insert_back(V &&value) { elements.insert_back(std::forward<V>(value)); }
 
-		AA_CONSTEXPR void push_back() { elements.push_back(); }
+		constexpr void push_back() { elements.push_back(); }
 
-		AA_CONSTEXPR void pop_back() {
+		constexpr void pop_back() {
 			if (single())
 				clear(); else elements.pop_back();
 		}
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		AA_CONSTEXPR iterator emplace_front(A&&... args) { return std::ranges::construct_at(push_front(), std::forward<A>(args)...); }
+		constexpr iterator emplace_front(A&&... args) { return std::ranges::construct_at(push_front(), std::forward<A>(args)...); }
 
 		template<assignable_to<reference> V>
-		AA_CONSTEXPR void insert_front(V &&value) { *push_front() = std::forward<V>(value); }
+		constexpr void insert_front(V &&value) { *push_front() = std::forward<V>(value); }
 
-		AA_CONSTEXPR void push_front() { --f_begin; }
+		constexpr void push_front() { --f_begin; }
 
-		AA_CONSTEXPR void pop_front() {
+		constexpr void pop_front() {
 			if (single())
 				clear(); else ++f_begin;
 		}
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		AA_CONSTEXPR iterator emplace(const const_iterator pos, A&&... args) { return elements.emplace(pos, std::forward<A>(args)...); }
+		constexpr iterator emplace(const const_iterator pos, A&&... args) { return elements.emplace(pos, std::forward<A>(args)...); }
 
 		template<assignable_to<reference> V>
-		AA_CONSTEXPR void insert(const const_iterator pos, V &&value) { elements.insert(pos, std::forward<V>(value)); }
+		constexpr void insert(const const_iterator pos, V &&value) { elements.insert(pos, std::forward<V>(value)); }
 
-		AA_CONSTEXPR void push(const const_iterator pos) { elements.push(pos); }
+		constexpr void push(const const_iterator pos) { elements.push(pos); }
 
-		AA_CONSTEXPR void erase(const const_iterator pos) {
+		constexpr void erase(const const_iterator pos) {
 			if (single())
 				clear(); else elements.erase(pos);
 		}
@@ -134,9 +134,9 @@ namespace aa {
 
 
 		// Special member functions
-		AA_CONSTEXPR fixed_queue() {}
+		constexpr fixed_queue() {}
 		template<std::ranges::input_range R>
-		AA_CONSTEXPR fixed_queue(R &&r) : elements{r} {}
+		constexpr fixed_queue(R &&r) : elements{r} {}
 
 
 

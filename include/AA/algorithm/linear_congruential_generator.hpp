@@ -31,17 +31,17 @@ namespace aa {
 		// https://cp-algorithms.com/algebra/module-inverse.html
 		// https://en.wikipedia.org/wiki/Euler%27s_totient_function
 		// https://en.wikipedia.org/wiki/Modular_multiplicative_inverse#Using_Euler's_theorem
-		static AA_CONSTEXPR const modulus_type
+		static constexpr modulus_type
 			modulus = representable_values_v<result_type>;
-		static AA_CONSTEXPR const result_type
+		static constexpr result_type
 			multiplier = A, increment = C,
 			inverse = power(multiplier, (modulus >> 1) - 1);
 
 
 
 		// Characteristics
-		static AA_CONSTEVAL result_type min() { return numeric_min; }
-		static AA_CONSTEVAL result_type max() { return numeric_max; }
+		static consteval result_type min() { return numeric_min; }
+		static consteval result_type max() { return numeric_max; }
 
 
 
@@ -62,16 +62,16 @@ namespace aa {
 
 		// Generation
 		// [0, MODULUS)
-		AA_CONSTEXPR result_type next() { return (state = (state * multiplier) + increment); }
-		AA_CONSTEXPR result_type prev() { return (state = inverse * (state - increment)); }
-		AA_CONSTEXPR result_type curr() const { return state; }
+		constexpr result_type next() { return (state = (state * multiplier) + increment); }
+		constexpr result_type prev() { return (state = inverse * (state - increment)); }
+		constexpr result_type curr() const { return state; }
 
-		AA_CONSTEXPR result_type operator()() { return next(); }
+		constexpr result_type operator()() { return next(); }
 
 		// https://www.nayuki.io/page/fast-skipping-in-a-linear-congruential-generator
 		// https://docs.rs/randomize/2.2.2/src/randomize/lcg.rs.html#99-114
 		template<std::unsigned_integral U>
-		AA_CONSTEXPR result_type jump(U n) {
+		constexpr result_type jump(U n) {
 			result_type acc_mult = 1, acc_plus = 0,
 				cur_mult = multiplier, cur_plus = increment;
 			do {
@@ -88,7 +88,7 @@ namespace aa {
 		}
 
 		// https://math.stackexchange.com/questions/2008585/computing-the-distance-between-two-linear-congruential-generator-states
-		AA_CONSTEXPR result_type dist(const linear_congruential_generator &o) const {
+		constexpr result_type dist(const linear_congruential_generator &o) const {
 			result_type d = 0, mask = 1, t_state = state,
 				cur_mult = multiplier, cur_plus = increment;
 			do {
@@ -106,11 +106,11 @@ namespace aa {
 		}
 
 		// Seeding
-		AA_CONSTEXPR void seed() {
+		constexpr void seed() {
 			state = unsign<result_type>(std::chrono::system_clock::now().time_since_epoch().count());
 		}
 
-		AA_CONSTEXPR void seed(const result_type s) {
+		constexpr void seed(const result_type s) {
 			state = s;
 		}
 	};

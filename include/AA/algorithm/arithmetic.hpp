@@ -9,46 +9,46 @@
 namespace aa {
 
 	template<std::floating_point T>
-	AA_CONSTEXPR T norm(const T value, const T mag) {
+	constexpr T norm(const T value, const T mag) {
 		return value / mag;
 	}
 
 	template<std::floating_point T>
-	AA_CONSTEXPR T norm(const T value, const T start, const T mag) {
+	constexpr T norm(const T value, const T start, const T mag) {
 		return (value - start) / mag;
 	}
 
 
 
 	template<std::floating_point T>
-	AA_CONSTEXPR T map(const T value, const T mag) {
+	constexpr T map(const T value, const T mag) {
 		return value * mag;
 	}
 
 	template<std::floating_point T>
-	AA_CONSTEXPR T map(const T value, const T start, const T mag) {
+	constexpr T map(const T value, const T start, const T mag) {
 		return start + value * mag;
 	}
 
 
 
 	template<std::floating_point T>
-	AA_CONSTEXPR T norm_map(const T value, const T mag1, const T mag2) {
+	constexpr T norm_map(const T value, const T mag1, const T mag2) {
 		return aa::map(aa::norm(value, mag1), mag2);
 	}
 
 	template<placeholder<1> auto, std::floating_point T>
-	AA_CONSTEXPR T norm_map(const T value, const T start1, const T mag1, const T mag2) {
+	constexpr T norm_map(const T value, const T start1, const T mag1, const T mag2) {
 		return aa::map(aa::norm(value, start1, mag1), mag2);
 	}
 
 	template<placeholder<2> auto, std::floating_point T>
-	AA_CONSTEXPR T norm_map(const T value, const T mag1, const T start2, const T mag2) {
+	constexpr T norm_map(const T value, const T mag1, const T start2, const T mag2) {
 		return aa::map(aa::norm(value, mag1), start2, mag2);
 	}
 
 	template<std::floating_point T>
-	AA_CONSTEXPR T norm_map(const T value, const T start1, const T mag1, const T start2, const T mag2) {
+	constexpr T norm_map(const T value, const T start1, const T mag1, const T start2, const T mag2) {
 		return aa::map(aa::norm(value, start1, mag1), start2, mag2);
 	}
 
@@ -61,7 +61,7 @@ namespace aa {
 	// Bandžiau rekursijos nenaudoti, gaunasi tas pats tik vietoje X visur atsiranda cast X į T.
 	// Turime turėti du tokius pačius return sakinius, nes apjungus sąlygas X gali sąlygoje būti float.
 	template<arithmetic T, T X>
-	AA_CONSTEXPR T product(const T x) {
+	constexpr T product(const T x) {
 		/**/ if constexpr (is_value<0>(X))				return value_v<T, 0>;
 		else if constexpr (is_value<1>(X))				return x;
 		else if constexpr (!std::unsigned_integral<T>)	return x * X;
@@ -70,14 +70,14 @@ namespace aa {
 	}
 
 	template<auto X, arithmetic T>
-	AA_CONSTEXPR T product(const T x) {
+	constexpr T product(const T x) {
 		return product<T, value_v<T, X>>(x);
 	}
 
 	// https://en.wikipedia.org/wiki/Remainder
 	template<arithmetic T, T X>
 		requires (!is_value<0>(X))
-	AA_CONSTEXPR T remainder(const T x) {
+	constexpr T remainder(const T x) {
 		/**/ if constexpr (is_value<1>(X))				return value_v<T, 0>;
 		else if constexpr (std::floating_point<T>)		return std::fmod(x, X);
 		else if constexpr (std::signed_integral<T>)		return x % X;
@@ -86,14 +86,14 @@ namespace aa {
 	}
 
 	template<auto X, arithmetic T>
-	AA_CONSTEXPR T remainder(const T x) {
+	constexpr T remainder(const T x) {
 		return remainder<T, value_v<T, X>>(x);
 	}
 
 	// https://en.wikipedia.org/wiki/Quotient
 	template<arithmetic T, T X>
 		requires (!is_value<0>(X))
-	AA_CONSTEXPR T quotient(const T x) {
+	constexpr T quotient(const T x) {
 		/**/ if constexpr (is_value<1>(X))				return x;
 		else if constexpr (std::floating_point<T>)		return x * const_v<value_v<T, 1> / X>;
 		else if constexpr (std::signed_integral<T>)		return x / X;
@@ -102,7 +102,7 @@ namespace aa {
 	}
 
 	template<auto X, arithmetic T>
-	AA_CONSTEXPR T quotient(const T x) {
+	constexpr T quotient(const T x) {
 		return quotient<T, value_v<T, X>>(x);
 	}
 
@@ -113,43 +113,43 @@ namespace aa {
 	// Išviso U ir T nepilnai generic, nes reiktų tada tikrinti ar su tais tipais išeitų vykdyti reikiamas operacijas.
 	// https://en.wikipedia.org/wiki/Power_of_two
 	template<arithmetic auto N, std::integral U = size_t, std::unsigned_integral T>
-	AA_CONSTEXPR U int_exp2(const T x) {
+	constexpr U int_exp2(const T x) {
 		return int_exp2<U>(product<N>(x));
 	}
 
 	// https://en.wikipedia.org/wiki/Find_first_set
 	// https://en.wikipedia.org/wiki/Binary_logarithm
 	template<arithmetic auto N, std::integral U = size_t, std::unsigned_integral T>
-	AA_CONSTEXPR U int_log2(const T x) {
+	constexpr U int_log2(const T x) {
 		return quotient<N>(int_log2<U>(x));
 	}
 
 
 
 	template<std::unsigned_integral U = size_t, std::unsigned_integral T>
-	AA_CONSTEXPR U magic_binary_number(const T x) {
+	constexpr U magic_binary_number(const T x) {
 		return numeric_max_v<U> / (int_exp2<U>(int_exp2(x)) | 1);
 	}
 
 	template<arithmetic T>
-	AA_CONSTEXPR T halve(const T x) {
+	constexpr T halve(const T x) {
 		return quotient<2>(x);
 	}
 
 	template<arithmetic T>
-	AA_CONSTEXPR T redouble(const T x) {
+	constexpr T redouble(const T x) {
 		return product<2>(x);
 	}
 
 	template<class T>
-	AA_CONSTEXPR size_t size_of(const size_t n) {
+	constexpr size_t size_of(const size_t n) {
 		return product<sizeof(T)>(n);
 	}
 
 	// https://cp-algorithms.com/algebra/binary-exp.html
 	// https://en.wikipedia.org/wiki/Modular_exponentiation
 	template<std::unsigned_integral T, std::unsigned_integral U>
-	AA_CONSTEXPR T power(T a, U b) {
+	constexpr T power(T a, U b) {
 		T res = 1;
 		do {
 			if (b & 1) res *= a;
@@ -159,26 +159,26 @@ namespace aa {
 	}
 
 	template<arithmetic T>
-	AA_CONSTEXPR T sq(const T x) {
+	constexpr T sq(const T x) {
 		return x * x;
 	}
 
 	// https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
 	template<std::unsigned_integral T>
-	AA_CONSTEXPR T min(const T x, const T y) {
+	constexpr T min(const T x, const T y) {
 		const T d = (x - y);
 		return y + (d & unsign(sign(d) >> numeric_digits_v<std::make_signed_t<T>>));
 	}
 
 	template<std::unsigned_integral T>
-	AA_CONSTEXPR T max(const T x, const T y) {
+	constexpr T max(const T x, const T y) {
 		const T d = (x - y);
 		return x - (d & unsign(sign(d) >> numeric_digits_v<std::make_signed_t<T>>));
 	}
 
 	// https://graphics.stanford.edu/~seander/bithacks.html#ReverseParallel
 	template<regular_unsigned_integral T>
-	AA_CONSTEXPR T bitswap(T v) {
+	constexpr T bitswap(T v) {
 		return apply<int_log2(numeric_digits_v<T>)>([&]<size_t... I> -> T {
 			return ((v = ((v >> const_v<int_exp2(I)>) & const_v<magic_binary_number<T>(I)>)
 				/*	*/ | ((v & const_v<magic_binary_number<T>(I)>) << const_v<int_exp2(I)>)), ...);
@@ -187,7 +187,7 @@ namespace aa {
 
 	// https://graphics.stanford.edu/~seander/bithacks.html#SwappingBitsXOR
 	template<regular_unsigned_integral T, std::unsigned_integral I, std::unsigned_integral J>
-	AA_CONSTEXPR T byteswap(const T b, I i, J j) {
+	constexpr T byteswap(const T b, I i, J j) {
 		i = product<numeric_digits_v<byte_t>>(i);
 		j = product<numeric_digits_v<byte_t>>(j);
 		const T x = ((b >> i) ^ (b >> j)) & value_v<T, numeric_max_v<byte_t>>;
@@ -207,76 +207,76 @@ namespace aa {
 		using difference_type = type_pack_element_t<!pointer<value_type>, ptrdiff_t, value_type>;
 
 		// Member constants
-		static AA_CONSTEXPR const bool subinterval = MIN < MAX;
+		static constexpr bool subinterval = MIN < MAX;
 
 
 
 		// Operations
-		AA_CONSTEXPR reference min() { return get_0(*this); }
-		AA_CONSTEXPR reference max() { return get_1(*this); }
-		AA_CONSTEXPR const_reference min() const { return get_0(*this); }
-		AA_CONSTEXPR const_reference max() const { return get_1(*this); }
+		constexpr reference min() { return get_0(*this); }
+		constexpr reference max() { return get_1(*this); }
+		constexpr const_reference min() const { return get_0(*this); }
+		constexpr const_reference max() const { return get_1(*this); }
 
-		AA_CONSTEXPR bool min_eq(propagate_const_t<value_type> x) const { return min() == x; }
-		AA_CONSTEXPR bool max_eq(propagate_const_t<value_type> x) const { return max() == x; }
-		AA_CONSTEXPR bool eq(propagate_const_t<value_type> x1, propagate_const_t<value_type> x2) const {
+		constexpr bool min_eq(propagate_const_t<value_type> x) const { return min() == x; }
+		constexpr bool max_eq(propagate_const_t<value_type> x) const { return max() == x; }
+		constexpr bool eq(propagate_const_t<value_type> x1, propagate_const_t<value_type> x2) const {
 			return min_eq(x1) && max_eq(x2);
 		}
 
-		AA_CONSTEXPR bool open_contains(propagate_const_t<value_type> x) const { return min() < x && x < max(); }
-		AA_CONSTEXPR bool closed_contains(propagate_const_t<value_type> x) const { return min() <= x && x <= max(); }
-		AA_CONSTEXPR bool left_open_contains(propagate_const_t<value_type> x) const { return min() < x && x <= max(); }
-		AA_CONSTEXPR bool right_open_contains(propagate_const_t<value_type> x) const { return min() <= x && x < max(); }
+		constexpr bool open_contains(propagate_const_t<value_type> x) const { return min() < x && x < max(); }
+		constexpr bool closed_contains(propagate_const_t<value_type> x) const { return min() <= x && x <= max(); }
+		constexpr bool left_open_contains(propagate_const_t<value_type> x) const { return min() < x && x <= max(); }
+		constexpr bool right_open_contains(propagate_const_t<value_type> x) const { return min() <= x && x < max(); }
 
-		AA_CONSTEXPR bool empty() const { return min() > max(); }
-		AA_CONSTEXPR bool degenerate() const { return min() == max(); }
-		AA_CONSTEXPR bool left_full() const requires (subinterval) { return min() == MIN; }
-		AA_CONSTEXPR bool right_full() const requires (subinterval) { return max() == MAX; }
-		AA_CONSTEXPR bool full() const requires (subinterval) { return left_full() && right_full(); }
+		constexpr bool empty() const { return min() > max(); }
+		constexpr bool degenerate() const { return min() == max(); }
+		constexpr bool left_full() const requires (subinterval) { return min() == MIN; }
+		constexpr bool right_full() const requires (subinterval) { return max() == MAX; }
+		constexpr bool full() const requires (subinterval) { return left_full() && right_full(); }
 
-		AA_CONSTEXPR difference_type diameter() const { return max() - min(); }
-		AA_CONSTEXPR difference_type radius() const { return halve(diameter()); }
-		AA_CONSTEXPR value_type centre() const { return std::midpoint(min(), max()); }
+		constexpr difference_type diameter() const { return max() - min(); }
+		constexpr difference_type radius() const { return halve(diameter()); }
+		constexpr value_type centre() const { return std::midpoint(min(), max()); }
 
 
 
 		// Modifiers
-		AA_CONSTEXPR bool left_shrink(const value_type x) { return (min() < x) ? (min() = x, true) : false; }
-		AA_CONSTEXPR bool right_shrink(const value_type x) { return (x < max()) ? (max() = x, true) : false; }
-		AA_CONSTEXPR bool shrink(const value_type x1, const value_type x2) {
+		constexpr bool left_shrink(const value_type x) { return (min() < x) ? (min() = x, true) : false; }
+		constexpr bool right_shrink(const value_type x) { return (x < max()) ? (max() = x, true) : false; }
+		constexpr bool shrink(const value_type x1, const value_type x2) {
 			return left_shrink(x1) | right_shrink(x2);
 		}
 
-		AA_CONSTEXPR bool left_expand(const value_type x) { return (x < min()) ? (min() = x, true) : false; }
-		AA_CONSTEXPR bool right_expand(const value_type x) { return (max() < x) ? (max() = x, true) : false; }
-		AA_CONSTEXPR bool expand(const value_type x) {
+		constexpr bool left_expand(const value_type x) { return (x < min()) ? (min() = x, true) : false; }
+		constexpr bool right_expand(const value_type x) { return (max() < x) ? (max() = x, true) : false; }
+		constexpr bool expand(const value_type x) {
 			// Patikrinau, čia greičiausia teisinga realizacija.
 			return left_expand(x) | right_expand(x);
 		}
 
-		AA_CONSTEXPR bool unsafe_expand(const value_type x) {
+		constexpr bool unsafe_expand(const value_type x) {
 			return left_expand(x) || right_expand(x);
 		}
 
 		// Logiška nenaudoti numeric_*, nes dabar yra galimybė, kad išplėčiant vieno endpoint nereikės pakeisti.
-		AA_CONSTEXPR void reset() requires (subinterval) {
+		constexpr void reset() requires (subinterval) {
 			min() = MAX;	max() = MIN;
 		}
 
-		AA_CONSTEXPR void reset(const value_type x) {
+		constexpr void reset(const value_type x) {
 			min() = x;		max() = x;
 		}
 
-		AA_CONSTEXPR void reset(const value_type x1, const value_type x2) {
+		constexpr void reset(const value_type x1, const value_type x2) {
 			min() = x2;		max() = x1;
 		}
 
 
 
 		// Special member functions
-		AA_CONSTEXPR interval() requires (subinterval) : tuple_type{MAX, MIN} {}
-		AA_CONSTEXPR interval(const value_type x) : tuple_type{x, x} {}
-		AA_CONSTEXPR interval(const value_type x1, const value_type x2) : tuple_type{x2, x1} {}
+		constexpr interval() requires (subinterval) : tuple_type{MAX, MIN} {}
+		constexpr interval(const value_type x) : tuple_type{x, x} {}
+		constexpr interval(const value_type x1, const value_type x2) : tuple_type{x2, x1} {}
 	};
 
 }

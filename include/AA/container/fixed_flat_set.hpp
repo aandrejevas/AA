@@ -27,46 +27,46 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return elements.get(pos); }
-		AA_CONSTEXPR const_reference get(const size_type pos) const { return elements.get(pos); }
-		AA_CONSTEXPR const_reference rget(const size_type pos) const { return elements.rget(pos); }
-		AA_CONSTEXPR const_pointer data(const size_type pos) const { return elements.data(pos); }
-		AA_CONSTEXPR const_pointer rdata(const size_type pos) const { return elements.rdata(pos); }
+		constexpr const_reference operator[](const size_type pos) const { return elements.get(pos); }
+		constexpr const_reference get(const size_type pos) const { return elements.get(pos); }
+		constexpr const_reference rget(const size_type pos) const { return elements.rget(pos); }
+		constexpr const_pointer data(const size_type pos) const { return elements.data(pos); }
+		constexpr const_pointer rdata(const size_type pos) const { return elements.rdata(pos); }
 
-		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
-		AA_CONSTEXPR const_pointer rdata() const { return elements.rdata(); }
-		AA_CONSTEXPR const_reference front() const { return elements.front(); }
-		AA_CONSTEXPR const_reference back() const { return elements.back(); }
+		constexpr const_pointer data() const { return elements.data(); }
+		constexpr const_pointer rdata() const { return elements.rdata(); }
+		constexpr const_reference front() const { return elements.front(); }
+		constexpr const_reference back() const { return elements.back(); }
 
 
 
 		// Iterators
-		AA_CONSTEXPR const_iterator begin() const { return elements.begin(); }
-		AA_CONSTEXPR const_iterator end() const { return elements.end(); }
-		AA_CONSTEXPR const_iterator rbegin() const { return elements.rbegin(); }
-		AA_CONSTEXPR const_iterator rend() const { return elements.rend(); }
+		constexpr const_iterator begin() const { return elements.begin(); }
+		constexpr const_iterator end() const { return elements.end(); }
+		constexpr const_iterator rbegin() const { return elements.rbegin(); }
+		constexpr const_iterator rend() const { return elements.rend(); }
 
 
 
 		// Capacity
-		AA_CONSTEXPR bool empty() const { return elements.empty(); }
-		AA_CONSTEXPR bool single() const { return elements.single(); }
-		AA_CONSTEXPR bool full() const { return elements.full(); }
+		constexpr bool empty() const { return elements.empty(); }
+		constexpr bool single() const { return elements.single(); }
+		constexpr bool full() const { return elements.full(); }
 
-		AA_CONSTEXPR difference_type ssize() const { return elements.ssize(); }
-		AA_CONSTEXPR size_type size() const { return elements.size(); }
+		constexpr difference_type ssize() const { return elements.ssize(); }
+		constexpr size_type size() const { return elements.size(); }
 
-		static AA_CONSTEVAL size_type max_size() { return N; }
-		static AA_CONSTEVAL size_type max_index() { return N - 1; }
+		static consteval size_type max_size() { return N; }
+		static consteval size_type max_index() { return N - 1; }
 
-		AA_CONSTEXPR difference_type sindexl() const { return elements.sindexl(); }
-		AA_CONSTEXPR size_type indexl() const { return elements.indexl(); }
+		constexpr difference_type sindexl() const { return elements.sindexl(); }
+		constexpr size_type indexl() const { return elements.indexl(); }
 
 
 
 		// Observers
 		template<class K1, in_relation_with<K1, const comparer_type &> K2>
-		AA_CONSTEXPR bool compare(const K1 &key1, const K2 &key2) const {
+		constexpr bool compare(const K1 &key1, const K2 &key2) const {
 			return std::invoke(comparer, key1, key2);
 		}
 
@@ -74,23 +74,23 @@ namespace aa {
 
 		// Lookup
 		template<in_relation_with<value_type, const comparer_type &> K>
-		AA_CONSTEXPR const_iterator unsafe_lower_bound(const K &key) const {
+		constexpr const_iterator unsafe_lower_bound(const K &key) const {
 			return aa::unsafe_lower_bound(elements, key, comparer);
 		}
 
 		template<in_relation_with<value_type, const comparer_type &> K>
-		AA_CONSTEXPR const_iterator unsafe_upper_bound(const K &key) const {
+		constexpr const_iterator unsafe_upper_bound(const K &key) const {
 			return aa::unsafe_upper_bound(elements, key, comparer);
 		}
 
 		template<in_relation_with<value_type, const comparer_type &> K>
-		AA_CONSTEXPR const_iterator find(const K &key) const {
+		constexpr const_iterator find(const K &key) const {
 			if (empty())	return nullptr;
 			else			return unsafe_find(key);
 		}
 
 		template<in_relation_with<value_type, const comparer_type &> K>
-		AA_CONSTEXPR const_iterator unsafe_find(const K &key) const {
+		constexpr const_iterator unsafe_find(const K &key) const {
 			if (compare(back(), key)) {
 				return nullptr;
 			} else {
@@ -101,13 +101,13 @@ namespace aa {
 		}
 
 		template<in_relation_with<value_type, const comparer_type &> K>
-		AA_CONSTEXPR bool contains(const K &key) const {
+		constexpr bool contains(const K &key) const {
 			if (empty())	return false;
 			else			return unsafe_contains(key);
 		}
 
 		template<in_relation_with<value_type, const comparer_type &> K>
-		AA_CONSTEXPR bool unsafe_contains(const K &key) const {
+		constexpr bool unsafe_contains(const K &key) const {
 			if (compare(back(), key))	return false;
 			else						return !compare(key, *unsafe_lower_bound(key));
 		}
@@ -115,25 +115,25 @@ namespace aa {
 
 
 		// Modifiers
-		AA_CONSTEXPR void clear() { elements.clear(); }
+		constexpr void clear() { elements.clear(); }
 
 		template<assignable_to<reference> V>
-		AA_CONSTEXPR void clear(V &&value) { *elements.resize(elements.begin()) = std::forward<V>(value); }
+		constexpr void clear(V &&value) { *elements.resize(elements.begin()) = std::forward<V>(value); }
 
 		// Neturime, kaip fixed_vector turi, resize funkcijų, nes jomis naudotojas galėtų
 		// padidinti savavališkai elementų kiekį ir taip sugadinti elementų tvarką.
 
-		AA_CONSTEXPR const_iterator pop_back() { return elements.pop_back(); }
-		AA_CONSTEXPR const_iterator pop_back(const size_type count) { return elements.pop_back(count); }
+		constexpr const_iterator pop_back() { return elements.pop_back(); }
+		constexpr const_iterator pop_back(const size_type count) { return elements.pop_back(count); }
 
 		template<in_relation_with_and_assignable_to<value_type, const comparer_type &> V>
-		AA_CONSTEXPR bool insert(const V &value) {
+		constexpr bool insert(const V &value) {
 			if (empty())	return (clear(value), true);
 			else			return unsafe_insert(value);
 		}
 
 		template<in_relation_with_and_assignable_to<value_type, const comparer_type &> V>
-		AA_CONSTEXPR bool unsafe_insert(const V &value) {
+		constexpr bool unsafe_insert(const V &value) {
 			if constexpr (MULTISET) {
 				elements.insert(unsafe_upper_bound(value), value);
 				return true;
@@ -154,13 +154,13 @@ namespace aa {
 		}
 
 		template<in_relation_with<value_type, const comparer_type &> K>
-		AA_CONSTEXPR bool erase(const K &key) {
+		constexpr bool erase(const K &key) {
 			if (empty())	return false;
 			else			return unsafe_erase(key);
 		}
 
 		template<in_relation_with<value_type, const comparer_type &> K>
-		AA_CONSTEXPR bool unsafe_erase(const K &key) {
+		constexpr bool unsafe_erase(const K &key) {
 			if (compare(back(), key)) {
 				return false;
 			} else {
@@ -172,7 +172,7 @@ namespace aa {
 			}
 		}
 
-		AA_CONSTEXPR void erase(const const_iterator pos) {
+		constexpr void erase(const const_iterator pos) {
 			elements.erase(pos);
 		}
 
@@ -183,10 +183,10 @@ namespace aa {
 		// nes comparer tipas yra const. Perfect forwarding naudojame, kad palaikyti move semantics
 		// ir pass by reference, jei parametras būtų const& tai neišeitų palaikyti move semantics.
 		template<constructible_to<comparer_type> U = const comparer_type>
-		AA_CONSTEXPR fixed_flat_set(U &&c = default_value) : comparer{std::forward<U>(c)} {}
+		constexpr fixed_flat_set(U &&c = default_value) : comparer{std::forward<U>(c)} {}
 
 		template<assignable_to<reference> V, constructible_to<comparer_type> U = const comparer_type>
-		AA_CONSTEXPR fixed_flat_set(V &&value, U &&c = default_value)
+		constexpr fixed_flat_set(V &&value, U &&c = default_value)
 			: elements{std::default_sentinel}, comparer{std::forward<U>(c)} { elements.back() = std::forward<V>(value); }
 
 

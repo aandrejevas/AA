@@ -37,8 +37,9 @@
 # // Filosofija bibliotekos tokia, visos funkcijos žymimos constexpr ir tiek. Nesvarbu gali ar negali būti funkcija
 # // naudojama constexpr kontekste, ji bus pažymėta constexpr. Gal naudotojams kiek neaišku gali būti ar jie gali
 # // funkciją naudoti constexpr kontekste, bet aš nenoriu mąstyti apie tai ar funkcijos realizacija gali būti constexpr.
-#define AA_CONSTEXPR inline constexpr
-#define AA_CONSTEVAL inline consteval
+#
+# // constexpr ir consteval funkcijos specifikatoriai implikuoja inline, todėl nereikia naudoti jų kartu.
+# // Atitinkamai constexpr kintamojo specifikatorius implikuoja inline ir const specifikatorius.
 #
 # // Reikia stengtis turėti kuo mažiau macros. DISCARD macro nereikia, nes tiesiog galime cast'inti į void. Taip pat
 # // nėra reikalo naudoti std::ignore, kad discard'inti, nes reiktų visur dėti papildomą include, taip pat nėra apibrėžta

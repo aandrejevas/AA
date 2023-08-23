@@ -26,30 +26,30 @@ namespace aa {
 
 
 		// Observers
-		AA_CONSTEXPR operator stream_type &() { return stream; }
-		AA_CONSTEXPR operator const stream_type &() const { return stream; }
+		constexpr operator stream_type &() { return stream; }
+		constexpr operator const stream_type &() const { return stream; }
 
-		AA_CONSTEXPR stream_type &operator*() { return stream; }
-		AA_CONSTEXPR const stream_type &operator*() const { return stream; }
+		constexpr stream_type &operator*() { return stream; }
+		constexpr stream_type &operator*() const { return stream; }
 
-		AA_CONSTEXPR stream_type *operator->() { return &stream; }
-		AA_CONSTEXPR const stream_type *operator->() const { return &stream; }
+		constexpr stream_type *operator->() { return &stream; }
+		constexpr stream_type *operator->() const { return &stream; }
 
-		AA_CONSTEXPR stream_type &get() { return stream; }
-		AA_CONSTEXPR const stream_type &get() const { return stream; }
+		constexpr stream_type &get() { return stream; }
+		constexpr stream_type &get() const { return stream; }
 
 
 
 		// Special member functions
 		template<constructible_to<path_type> T = path_type, invoke_result_constructible_to<stream_type, const path_type &> F>
-		AA_CONSTEXPR pathed_stream(T &&t, F &&f)
+		constexpr pathed_stream(T &&t, F &&f)
 			: path{std::forward<T>(t)}, stream{std::invoke(std::forward<F>(f), std::as_const(path))}
 		{
 			AA_TRACE_ASSERT(!cast<base_type>(stream).fail(), "Stream ",
 				type_name_v<stream_type>, '(', path, ") in fail state after construction.");
 		}
 
-		AA_CONSTEXPR ~pathed_stream() {
+		constexpr ~pathed_stream() {
 			AA_TRACE_ASSERT(!cast<base_type>(stream).fail(), "Stream ",
 				type_name_v<stream_type>, '(', path, ") in fail state before destruction.");
 		}
@@ -69,12 +69,12 @@ namespace aa {
 
 
 	template<std::ios_base::openmode MODE = std::ios_base::out, class T>
-	AA_CONSTEXPR pathed_stream<T, std::ofstream> make_p_ofstream(T &&t) {
+	constexpr pathed_stream<T, std::ofstream> make_p_ofstream(T &&t) {
 		return {std::forward<T>(t), [](const T &p) { return std::ofstream{p, MODE}; }};
 	}
 
 	template<std::ios_base::openmode MODE = std::ios_base::in, class T>
-	AA_CONSTEXPR pathed_stream<T, std::ifstream> make_p_ifstream(T &&t) {
+	constexpr pathed_stream<T, std::ifstream> make_p_ifstream(T &&t) {
 		return {std::forward<T>(t), [](const T &p) { return std::ifstream{p, MODE}; }};
 	}
 

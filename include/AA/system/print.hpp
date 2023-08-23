@@ -3,19 +3,81 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
 #include "../algorithm/init.hpp"
-#include <iostream> // cout, cin
-#include <ostream> // ostream, wostream, endl, flush
+#include <iostream> // cin
 #include <istream> // istream
+#include <iterator> // output_iterator_tag
+#include <format> // format_to
 
 
 
 namespace aa {
 
+	template<char_traits_like T>
+	struct ostreambuf_iter {
+		using traits_type = T;
+		using int_type = int_type_in_use_t<traits_type>;
+		using char_type = char_type_in_use_t<traits_type>;
+		using streambuf_type = streambuf_t<ostreambuf_iter>;
+		using ostream_type = ostream_t<ostreambuf_iter>;
+		using difference_type = ptrdiff_t;
+		using value_type = void;
+		using reference = void;
+		using pointer = void;
+		using iterator_category = std::output_iterator_tag;
+
+		constexpr const ostreambuf_iter &operator*() const { return *this; }
+		constexpr const ostreambuf_iter &operator++(const int) const { return *this; }
+		constexpr ostreambuf_iter &operator++() { return *this; }
+		constexpr int_type operator=(const char_type c) const { return file->sputc(c); }
+
+		friend constexpr bool operator==(const ostreambuf_iter &l, const ostreambuf_iter &r) { return l.file == r.file; }
+
+		template<ref_convertible_to<ostream_type &> S>
+		constexpr ostreambuf_iter(const S &s) : file{cast<const ostream_type &>(s).rdbuf()} {}
+
+		streambuf_type *file;
+	};
+
+	template<ostream_like S>
+	ostreambuf_iter(const S &) -> ostreambuf_iter<traits_type_in_use_t<S>>;
+
+
+
+	template<char_traits_like T>
+	struct istreambuf_iter {
+		using traits_type = T;
+		using int_type = int_type_in_use_t<traits_type>;
+		using char_type = char_type_in_use_t<traits_type>;
+		using streambuf_type = streambuf_t<istreambuf_iter>;
+		using istream_type = istream_t<istreambuf_iter>;
+		using difference_type = ptrdiff_t;
+		using value_type = int_type;
+		using reference = int_type;
+		using pointer = void;
+		using iterator_category = std::input_iterator_tag;
+
+		constexpr int_type operator*() const { return file->sgetc(); }
+		constexpr istreambuf_iter &operator++() { return (file->sbumpc(), *this); }
+		constexpr int_type operator++(const int) const { return file->sbumpc(); }
+
+		friend constexpr bool operator==(const istreambuf_iter &l, const istreambuf_iter &r) { return l.file == r.file; }
+
+		template<ref_convertible_to<istream_type &> S>
+		constexpr istreambuf_iter(const S &s) : file{cast<const istream_type &>(s).rdbuf()} {}
+
+		streambuf_type *file;
+	};
+
+	template<istream_like S>
+	istreambuf_iter(const S &) -> istreambuf_iter<traits_type_in_use_t<S>>;
+
+
+
 	// Dėl atributo neturėtų nukentėti greitaveika, nes taip tai standartiniai srautai yra visiems pasiekiami
 	// ir atrodo nereiktų jų padavinėti per parametrus, bet template argumentai irgi ne alternatyva.
-	template<ostream_like T, stream_insertable<T> A1, stream_insertable<T>... A>
-	AA_CONSTEXPR borrowed_t<T, ostream_t<T> &> print(T &&s, const A1 &a1, const A&... args) {
-		return ((cast<ostream_t<T> &>(s) << a1) << ... << args);
+	template<ostream_like T, class... A>
+	constexpr void print(const T &s, const format_string_t<T, const A&...> &fmt, const A&... args) {
+		std::format_to(ostreambuf_iter{s}, fmt, args...);
 	}
 
 	// Tikriname ar į output_stream galima insert'inti visus paduotus tipus, nes tarp jų
@@ -23,18 +85,18 @@ namespace aa {
 	//
 	// Neturime template parametro, per kurį paduotume eilutės galo simbolį, nes
 	// tiesiog galime kaip paprastą parametrą eilutės galo simbolį paduoti.
-	template<ostream_like T, stream_insertable<T>... A>
-	AA_CONSTEXPR borrowed_t<T, ostream_t<T> &> printl(T &&s, const A&... args) {
-		return (cast<ostream_t<T> &>(s) << ... << args) << '\n';
+	template<ostream_like T, class... A>
+	constexpr void printl(const T &s, const format_string_t<T, const A&...> &fmt, const A&... args) {
+		std::format_to(ostreambuf_iter{s}, fmt, args...) = '\n';
 	}
 
 	template<istream_like T, stream_extractable<T> A1, stream_extractable<T>... A>
-	AA_CONSTEXPR borrowed_t<T, istream_t<T> &> read(T &&s, A1 &a1, A&... args) {
+	constexpr borrowed_t<T, istream_t<T> &> read(T &&s, A1 &a1, A&... args) {
 		return ((cast<istream_t<T> &>(s) >> a1) >> ... >> args);
 	}
 
 	template<class T, istream_like S = std::istream &>
-	AA_CONSTEXPR std::remove_cvref_t<T> read(S &&s = std::cin) {
+	constexpr std::remove_cvref_t<T> read(S &&s = std::cin) {
 		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(s, t); });
 	}
 
@@ -43,27 +105,19 @@ namespace aa {
 	// Čia neatliekamas perfect forwarding, nes atrodo spausdinimui užtenka const kintamųjų. Žinoma gali atsirasti
 	// situacijų, kai tai nėra tiesa, pavyzdžiui norint sekti kiek kartų kintamasis buvo išspausdintas. Bet tokiems
 	// atvejams klasė gali būti taip parašyta, kad ji ignoruotų const kvalifikatorių.
-	template<stream_insertable A1, stream_insertable... A>
-	AA_CONSTEXPR std::ostream &print(const A1 &a1, const A&... args) {
-		return print(std::cout, a1, args...);
+	template<class... A>
+	constexpr void print(const std::string_view &fmt, const A&... args) {
+		print(stdout, fmt, args...);
 	}
 
-	template<stream_insertable... A>
-	AA_CONSTEXPR std::ostream &printl(const A&... args) {
-		return printl(std::cout, args...);
+	template<class... A>
+	constexpr void printl(const std::string_view &fmt, const A&... args) {
+		printl(stdout, fmt, args...);
 	}
 
 	template<stream_extractable A1, stream_extractable... A>
-	AA_CONSTEXPR std::istream &read(A1 &a1, A&... args) {
+	constexpr std::istream &read(A1 &a1, A&... args) {
 		return read(std::cin, a1, args...);
 	}
-
-
-
-	AA_CONSTEXPR std::ostream &endl(std::ostream &os) { return std::endl(os); }
-	AA_CONSTEXPR std::wostream &wendl(std::wostream &os) { return std::endl(os); }
-
-	AA_CONSTEXPR std::ostream &flush(std::ostream &os) { return std::flush(os); }
-	AA_CONSTEXPR std::wostream &wflush(std::wostream &os) { return std::flush(os); }
 
 }

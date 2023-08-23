@@ -35,7 +35,7 @@ namespace aa {
 		using union_type = typename node_type::union_type;
 
 		// Member constants
-		static AA_CONSTEXPR const size_type hole_index = 0, elem_index = 1;
+		static constexpr size_type hole_index = 0, elem_index = 1;
 
 		template<class P1, class P2>
 		struct variant_iterator {
@@ -45,32 +45,32 @@ namespace aa {
 			using pointer = value_type;
 			using iterator_category = std::random_access_iterator_tag;
 
-			AA_CONSTEXPR reference operator*() const { return get_elem(ptr); }
-			AA_CONSTEXPR pointer operator->() const { return get_elem(ptr); }
+			constexpr reference operator*() const { return get_elem(ptr); }
+			constexpr pointer operator->() const { return get_elem(ptr); }
 
-			AA_CONSTEXPR variant_iterator &operator++() { ++ptr; return *this; }
-			AA_CONSTEXPR variant_iterator operator++(const int) { return {ptr++}; }
-			AA_CONSTEXPR variant_iterator &operator--() { --ptr; return *this; }
-			AA_CONSTEXPR variant_iterator operator--(const int) { return {ptr--}; }
+			constexpr variant_iterator &operator++() { ++ptr; return *this; }
+			constexpr variant_iterator operator++(const int) { return {ptr++}; }
+			constexpr variant_iterator &operator--() { --ptr; return *this; }
+			constexpr variant_iterator operator--(const int) { return {ptr--}; }
 
-			friend AA_CONSTEXPR bool operator==(const variant_iterator &l, const variant_iterator &r) { return l.ptr == r.ptr; }
-			friend AA_CONSTEXPR std::strong_ordering operator<=>(const variant_iterator &l, const variant_iterator &r) { return l.ptr <=> r.ptr; }
+			friend constexpr bool operator==(const variant_iterator &l, const variant_iterator &r) { return l.ptr == r.ptr; }
+			friend constexpr std::strong_ordering operator<=>(const variant_iterator &l, const variant_iterator &r) { return l.ptr <=> r.ptr; }
 
-			AA_CONSTEXPR difference_type operator-(const variant_iterator &r) const { return ptr - r.ptr; }
-			AA_CONSTEXPR reference operator[](const difference_type n) const { return get_elem(ptr + n); }
-			AA_CONSTEXPR variant_iterator operator+(const difference_type n) const { return {ptr + n}; }
-			AA_CONSTEXPR variant_iterator operator-(const difference_type n) const { return {ptr - n}; }
-			AA_CONSTEXPR variant_iterator &operator+=(const difference_type n) { ptr += n; return *this; }
-			AA_CONSTEXPR variant_iterator &operator-=(const difference_type n) { ptr -= n; return *this; }
-			friend AA_CONSTEXPR variant_iterator operator+(const difference_type n, const variant_iterator &r) { return {n + r.ptr}; }
+			constexpr difference_type operator-(const variant_iterator &r) const { return ptr - r.ptr; }
+			constexpr reference operator[](const difference_type n) const { return get_elem(ptr + n); }
+			constexpr variant_iterator operator+(const difference_type n) const { return {ptr + n}; }
+			constexpr variant_iterator operator-(const difference_type n) const { return {ptr - n}; }
+			constexpr variant_iterator &operator+=(const difference_type n) { ptr += n; return *this; }
+			constexpr variant_iterator &operator-=(const difference_type n) { ptr -= n; return *this; }
+			friend constexpr variant_iterator operator+(const difference_type n, const variant_iterator &r) { return {n + r.ptr}; }
 
-			AA_CONSTEVAL variant_iterator() = default;
+			consteval variant_iterator() = default;
 
 		protected:
 			friend fixed_free_vector;
 			using node_type = P2;
 
-			AA_CONSTEXPR variant_iterator(node_type *const p) : ptr{p} {}
+			constexpr variant_iterator(node_type *const p) : ptr{p} {}
 
 			// Kintamasis protected, nes prie duomenų patekti reikia specifiniu būdu (žr. operator*).
 			node_type *ptr;
@@ -84,49 +84,49 @@ namespace aa {
 
 		// Element access
 	protected:
-		static AA_CONSTEXPR union_type &unwrap(node_type *const n) { return n->v; }
-		static AA_CONSTEXPR const union_type &unwrap(const node_type *const n) { return n->v; }
+		static constexpr union_type &unwrap(node_type *const n) { return n->v; }
+		static constexpr union_type &unwrap(const node_type *const n) { return n->v; }
 
-		static AA_CONSTEXPR pointer get_elem(node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
-		static AA_CONSTEXPR const_pointer get_elem(const node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
+		static constexpr pointer get_elem(node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
+		static constexpr const_pointer get_elem(const node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
 
 	public:
-		AA_CONSTEXPR pointer operator[](const size_type pos) { return get(pos); }
-		AA_CONSTEXPR const_pointer operator[](const size_type pos) const { return get(pos); }
+		constexpr pointer operator[](const size_type pos) { return get(pos); }
+		constexpr const_pointer operator[](const size_type pos) const { return get(pos); }
 
-		AA_CONSTEXPR pointer get(const size_type pos) { return get_elem(elements.data(pos)); }
-		AA_CONSTEXPR const_pointer get(const size_type pos) const { return get_elem(elements.data(pos)); }
+		constexpr pointer get(const size_type pos) { return get_elem(elements.data(pos)); }
+		constexpr const_pointer get(const size_type pos) const { return get_elem(elements.data(pos)); }
 
-		AA_CONSTEXPR pointer rget(const size_type pos) { return get_elem(elements.rdata(pos)); }
-		AA_CONSTEXPR const_pointer rget(const size_type pos) const { return get_elem(elements.rdata(pos)); }
+		constexpr pointer rget(const size_type pos) { return get_elem(elements.rdata(pos)); }
+		constexpr const_pointer rget(const size_type pos) const { return get_elem(elements.rdata(pos)); }
 
-		AA_CONSTEXPR pointer front() { return get_elem(elements.data()); }
-		AA_CONSTEXPR const_pointer front() const { return get_elem(elements.data()); }
+		constexpr pointer front() { return get_elem(elements.data()); }
+		constexpr const_pointer front() const { return get_elem(elements.data()); }
 
-		AA_CONSTEXPR pointer back() { return get_elem(elements.rdata()); }
-		AA_CONSTEXPR const_pointer back() const { return get_elem(elements.rdata()); }
+		constexpr pointer back() { return get_elem(elements.rdata()); }
+		constexpr const_pointer back() const { return get_elem(elements.rdata()); }
 
 
 
 		// Iterators
-		AA_CONSTEXPR iterator begin() { return {elements.begin()}; }
-		AA_CONSTEXPR const_iterator begin() const { return {elements.begin()}; }
+		constexpr iterator begin() { return {elements.begin()}; }
+		constexpr const_iterator begin() const { return {elements.begin()}; }
 
-		AA_CONSTEXPR iterator end() { return {elements.end()}; }
-		AA_CONSTEXPR const_iterator end() const { return {elements.end()}; }
+		constexpr iterator end() { return {elements.end()}; }
+		constexpr const_iterator end() const { return {elements.end()}; }
 
-		AA_CONSTEXPR iterator rbegin() { return {elements.rbegin()}; }
-		AA_CONSTEXPR const_iterator rbegin() const { return {elements.rbegin()}; }
+		constexpr iterator rbegin() { return {elements.rbegin()}; }
+		constexpr const_iterator rbegin() const { return {elements.rbegin()}; }
 
-		AA_CONSTEXPR iterator rend() { return {elements.rend()}; }
-		AA_CONSTEXPR const_iterator rend() const { return {elements.rend()}; }
+		constexpr iterator rend() { return {elements.rend()}; }
+		constexpr const_iterator rend() const { return {elements.rend()}; }
 
 
 
 		// Capacity
-		AA_CONSTEXPR bool has_holes() const { return first_hole; }
+		constexpr bool has_holes() const { return first_hole; }
 
-		AA_CONSTEXPR size_type holes_count() const {
+		constexpr size_type holes_count() const {
 			if (first_hole) {
 				size_type count = 0;
 				const node_type *iter = first_hole;
@@ -137,33 +137,33 @@ namespace aa {
 			} else return 0;
 		}
 
-		AA_CONSTEXPR bool full() const { return elements.full(); }
-		AA_CONSTEXPR bool empty() const { return elements.empty(); }
-		AA_CONSTEXPR bool single() const { return elements.single(); }
+		constexpr bool full() const { return elements.full(); }
+		constexpr bool empty() const { return elements.empty(); }
+		constexpr bool single() const { return elements.single(); }
 
-		AA_CONSTEXPR size_type size_wo_holes() const { return size() - holes_count(); }
-		AA_CONSTEXPR difference_type ssize() const { return elements.ssize(); }
-		AA_CONSTEXPR size_type size() const { return elements.size(); }
+		constexpr size_type size_wo_holes() const { return size() - holes_count(); }
+		constexpr difference_type ssize() const { return elements.ssize(); }
+		constexpr size_type size() const { return elements.size(); }
 
-		static AA_CONSTEVAL size_type max_size() { return N; }
-		static AA_CONSTEVAL size_type max_index() { return N - 1; }
+		static consteval size_type max_size() { return N; }
+		static consteval size_type max_index() { return N - 1; }
 
-		AA_CONSTEXPR difference_type sindexl() const { return elements.sindexl(); }
-		AA_CONSTEXPR size_type indexl() const { return elements.indexl(); }
+		constexpr difference_type sindexl() const { return elements.sindexl(); }
+		constexpr size_type indexl() const { return elements.indexl(); }
 
 
 
 		// Modifiers
-		AA_CONSTEXPR void clear() { elements.clear(); first_hole = nullptr; }
+		constexpr void clear() { elements.clear(); first_hole = nullptr; }
 
 		template<ref_invocable<pointer> F>
-		AA_CONSTEXPR void clear(F &&f) {
+		constexpr void clear(F &&f) {
 			if (!elements.empty())
 				unsafe_clear(f);
 		}
 
 		template<ref_invocable<pointer> F>
-		AA_CONSTEXPR void unsafe_clear(F &&f) {
+		constexpr void unsafe_clear(F &&f) {
 			do {
 				std::invoke(f, back());
 				elements.pop_back();
@@ -173,7 +173,7 @@ namespace aa {
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		AA_CONSTEXPR reference emplace(A&&... args) {
+		constexpr reference emplace(A&&... args) {
 			if (first_hole) {
 				union_type &hole = unwrap(first_hole);
 				first_hole = std::get<hole_index>(hole);
@@ -184,7 +184,7 @@ namespace aa {
 		}
 
 		template<assignable_to<reference> V>
-		AA_CONSTEXPR void insert(V &&value) {
+		constexpr void insert(V &&value) {
 			if (first_hole) {
 				union_type &hole = unwrap(first_hole);
 				first_hole = std::get<hole_index>(hole);
@@ -194,7 +194,7 @@ namespace aa {
 			}
 		}
 
-		AA_CONSTEXPR void erase(const size_type pos) {
+		constexpr void erase(const size_type pos) {
 			node_type *const element = elements.data(pos);
 			if (unwrap(element).index() == elem_index) {
 				unwrap(element).template emplace<hole_index>(first_hole);
@@ -202,7 +202,7 @@ namespace aa {
 			}
 		}
 
-		AA_CONSTEXPR void erase(const pointer pos) {
+		constexpr void erase(const pointer pos) {
 			node_type *const element = std::bit_cast<node_type *>(pos);
 			unwrap(element).template emplace<hole_index>(first_hole);
 			first_hole = element;
@@ -211,7 +211,7 @@ namespace aa {
 
 
 		// Special member functions
-		AA_CONSTEXPR fixed_free_vector() {}
+		constexpr fixed_free_vector() {}
 
 
 

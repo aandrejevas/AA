@@ -27,69 +27,69 @@ namespace aa {
 
 		// Element access
 		template<size_type I>
-		AA_CONSTEXPR reference get() requires (I < N) { return get(I); }
+		constexpr reference get() requires (I < N) { return get(I); }
 		template<size_type I>
-		AA_CONSTEXPR const_reference get() const requires (I < N) { return get(I); }
+		constexpr const_reference get() const requires (I < N) { return get(I); }
 
-		AA_CONSTEXPR reference operator[](const size_type pos) { return get(pos); }
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return get(pos); }
+		constexpr reference operator[](const size_type pos) { return get(pos); }
+		constexpr const_reference operator[](const size_type pos) const { return get(pos); }
 
-		AA_CONSTEXPR reference get(const size_type pos) { return *data(pos); }
-		AA_CONSTEXPR const_reference get(const size_type pos) const { return *data(pos); }
+		constexpr reference get(const size_type pos) { return *data(pos); }
+		constexpr const_reference get(const size_type pos) const { return *data(pos); }
 
-		AA_CONSTEXPR reference rget(const size_type pos) { return *rdata(pos); }
-		AA_CONSTEXPR const_reference rget(const size_type pos) const { return *rdata(pos); }
+		constexpr reference rget(const size_type pos) { return *rdata(pos); }
+		constexpr const_reference rget(const size_type pos) const { return *rdata(pos); }
 
-		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
-		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
+		constexpr pointer data(const size_type pos) { return data() + pos; }
+		constexpr const_pointer data(const size_type pos) const { return data() + pos; }
 
-		AA_CONSTEXPR pointer rdata(const size_type pos) { return rdata() - pos; }
-		AA_CONSTEXPR const_pointer rdata(const size_type pos) const { return rdata() - pos; }
+		constexpr pointer rdata(const size_type pos) { return rdata() - pos; }
+		constexpr const_pointer rdata(const size_type pos) const { return rdata() - pos; }
 
-		AA_CONSTEXPR pointer data() { return elements.data(); }
-		AA_CONSTEXPR const_pointer data() const { return elements.data(); }
+		constexpr pointer data() { return elements.data(); }
+		constexpr const_pointer data() const { return elements.data(); }
 
-		AA_CONSTEXPR pointer rdata() { return r_begin; }
-		AA_CONSTEXPR const_pointer rdata() const { return r_begin; }
+		constexpr pointer rdata() { return r_begin; }
+		constexpr const_pointer rdata() const { return r_begin; }
 
-		AA_CONSTEXPR reference front() { return *data(); }
-		AA_CONSTEXPR const_reference front() const { return *data(); }
+		constexpr reference front() { return *data(); }
+		constexpr const_reference front() const { return *data(); }
 
-		AA_CONSTEXPR reference back() { return *rdata(); }
-		AA_CONSTEXPR const_reference back() const { return *rdata(); }
+		constexpr reference back() { return *rdata(); }
+		constexpr const_reference back() const { return *rdata(); }
 
 
 
 		// Iterators
-		AA_CONSTEXPR iterator begin() { return data(); }
-		AA_CONSTEXPR const_iterator begin() const { return data(); }
+		constexpr iterator begin() { return data(); }
+		constexpr const_iterator begin() const { return data(); }
 
-		AA_CONSTEXPR iterator end() { return rdata() + 1; }
-		AA_CONSTEXPR const_iterator end() const { return rdata() + 1; }
+		constexpr iterator end() { return rdata() + 1; }
+		constexpr const_iterator end() const { return rdata() + 1; }
 
-		AA_CONSTEXPR iterator rbegin() { return rdata(); }
-		AA_CONSTEXPR const_iterator rbegin() const { return rdata(); }
+		constexpr iterator rbegin() { return rdata(); }
+		constexpr const_iterator rbegin() const { return rdata(); }
 
-		AA_CONSTEXPR iterator rend() { return data() - 1; }
-		AA_CONSTEXPR const_iterator rend() const { return data() - 1; }
+		constexpr iterator rend() { return data() - 1; }
+		constexpr const_iterator rend() const { return data() - 1; }
 
 
 
 		// Capacity
-		static AA_CONSTEVAL bool empty() { return !N; }
-		static AA_CONSTEVAL bool single() { return N == 1; }
-		static AA_CONSTEVAL size_type size() { return N; }
-		static AA_CONSTEVAL size_type max_size() { return N; }
-		static AA_CONSTEVAL size_type tuple_size() { return N; }
-		static AA_CONSTEVAL size_type indexl() { return N - 1; }
-		static AA_CONSTEVAL size_type max_index() { return N - 1; }
+		static consteval bool empty() { return !N; }
+		static consteval bool single() { return N == 1; }
+		static consteval size_type size() { return N; }
+		static consteval size_type max_size() { return N; }
+		static consteval size_type tuple_size() { return N; }
+		static consteval size_type indexl() { return N - 1; }
+		static consteval size_type max_index() { return N - 1; }
 
 
 
 		// Special member functions
-		AA_CONSTEXPR fixed_array() {}
+		constexpr fixed_array() {}
 		template<std::ranges::input_range R>
-		AA_CONSTEXPR fixed_array(R &&r) { std::ranges::copy(r, elements.data()); }
+		constexpr fixed_array(R &&r) { std::ranges::copy(r, elements.data()); }
 
 
 
@@ -122,70 +122,70 @@ namespace aa {
 
 
 		// Element access
-		AA_CONSTEXPR reference operator[](const size_type pos) { return get(pos); }
-		AA_CONSTEXPR const_reference operator[](const size_type pos) const { return get(pos); }
+		constexpr reference operator[](const size_type pos) { return get(pos); }
+		constexpr const_reference operator[](const size_type pos) const { return get(pos); }
 
-		AA_CONSTEXPR reference get(const size_type pos) { return *data(pos); }
-		AA_CONSTEXPR const_reference get(const size_type pos) const { return *data(pos); }
+		constexpr reference get(const size_type pos) { return *data(pos); }
+		constexpr const_reference get(const size_type pos) const { return *data(pos); }
 
-		AA_CONSTEXPR reference rget(const size_type pos) { return *rdata(pos); }
-		AA_CONSTEXPR const_reference rget(const size_type pos) const { return *rdata(pos); }
+		constexpr reference rget(const size_type pos) { return *rdata(pos); }
+		constexpr const_reference rget(const size_type pos) const { return *rdata(pos); }
 
-		AA_CONSTEXPR pointer data(const size_type pos) { return data() + pos; }
-		AA_CONSTEXPR const_pointer data(const size_type pos) const { return data() + pos; }
+		constexpr pointer data(const size_type pos) { return data() + pos; }
+		constexpr const_pointer data(const size_type pos) const { return data() + pos; }
 
-		AA_CONSTEXPR pointer rdata(const size_type pos) { return rdata() - pos; }
-		AA_CONSTEXPR const_pointer rdata(const size_type pos) const { return rdata() - pos; }
+		constexpr pointer rdata(const size_type pos) { return rdata() - pos; }
+		constexpr const_pointer rdata(const size_type pos) const { return rdata() - pos; }
 
-		AA_CONSTEXPR pointer data() { return elements.get(); }
-		AA_CONSTEXPR const_pointer data() const { return elements.get(); }
+		constexpr pointer data() { return elements.get(); }
+		constexpr const_pointer data() const { return elements.get(); }
 
-		AA_CONSTEXPR pointer rdata() { return r_begin; }
-		AA_CONSTEXPR const_pointer rdata() const { return r_begin; }
+		constexpr pointer rdata() { return r_begin; }
+		constexpr const_pointer rdata() const { return r_begin; }
 
-		AA_CONSTEXPR reference front() { return *data(); }
-		AA_CONSTEXPR const_reference front() const { return *data(); }
+		constexpr reference front() { return *data(); }
+		constexpr const_reference front() const { return *data(); }
 
-		AA_CONSTEXPR reference back() { return *rdata(); }
-		AA_CONSTEXPR const_reference back() const { return *rdata(); }
+		constexpr reference back() { return *rdata(); }
+		constexpr const_reference back() const { return *rdata(); }
 
 
 
 		// Iterators
-		AA_CONSTEXPR iterator begin() { return data(); }
-		AA_CONSTEXPR const_iterator begin() const { return data(); }
+		constexpr iterator begin() { return data(); }
+		constexpr const_iterator begin() const { return data(); }
 
-		AA_CONSTEXPR iterator end() { return rdata() + 1; }
-		AA_CONSTEXPR const_iterator end() const { return rdata() + 1; }
+		constexpr iterator end() { return rdata() + 1; }
+		constexpr const_iterator end() const { return rdata() + 1; }
 
-		AA_CONSTEXPR iterator rbegin() { return rdata(); }
-		AA_CONSTEXPR const_iterator rbegin() const { return rdata(); }
+		constexpr iterator rbegin() { return rdata(); }
+		constexpr const_iterator rbegin() const { return rdata(); }
 
-		AA_CONSTEXPR iterator rend() { return data() - 1; }
-		AA_CONSTEXPR const_iterator rend() const { return data() - 1; }
+		constexpr iterator rend() { return data() - 1; }
+		constexpr const_iterator rend() const { return data() - 1; }
 
 
 
 		// Capacity
-		AA_CONSTEXPR bool empty() const { return r_begin < data(); }
-		AA_CONSTEXPR bool single() const { return r_begin == data(); }
+		constexpr bool empty() const { return r_begin < data(); }
+		constexpr bool single() const { return r_begin == data(); }
 
-		AA_CONSTEXPR difference_type ssize() const { return sindexl() + 1; }
-		AA_CONSTEXPR size_type size() const { return indexl() + 1; }
-		AA_CONSTEXPR difference_type sindexl() const { return r_begin - data(); }
-		AA_CONSTEXPR size_type indexl() const { return unsign(sindexl()); }
+		constexpr difference_type ssize() const { return sindexl() + 1; }
+		constexpr size_type size() const { return indexl() + 1; }
+		constexpr difference_type sindexl() const { return r_begin - data(); }
+		constexpr size_type indexl() const { return unsign(sindexl()); }
 
-		static AA_CONSTEVAL size_type max_size() { return numeric_max; }
-		static AA_CONSTEVAL size_type max_index() { return max_size() - 1; }
+		static consteval size_type max_size() { return numeric_max; }
+		static consteval size_type max_index() { return max_size() - 1; }
 
 
 
 		// Special member functions
-		AA_CONSTEXPR fixed_array()
+		constexpr fixed_array()
 			: r_begin{nullptr} {}
-		AA_CONSTEXPR fixed_array(alloc_array<value_type> &&o)
+		constexpr fixed_array(alloc_array<value_type> &&o)
 			: elements{std::move(o.elements)}, r_begin{o.r_begin} {}
-		AA_CONSTEXPR fixed_array(const size_t size)
+		constexpr fixed_array(const size_t size)
 			: elements{std::make_unique_for_overwrite<value_type[]>(size)}, r_begin{elements.get() + size - 1} {}
 
 
