@@ -18,8 +18,8 @@ namespace aa {
 
 		constexpr I &begin() { return get_0(*this); }
 		constexpr S &rbegin() { return get_1(*this); }
-		constexpr I &begin() const { return get_0(*this); }
-		constexpr S &rbegin() const { return get_1(*this); }
+		constexpr const I &begin() const { return get_0(*this); }
+		constexpr const S &rbegin() const { return get_1(*this); }
 		constexpr S end() const requires (std::input_or_output_iterator<S>) { return std::ranges::next(rbegin()); }
 		constexpr I rend() const requires (std::bidirectional_iterator<I>) { return std::ranges::prev(begin()); }
 

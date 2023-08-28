@@ -81,7 +81,7 @@ namespace aa {
 
 			// Kituose konteineriuose vidinio konteinerio nerodome, nes kituose konteineriuose vidinis
 			// konteineris galima sakyti yra pats konteineris tai nėra tikslo to daryti.
-			constexpr container_type &buckets() const { return bins; }
+			constexpr const container_type &buckets() const { return bins; }
 
 
 

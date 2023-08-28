@@ -26,13 +26,12 @@ namespace aa {
 		// void* turi būti pirmas tipas, nes masyvo inicializavimo metu, bus inicializuojami visi jo elementai
 		// ir variant default kontruktorius inicializuoja pirmą alternatyvą, makes sence, kad by default aktyvi
 		// alternatyva būtų void* ir apskritai value_type gali neturėti default konstruktoriaus.
-		struct node_type {
-			using union_type = std::variant<node_type *, value_type>;
-
-			union_type v;
+		//
+		// Masyvas node_type'ų yra memset'inamas, nes variant default constructor
+		// inicializuoja dalykus nors mums tokio funkcionalumo nereikia.
+		struct node_type : std::variant<node_type *, value_type> {
+			using std::variant<node_type *, value_type>::operator=;
 		};
-
-		using union_type = typename node_type::union_type;
 
 		// Member constants
 		static constexpr size_type hole_index = 0, elem_index = 1;
@@ -45,8 +44,8 @@ namespace aa {
 			using pointer = value_type;
 			using iterator_category = std::random_access_iterator_tag;
 
-			constexpr reference operator*() const { return get_elem(ptr); }
-			constexpr pointer operator->() const { return get_elem(ptr); }
+			constexpr reference operator*() const { return std::get_if<elem_index>(ptr); }
+			constexpr pointer operator->() const { return std::get_if<elem_index>(ptr); }
 
 			constexpr variant_iterator &operator++() { ++ptr; return *this; }
 			constexpr variant_iterator operator++(const int) { return {ptr++}; }
@@ -57,7 +56,7 @@ namespace aa {
 			friend constexpr std::strong_ordering operator<=>(const variant_iterator &l, const variant_iterator &r) { return l.ptr <=> r.ptr; }
 
 			constexpr difference_type operator-(const variant_iterator &r) const { return ptr - r.ptr; }
-			constexpr reference operator[](const difference_type n) const { return get_elem(ptr + n); }
+			constexpr reference operator[](const difference_type n) const { return std::get_if<elem_index>(ptr + n); }
 			constexpr variant_iterator operator+(const difference_type n) const { return {ptr + n}; }
 			constexpr variant_iterator operator-(const difference_type n) const { return {ptr - n}; }
 			constexpr variant_iterator &operator+=(const difference_type n) { ptr += n; return *this; }
@@ -83,28 +82,20 @@ namespace aa {
 
 
 		// Element access
-	protected:
-		static constexpr union_type &unwrap(node_type *const n) { return n->v; }
-		static constexpr union_type &unwrap(const node_type *const n) { return n->v; }
-
-		static constexpr pointer get_elem(node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
-		static constexpr const_pointer get_elem(const node_type *const n) { return std::get_if<elem_index>(&unwrap(n)); }
-
-	public:
 		constexpr pointer operator[](const size_type pos) { return get(pos); }
 		constexpr const_pointer operator[](const size_type pos) const { return get(pos); }
 
-		constexpr pointer get(const size_type pos) { return get_elem(elements.data(pos)); }
-		constexpr const_pointer get(const size_type pos) const { return get_elem(elements.data(pos)); }
+		constexpr pointer get(const size_type pos) { return std::get_if<elem_index>(elements.data(pos)); }
+		constexpr const_pointer get(const size_type pos) const { return std::get_if<elem_index>(elements.data(pos)); }
 
-		constexpr pointer rget(const size_type pos) { return get_elem(elements.rdata(pos)); }
-		constexpr const_pointer rget(const size_type pos) const { return get_elem(elements.rdata(pos)); }
+		constexpr pointer rget(const size_type pos) { return std::get_if<elem_index>(elements.rdata(pos)); }
+		constexpr const_pointer rget(const size_type pos) const { return std::get_if<elem_index>(elements.rdata(pos)); }
 
-		constexpr pointer front() { return get_elem(elements.data()); }
-		constexpr const_pointer front() const { return get_elem(elements.data()); }
+		constexpr pointer front() { return std::get_if<elem_index>(elements.data()); }
+		constexpr const_pointer front() const { return std::get_if<elem_index>(elements.data()); }
 
-		constexpr pointer back() { return get_elem(elements.rdata()); }
-		constexpr const_pointer back() const { return get_elem(elements.rdata()); }
+		constexpr pointer back() { return std::get_if<elem_index>(elements.rdata()); }
+		constexpr const_pointer back() const { return std::get_if<elem_index>(elements.rdata()); }
 
 
 
@@ -132,7 +123,7 @@ namespace aa {
 				const node_type *iter = first_hole;
 				do {
 					++count;
-				} while ((iter = std::get<hole_index>(unwrap(iter))));
+				} while ((iter = std::get<hole_index>(*iter)));
 				return count;
 			} else return 0;
 		}
@@ -175,36 +166,36 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		constexpr reference emplace(A&&... args) {
 			if (first_hole) {
-				union_type &hole = unwrap(first_hole);
+				node_type &hole = *first_hole;
 				first_hole = std::get<hole_index>(hole);
 				return hole.template emplace<elem_index>(std::forward<A>(args)...);
 			} else {
-				return unwrap(elements.push_back()).template emplace<elem_index>(std::forward<A>(args)...);
+				return elements.push_back()->template emplace<elem_index>(std::forward<A>(args)...);
 			}
 		}
 
 		template<assignable_to<reference> V>
 		constexpr void insert(V &&value) {
 			if (first_hole) {
-				union_type &hole = unwrap(first_hole);
+				node_type &hole = *first_hole;
 				first_hole = std::get<hole_index>(hole);
 				hole = std::forward<V>(value);
 			} else {
-				unwrap(elements.push_back()) = std::forward<V>(value);
+				*elements.push_back() = std::forward<V>(value);
 			}
 		}
 
 		constexpr void erase(const size_type pos) {
 			node_type *const element = elements.data(pos);
-			if (unwrap(element).index() == elem_index) {
-				unwrap(element).template emplace<hole_index>(first_hole);
+			if (element->index() == elem_index) {
+				element->template emplace<hole_index>(first_hole);
 				first_hole = element;
 			}
 		}
 
 		constexpr void erase(const pointer pos) {
 			node_type *const element = std::bit_cast<node_type *>(pos);
-			unwrap(element).template emplace<hole_index>(first_hole);
+			element->template emplace<hole_index>(first_hole);
 			first_hole = element;
 		}
 

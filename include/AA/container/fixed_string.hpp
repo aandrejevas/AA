@@ -34,9 +34,9 @@ namespace aa {
 
 		// Element access
 		template<size_type I>
-		constexpr reference get() requires (I < N) { return get(I); }
+		constexpr reference get() requires (std::cmp_less(I, N)) { return get(I); }
 		template<size_type I>
-		constexpr const_reference get() const requires (I < N) { return get(I); }
+		constexpr const_reference get() const requires (std::cmp_less(I, N)) { return get(I); }
 
 		constexpr reference operator[](const size_type pos) { return get(pos); }
 		constexpr const_reference operator[](const size_type pos) const { return get(pos); }

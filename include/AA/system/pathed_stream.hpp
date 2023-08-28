@@ -30,13 +30,13 @@ namespace aa {
 		constexpr operator const stream_type &() const { return stream; }
 
 		constexpr stream_type &operator*() { return stream; }
-		constexpr stream_type &operator*() const { return stream; }
+		constexpr const stream_type &operator*() const { return stream; }
 
 		constexpr stream_type *operator->() { return &stream; }
-		constexpr stream_type *operator->() const { return &stream; }
+		constexpr const stream_type *operator->() const { return &stream; }
 
 		constexpr stream_type &get() { return stream; }
-		constexpr stream_type &get() const { return stream; }
+		constexpr const stream_type &get() const { return stream; }
 
 
 

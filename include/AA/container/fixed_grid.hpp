@@ -147,7 +147,7 @@ namespace aa {
 		// Observers
 		constexpr size_type get_pass() const { return pass; }
 
-		constexpr position_type &locate(const value_type &e) const {
+		constexpr const position_type &locate(const value_type &e) const {
 			return std::invoke(locator, e);
 		}
 
@@ -160,7 +160,7 @@ namespace aa {
 		}
 
 		template<array_similar_to<pair_type> P = pair_type>
-		constexpr leaf &find_leaf(const P &pos) const {
+		constexpr const leaf &find_leaf(const P &pos) const {
 			return
 				leaves[unsign_cast<size_type>(get_y(pos) / get_h(leaf_size))][unsign_cast<size_type>(get_x(pos) / get_w(leaf_size))];
 		}
