@@ -2,11 +2,12 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
+#include "../container/fixed_vector.hpp"
 #include "../algorithm/init.hpp"
-#include <iostream> // cin
+#include <iostream> // cin, cout
 #include <istream> // istream
-#include <iterator> // output_iterator_tag
-#include <format> // format_to
+#include <iterator> // output_iterator_tag, input_iterator_tag
+#include <format> // format_to, format_string
 
 
 
@@ -73,6 +74,10 @@ namespace aa {
 
 
 
+	using token_type = fixed_vector<char, 100>;
+
+
+
 	// Dėl atributo neturėtų nukentėti greitaveika, nes taip tai standartiniai srautai yra visiems pasiekiami
 	// ir atrodo nereiktų jų padavinėti per parametrus, bet template argumentai irgi ne alternatyva.
 	template<ostream_like T, class... A>
@@ -106,13 +111,13 @@ namespace aa {
 	// situacijų, kai tai nėra tiesa, pavyzdžiui norint sekti kiek kartų kintamasis buvo išspausdintas. Bet tokiems
 	// atvejams klasė gali būti taip parašyta, kad ji ignoruotų const kvalifikatorių.
 	template<class... A>
-	constexpr void print(const std::string_view &fmt, const A&... args) {
-		print(stdout, fmt, args...);
+	constexpr void print(const std::format_string<const A&...> &fmt, const A&... args) {
+		print(std:cout, fmt, args...);
 	}
 
 	template<class... A>
-	constexpr void printl(const std::string_view &fmt, const A&... args) {
-		printl(stdout, fmt, args...);
+	constexpr void printl(const std::format_string<const A&...> &fmt, const A&... args) {
+		printl(std:cout, fmt, args...);
 	}
 
 	template<stream_extractable A1, stream_extractable... A>

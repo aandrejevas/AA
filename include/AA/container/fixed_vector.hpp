@@ -159,6 +159,11 @@ namespace aa {
 			*const_cast<iterator>(pos) = *r_begin--;
 		}
 
+		template<std::ranges::input_range R>
+		constexpr void append_range(R &&r) {
+			r_begin = std::ranges::copy(r, r_begin + 1).out - 1;
+		}
+
 
 
 		// Special member functions

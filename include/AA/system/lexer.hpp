@@ -2,7 +2,6 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
-#include "../container/fixed_vector.hpp"
 #include "../algorithm/hash.hpp"
 #include "print.hpp"
 #include <istream> // istream
@@ -11,26 +10,13 @@
 
 namespace aa {
 
-	struct lexer_config {
-		// Special member functions
-		constexpr lexer_config(const size_t r1 = 64, const size_t r2 = 64) {
-			token.reserve(r1);
-			whitespace.reserve(r2);
-		}
-
-
-
-		// Member objects
-		std::string token, whitespace;
-	};
-
 	// https://en.wikipedia.org/wiki/Lexical_analysis
 	// Būvo idėja realizuoti escape sequences, bet faile galima tiesiog įterpti pavyzdžiui naują eilutę todėl jų neprireikia.
 	// Teksto eilutės reikšmėse pirminiame kode to padaryti negalima todėl tokiame kontekste yra reikalingos escape sequences.
 	//
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<instance_of<string_perfect_hash<>> auto H, invocable_constifier<std::tuple_size_v<const_t<H>>, const std::string &> CONSUMER, ref_convertible_to<std::istream &> FILE>
+	template<instance_of<string_perfect_hash<>> auto H, invocable_constifier<std::tuple_size_v<const_t<H>>, const token_type &> CONSUMER, ref_convertible_to<std::istream &> FILE>
 	constexpr void lex(const FILE &file, CONSUMER &&consumer) {
 		// Lexing parameters
 		constifier_func_t<CONSUMER> target;
@@ -40,7 +26,7 @@ namespace aa {
 			VALUE, SKIP_VALUE
 		} phase2 = lexing_state::BEFORE_KEY;
 
-		fixed_vector<char, 100> token, whitespace;
+		token_type token, whitespace;
 
 		const auto init_key = [&]() -> void {
 			H(token, [&]<size_t I> -> void {
@@ -63,18 +49,18 @@ namespace aa {
 						default:
 							phase2 = lexing_state::KEY;
 							// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
-							token.push_back(static_cast<char>(character));
+							token.insert_back(static_cast<char>(character));
 							return;
 					}
 
 				case lexing_state::KEY:
 					switch (character) {
 						default:
-							token.push_back(static_cast<char>(character));
+							token.insert_back(static_cast<char>(character));
 							return;
 						case ' ': case '\t':
 							phase2 = lexing_state::KEY_SPACE;
-							whitespace.push_back(static_cast<char>(character));
+							whitespace.insert_back(static_cast<char>(character));
 							return;
 						case '=':
 							init_key();
@@ -86,11 +72,12 @@ namespace aa {
 					switch (character) {
 						default:
 							phase2 = lexing_state::KEY;
-							token.append(whitespace).push_back(static_cast<char>(character));
+							token.append_range(whitespace);
+							token.insert_back(static_cast<char>(character));
 							whitespace.clear();
 							return;
 						case ' ': case '\t':
-							whitespace.push_back(static_cast<char>(character));
+							whitespace.insert_back(static_cast<char>(character));
 							return;
 						case '=':
 							init_key();
@@ -102,11 +89,11 @@ namespace aa {
 				case lexing_state::VALUE:
 					switch (character) {
 						default:
-							token.push_back(static_cast<char>(character));
+							token.insert_back(static_cast<char>(character));
 							return;
 						case '\n':
 							phase2 = lexing_state::BEFORE_KEY;
-							(consumer.*target)(token);
+							(consumer.*target)(std::as_const(token));
 							token.clear();
 							return;
 					}

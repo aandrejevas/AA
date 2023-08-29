@@ -67,13 +67,10 @@ namespace aa {
 		}
 
 	public:
-		template<class T, class F>
+		template<same_range_char_traits_as<traits_type> T, class F>
 		static constexpr void operator()(const T &t, F &&f) {
-			if constexpr (same_range_char_traits_as<T, traits_type>) {
-				if ((... || trie<0, A>(t, std::forward<F>(f), std::ranges::size(t) == std::tuple_size_v<const_t<A>>)))
-					return;
-			}
-			invoke<max()>(std::forward<F>(f));
+			if (!(... || trie<0, A>(t, std::forward<F>(f), std::ranges::size(t) == std::tuple_size_v<const_t<A>>)))
+				invoke<max()>(std::forward<F>(f));
 		}
 
 		static consteval size_t min() { return 0; }
