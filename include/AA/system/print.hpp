@@ -2,8 +2,8 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
-#include "../container/fixed_vector.hpp"
 #include "../algorithm/init.hpp"
+#include "evaluator.hpp"
 #include <iostream> // cin, cout
 #include <istream> // istream
 #include <iterator> // output_iterator_tag, input_iterator_tag
@@ -74,10 +74,6 @@ namespace aa {
 
 
 
-	using token_type = fixed_vector<char, 100>;
-
-
-
 	// Dėl atributo neturėtų nukentėti greitaveika, nes taip tai standartiniai srautai yra visiems pasiekiami
 	// ir atrodo nereiktų jų padavinėti per parametrus, bet template argumentai irgi ne alternatyva.
 	template<ostream_like T, class... A>
@@ -95,14 +91,16 @@ namespace aa {
 		std::format_to(ostreambuf_iter{s}, fmt, args...) = '\n';
 	}
 
-	template<istream_like T, stream_extractable<T> A1, stream_extractable<T>... A>
-	constexpr borrowed_t<T, istream_t<T> &> read(T &&s, A1 &a1, A&... args) {
-		return ((cast<istream_t<T> &>(s) >> a1) >> ... >> args);
+	template<ref_convertible_to<std::istream &> S, class EVAL = evaluator, class A>
+	constexpr void read(A &a, S &&s, EVAL &&eval = {}) {
+		istreambuf_iter in = {s};
+		while (eval(in++));
+		eval.evaluate(a);
 	}
 
-	template<class T, istream_like S = std::istream &>
-	constexpr std::remove_cvref_t<T> read(S &&s = std::cin) {
-		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(s, t); });
+	template<class T, ref_convertible_to<std::istream &> S, class EVAL = evaluator>
+	constexpr std::remove_cvref_t<T> read(S &&s, EVAL &&eval = {}) {
+		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(t, s, eval); });
 	}
 
 
@@ -112,17 +110,22 @@ namespace aa {
 	// atvejams klasė gali būti taip parašyta, kad ji ignoruotų const kvalifikatorių.
 	template<class... A>
 	constexpr void print(const std::format_string<const A&...> &fmt, const A&... args) {
-		print(std:cout, fmt, args...);
+		print(std::cout, fmt, args...);
 	}
 
 	template<class... A>
 	constexpr void printl(const std::format_string<const A&...> &fmt, const A&... args) {
-		printl(std:cout, fmt, args...);
+		printl(std::cout, fmt, args...);
 	}
 
-	template<stream_extractable A1, stream_extractable... A>
-	constexpr std::istream &read(A1 &a1, A&... args) {
-		return read(std::cin, a1, args...);
+	template<class EVAL = evaluator, class A>
+	constexpr void read(A &a, EVAL &&eval = {}) {
+		read(a, std::cin, eval);
+	}
+
+	template<class T, class EVAL = evaluator>
+	constexpr std::remove_cvref_t<T> read(EVAL &&eval = {}) {
+		return read<T>(std::cin, eval);
 	}
 
 }

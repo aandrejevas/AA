@@ -52,24 +52,13 @@ namespace aa {
 		using is_transparent = void;
 		using traits_type = first_or_void_t<range_char_traits_t<const_t<A>>...>;
 
-	protected:
-		template<size_t I, auto V, class T, class F>
-		static constexpr bool trie(const T &t, F &&f, const bool c) {
-			if (c) {
-				if constexpr (I == std::tuple_size_v<const_t<V>>) {
-					invoke<pack_index_v<V, A...>>(std::forward<F>(f));
-					return true;
-				} else {
-					return trie<I + 1, V>(t, std::forward<F>(f),
-						traits_type::eq(std::ranges::data(t)[I], const_v<getter_v<I>(V)>));
-				}
-			} else return false;
-		}
-
-	public:
 		template<same_range_char_traits_as<traits_type> T, class F>
 		static constexpr void operator()(const T &t, F &&f) {
-			if (!(... || trie<0, A>(t, std::forward<F>(f), std::ranges::size(t) == std::tuple_size_v<const_t<A>>)))
+			const size_t count = std::ranges::size(t);
+			if (!(... || ((count == std::tuple_size_v<const_t<A>>) && apply<const_t<A>>([&]<size_t... I> -> bool {
+				return (... && traits_type::eq(std::ranges::data(t)[I], const_v<getter_v<I>(A)>)) ?
+					(invoke<pack_index_v<A, A...>>(std::forward<F>(f)), true) : false;
+			}))))
 				invoke<max()>(std::forward<F>(f));
 		}
 

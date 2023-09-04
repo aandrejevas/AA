@@ -3,8 +3,10 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/io.hpp"
 #include "../algorithm/hash.hpp"
+#include "../container/fixed_vector.hpp"
 #include "print.hpp"
 #include <istream> // istream
+#include <string> // char_traits
 
 
 
@@ -16,94 +18,60 @@ namespace aa {
 	//
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<instance_of<string_perfect_hash<>> auto H, invocable_constifier<std::tuple_size_v<const_t<H>>, const token_type &> CONSUMER, ref_convertible_to<std::istream &> FILE>
+	template<instance_of<string_perfect_hash<>> auto H, invocable_r_constifier<std::tuple_size_v<const_t<H>>, bool, int> CONSUMER, ref_convertible_to<std::istream &> FILE>
 	constexpr void lex(const FILE &file, CONSUMER &&consumer) {
 		// Lexing parameters
 		constifier_func_t<CONSUMER> target;
 
 		enum struct lexing_state : size_t {
-			BEFORE_KEY, KEY, KEY_SPACE,
+			KEY,
 			VALUE, SKIP_VALUE
-		} phase2 = lexing_state::BEFORE_KEY;
+		} phase2 = lexing_state::KEY;
 
-		token_type token, whitespace;
-
-		const auto init_key = [&]() -> void {
-			H(token, [&]<size_t I> -> void {
-				if constexpr (I != std::tuple_size_v<const_t<H>>) {
-					// Metodų rodyklių dydis (16 baitai) yra didesnis negu size_t tipo (8 baitai).
-					target = constifier_func_v<CONSUMER, I>;
-					phase2 = lexing_state::VALUE;
-				} else {
-					phase2 = lexing_state::SKIP_VALUE;
-				}
-			});
-		};
+		fixed_vector<char, 100> token;
 
 		const auto lexer = [&](const int character) -> void {
 			switch (phase2) {
-				case lexing_state::BEFORE_KEY:
-					switch (character) {
-						case '=': init_key();
-						case ' ': case '\t': case '\n': case '\r': return;
-						default:
-							phase2 = lexing_state::KEY;
-							// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
-							token.insert_back(static_cast<char>(character));
-							return;
-					}
-
 				case lexing_state::KEY:
 					switch (character) {
 						default:
+							// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
 							token.insert_back(static_cast<char>(character));
 							return;
-						case ' ': case '\t':
-							phase2 = lexing_state::KEY_SPACE;
-							whitespace.insert_back(static_cast<char>(character));
+						case ' ': case '\t': case '\n': case '\r':
 							return;
 						case '=':
-							init_key();
+							H(token, [&]<size_t I> -> void {
+								if constexpr (I != std::tuple_size_v<const_t<H>>) {
+									// Metodų rodyklių dydis (16 baitai) yra didesnis negu size_t tipo (8 baitai).
+									target = constifier_func_v<CONSUMER, I>;
+									phase2 = lexing_state::VALUE;
+								} else {
+									phase2 = lexing_state::SKIP_VALUE;
+								}
+							});
 							token.clear();
-							return;
-					}
-
-				case lexing_state::KEY_SPACE:
-					switch (character) {
-						default:
-							phase2 = lexing_state::KEY;
-							token.append_range(whitespace);
-							token.insert_back(static_cast<char>(character));
-							whitespace.clear();
-							return;
-						case ' ': case '\t':
-							whitespace.insert_back(static_cast<char>(character));
-							return;
-						case '=':
-							init_key();
-							token.clear();
-							whitespace.clear();
 							return;
 					}
 
 				case lexing_state::VALUE:
-					switch (character) {
-						default:
-							token.insert_back(static_cast<char>(character));
-							return;
-						case '\n':
-							phase2 = lexing_state::BEFORE_KEY;
-							(consumer.*target)(std::as_const(token));
-							token.clear();
-							return;
-					}
+					if (!(consumer.*target)(character)) {
+						switch (character) {
+							default:
+								phase2 = lexing_state::SKIP_VALUE;
+								return;
+							case '\n':
+								phase2 = lexing_state::KEY;
+								return;
+						}
+					} else return;
 
 				case lexing_state::SKIP_VALUE:
 					switch (character) {
 						default:
 							return;
 						case '\n':
-							phase2 = lexing_state::BEFORE_KEY;
+							phase2 = lexing_state::KEY;
 							return;
 					}
 
@@ -123,10 +91,9 @@ namespace aa {
 
 		istreambuf_iter in = {file};
 		do {
-			const int_type_in_use_t<std::istream> character = in++;
+			const int character = in++;
 
-			using traits_type = traits_type_in_use_t<std::istream>;
-			if (traits_type::eq_int_type(character, traits_type::eof())) break;
+			if (std::char_traits<char>::eq_int_type(character, std::char_traits<char>::eof())) break;
 
 			switch (phase1) {
 				case preprocessing_state::NONE:

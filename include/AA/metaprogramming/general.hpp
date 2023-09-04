@@ -403,6 +403,12 @@ namespace aa {
 	template<uses_allocator_type T>
 	using allocator_type_in_use_t = typename std::remove_reference_t<T>::allocator_type;
 
+	template<class T>
+	concept uses_iterator = requires { typename std::remove_reference_t<T>::iterator; };
+
+	template<uses_iterator T>
+	using iterator_in_use_t = typename std::remove_reference_t<T>::iterator;
+
 	// Constraint negali būti pakeistas į concept, nes pirmas parametras concept'o nebūtų tipas.
 	template<template<class...> class T, class... A>
 		requires (requires { T(std::declval<A>()...); })
@@ -444,9 +450,6 @@ namespace aa {
 
 	template<class T>
 	concept regular_scalar = arithmetic<T> || pointer<T>;
-
-	template<class T>
-	concept not_const_arithmetic = not_const<T> && arithmetic<T>;
 
 	template<class T>
 	concept uniquely_representable = std::has_unique_object_representations_v<T>;
@@ -548,13 +551,16 @@ namespace aa {
 
 	// GCC bug: jei bandome alias realizuoti be struct tai compiler rejects valid code, nes nepalaiko lambda type gavimo.
 	template<size_t I, gettable<I> T>
-	using get_result_t = type_in_use_t<const_t<([] {
+	constexpr auto get_result_v = []() static {
 		// declval viduje reference, nes getter taip veikia, o getter taip veikia, nes iš standarto imiau pavyzdį.
 		if constexpr (member_get_exists<T, I>)
 			return default_value_v<std::type_identity<decltype(std::declval<T &>().template get<I>())>>;
 		else
 			return default_value_v<std::type_identity<decltype(get<I>(std::declval<T &>()))>>;
-	})()>>;
+	};
+
+	template<size_t I, gettable<I> T>
+	using get_result_t = type_in_use_t<const_t<get_result_v<I, T>()>>;
 
 	// Negalime turėti funkcijos, nes neišeina turėti function aliases patogių.
 	template<size_t I>
@@ -652,6 +658,9 @@ namespace aa {
 
 	template<class F, size_t N, class... A>
 	concept invocable_constifier = (constifier_like<F, N> && std::invocable<constifier_func_t<F>, F, A...>);
+
+	template<class F, size_t N, class R, class... A>
+	concept invocable_r_constifier = (constifier_like<F, N> && invocable_r<constifier_func_t<F>, R, F, A...>);
 
 
 

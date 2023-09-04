@@ -7,6 +7,7 @@
 #include <cstdlib> // exit, EXIT_FAILURE
 #include <iostream> // cerr, clog
 #include <ostream> // ostream
+#include <format> // format_string, formatter, format_parse_context, format_context, format_to
 
 
 
@@ -36,46 +37,38 @@ namespace aa {
 	// ir taip pat yra truputį keista man, kad minėtos klasės duomenys pasiekiami tik per metodus.
 	//
 	// fixed_string tipas naudojamas, nes source_location file_name, function_name metodai gražina const char*.
-	template<size_t COL, size_t LINE, fixed_string FILE, fixed_string FUNC>
+	template<size_t LINE, fixed_string FILE, fixed_string FUNC>
 	struct source_data {
 		// Naudojamas ostream stream, nes fixed_string galima naudoti tik su tokiu stream, o
 		// fixed_string turime naudoti dėl constantų tipo, kuriomis ši klasė inicializuojama.
 		// Input/output
-		friend constexpr std::ostream &operator<<(std::ostream &s, const source_data &) {
-			print(s, FILE, ':', LINE);
-			if constexpr (!is_numeric_max(COL)) {
-				print(s, ':', COL);
-			}
-			return print(s, ": `", FUNC, '`');
-		}
 	};
 
 
 
 	// source_location neišeitų naudoti, nes turime naudoti parameter pack.
 	// ostream naudojame, nes funkcija turi galėti išspausdinti source_data.
-	template<stream_insertable auto D, ref_convertible_to<std::ostream &> S, stream_insertable... A>
-	constexpr borrowed_t<S, std::ostream &> log(S &&s, const A&... args) {
-		if constexpr (sizeof...(A))		return printl(s, D, ": ", args...);
-		else							return log<D>(s, "Info logged.");
+	template<auto D, ref_convertible_to<std::ostream &> S, class... A>
+	constexpr void log(S &&s, const std::format_string<const A&...> &fmt = "Info logged.", const A&... args) {
+		print(s, "{}: ", D);
+		printl(s, fmt, args...);
 	}
 
-	template<stream_insertable auto D, stream_insertable... A>
-	constexpr std::ostream &log(const A&... args) {
-		return log<D>(std::clog, args...);
+	template<auto D, class... A>
+	constexpr void log(const std::format_string<const A&...> &fmt = "Info logged.", const A&... args) {
+		log<D>(std::clog, fmt, args...);
 	}
 
-	template<stream_insertable auto D, ref_convertible_to<std::ostream &> S, stream_insertable... A>
-	[[noreturn]] constexpr void abort(S &&s, const A&... args) {
-		if constexpr (sizeof...(A))		log<D>(s, args...);
-		else							log<D>(s, "Program aborted.");
+	template<auto D, ref_convertible_to<std::ostream &> S, class... A>
+	[[noreturn]] constexpr void abort(S &&s, const std::format_string<const A&...> &fmt = "Program aborted.", const A&... args) {
+		log<D>(s, fmt, args...);
 		// Netinka abort ar kitos funkcijos, nes gali būti neišspausdintas klaidos pranešimas.
 		std::exit(EXIT_FAILURE);
 	}
 
-	template<stream_insertable auto D, stream_insertable... A>
-	[[noreturn]] constexpr void abort(const A&... args) {
-		abort<D>(std::cerr, args...);
+	template<auto D, class... A>
+	[[noreturn]] constexpr void abort(const std::format_string<const A&...> &fmt = "Program aborted.", const A&... args) {
+		abort<D>(std::cerr, fmt, args...);
 	}
 
 	// Neturime assert funkcijų, nes nereikia turėti dviejų kelių, kad pasiekti tą patį. Na ir macros
@@ -83,3 +76,17 @@ namespace aa {
 	// išvengti naudojant atributą) ir kodo trumpumo (naudotojui tektų funkcijai paduoti source_data klasę).
 
 }
+
+
+
+// https://www.cppstories.com/2022/custom-stdformat-cpp20/
+template<size_t LINE, aa::fixed_string FILE, aa::fixed_string FUNC>
+struct std::formatter<aa::source_data<LINE, FILE, FUNC>> {
+	constexpr aa::iterator_in_use_t<std::format_parse_context> parse(const std::format_parse_context &ctx) const {
+		return ctx.begin();
+	}
+
+	constexpr aa::iterator_in_use_t<std::format_context> format(const aa::source_data<LINE, FILE, FUNC> &, std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "{}:{}: `{}`", FILE, LINE, FUNC);
+	}
+};

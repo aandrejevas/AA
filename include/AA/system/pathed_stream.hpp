@@ -45,13 +45,13 @@ namespace aa {
 		constexpr pathed_stream(T &&t, F &&f)
 			: path{std::forward<T>(t)}, stream{std::invoke(std::forward<F>(f), std::as_const(path))}
 		{
-			AA_TRACE_ASSERT(!cast<base_type>(stream).fail(), "Stream ",
-				type_name_v<stream_type>, '(', path, ") in fail state after construction.");
+			AA_TRACE_ASSERT(!cast<base_type>(stream).fail(), "Stream {}({}) in fail state after construction.",
+				type_name_v<stream_type>, path);
 		}
 
 		constexpr ~pathed_stream() {
-			AA_TRACE_ASSERT(!cast<base_type>(stream).fail(), "Stream ",
-				type_name_v<stream_type>, '(', path, ") in fail state before destruction.");
+			AA_TRACE_ASSERT(!cast<base_type>(stream).fail(), "Stream {}({}) in fail state before destruction.",
+				type_name_v<stream_type>, path);
 		}
 
 

@@ -109,13 +109,16 @@ namespace aa {
 		std::same_as<char_type_in_use_t<traits_type_in_use_t<T>>, std::ranges::range_value_t<T>>;
 
 	template<sized_contiguous_range T>
-	using range_char_traits_t = type_in_use_t<const_t<([] {
+	constexpr auto range_char_traits_v = [] static {
 		if constexpr (range_using_traits_type<T>)
 			return default_value_v<std::type_identity<traits_type_in_use_t<T>>>;
 		else
 			// Darome prielaidą, kad char_traits yra apibrėžtas su visais tipais.
 			return default_value_v<std::type_identity<std::char_traits<std::ranges::range_value_t<T>>>>;
-	})()>>;
+	};
+
+	template<sized_contiguous_range T>
+	using range_char_traits_t = type_in_use_t<const_t<range_char_traits_v<T>()>>;
 
 	template<class T, class U>
 	concept same_range_char_traits_as = std::same_as<range_char_traits_t<T>, U>;
