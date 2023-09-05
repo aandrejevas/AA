@@ -11,7 +11,7 @@
 
 namespace aa {
 
-	template<stream_insertable P, stream_like S>
+	template<class P, stream_like S>
 	struct pathed_stream {
 		// Member types
 		using path_type = P;

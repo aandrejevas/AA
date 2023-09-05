@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../metaprogramming/range.hpp"
 #include "../metaprogramming/io.hpp"
 #include "../algorithm/init.hpp"
 #include "evaluator.hpp"
@@ -8,6 +9,8 @@
 #include <istream> // istream
 #include <iterator> // output_iterator_tag, input_iterator_tag
 #include <format> // format_to, format_string
+#include <algorithm> // for_each
+#include <ranges> // input_range, range_value_t
 
 
 
@@ -87,7 +90,7 @@ namespace aa {
 	// Neturime template parametro, per kurį paduotume eilutės galo simbolį, nes
 	// tiesiog galime kaip paprastą parametrą eilutės galo simbolį paduoti.
 	template<ostream_like T, class... A>
-	constexpr void printl(const T &s, const format_string_t<T, const A&...> &fmt, const A&... args) {
+	constexpr void printl(const T &s, const format_string_t<T, const A&...> &fmt = "", const A&... args) {
 		std::format_to(ostreambuf_iter{s}, fmt, args...) = '\n';
 	}
 
@@ -114,7 +117,7 @@ namespace aa {
 	}
 
 	template<class... A>
-	constexpr void printl(const std::format_string<const A&...> &fmt, const A&... args) {
+	constexpr void printl(const std::format_string<const A&...> &fmt = "", const A&... args) {
 		printl(std::cout, fmt, args...);
 	}
 
@@ -129,3 +132,19 @@ namespace aa {
 	}
 
 }
+
+
+
+template<std::ranges::input_range R>
+struct std::formatter<R> {
+	constexpr aa::iterator_in_use_t<std::format_parse_context> parse(const std::format_parse_context &ctx) const {
+		return ctx.begin();
+	}
+
+	constexpr aa::iterator_in_use_t<std::format_context> format(const R &r, std::format_context &ctx) const {
+		std::ranges::for_each(r, [&](const std::ranges::range_value_t<R> &element) -> void {
+			std::format_to(ctx.out(), "{} ", element);
+		});
+		return ctx.out();
+	}
+};
