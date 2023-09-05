@@ -98,7 +98,7 @@ namespace aa {
 
 	protected:
 		// Šitas kintamasis turi būti paslėptas, nes kitaip jis suteiktų galimybę naudotojui keisti const elementus.
-		value_type *const r_begin = elements.data() + indexl();
+		value_type *const r_begin = elements.data() + max_index();
 	};
 
 
@@ -186,7 +186,7 @@ namespace aa {
 		constexpr fixed_array(alloc_array<value_type> &&o)
 			: elements{std::move(o.elements)}, r_begin{o.r_begin} {}
 		constexpr fixed_array(const size_t size)
-			: elements{std::make_unique_for_overwrite<value_type[]>(size)}, r_begin{elements.get() + size - 1} {}
+			: elements{std::make_unique_for_overwrite<value_type[]>(size)}, r_begin{(elements.get() - 1) + size} {}
 
 
 

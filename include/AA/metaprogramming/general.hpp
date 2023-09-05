@@ -551,7 +551,7 @@ namespace aa {
 
 	// GCC bug: jei bandome alias realizuoti be struct tai compiler rejects valid code, nes nepalaiko lambda type gavimo.
 	template<size_t I, gettable<I> T>
-	constexpr auto get_result_v = []() static {
+	constexpr auto get_result_v = [] static {
 		// declval viduje reference, nes getter taip veikia, o getter taip veikia, nes iš standarto imiau pavyzdį.
 		if constexpr (member_get_exists<T, I>)
 			return default_value_v<std::type_identity<decltype(std::declval<T &>().template get<I>())>>;
@@ -597,7 +597,7 @@ namespace aa {
 	}
 
 	template<class T, size_t N = numeric_max>
-	concept tuple_like = (is_numeric_max(N) || std::tuple_size_v<T> == N) && apply<std::tuple_size_v<T>>(
+	concept tuple_like = complete<std::tuple_size<T>> && (is_numeric_max(N) || std::tuple_size_v<T> == N) && apply<std::tuple_size_v<T>>(
 		[]<size_t... I> -> bool { return (... && wo_ref_same_as<get_result_t<I, T>, std::tuple_element_t<I, T>>); });
 
 	template<tuple_like T, class F, class... A>

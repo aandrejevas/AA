@@ -11,6 +11,7 @@
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Dynamic_array
+	// Negali būti tuple like, nes kinta kiek masyvo elementų yra "naudojama".
 	template<trivially_copyable T, size_t N>
 	struct fixed_vector {
 		// Member types
@@ -27,12 +28,6 @@ namespace aa {
 
 
 		// Element access
-		// Ribojame indeksus, nes klaida būtų pažvelgti į atmintį, kuri mums nepriklauso.
-		template<size_type I>
-		constexpr reference get() requires (std::cmp_less(I, N)) { return get(I); }
-		template<size_type I>
-		constexpr const_reference get() const requires (std::cmp_less(I, N)) { return get(I); }
-
 		constexpr reference operator[](const size_type pos) { return get(pos); }
 		constexpr const_reference operator[](const size_type pos) const { return get(pos); }
 
@@ -86,7 +81,6 @@ namespace aa {
 		constexpr size_type size() const { return unsign(ssize()); }
 
 		static consteval size_type max_size() { return N; }
-		static consteval size_type tuple_size() { return N; }
 		static consteval size_type max_index() { return N - 1; }
 
 		constexpr difference_type sindexl() const { return r_begin - data(); }

@@ -33,6 +33,7 @@ namespace aa {
 
 
 		// Element access
+		// Ribojame indeksus, nes klaida būtų pažvelgti į atmintį, kuri mums nepriklauso.
 		template<size_type I>
 		constexpr reference get() requires (std::cmp_less(I, N)) { return get(I); }
 		template<size_type I>

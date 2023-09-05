@@ -2,7 +2,7 @@
 
 #include "general.hpp"
 #include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, next, prev, distance, iter_reference_t, make_reverse_iterator
-#include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, common_range, iterator_t, sentinel_t, range_value_t, range_reference_t, begin, end, rbegin, rend, size, data, range, subrange
+#include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, common_range, iterator_t, sentinel_t, range_value_t, range_reference_t, begin, end, rbegin, rend, size, data, range, input_range, subrange
 #include <string> // char_traits
 #include <memory> // to_address
 
@@ -105,6 +105,9 @@ namespace aa {
 	concept char_range = sized_contiguous_range<T> && std::same_as<std::ranges::range_value_t<T>, char>;
 
 	template<class T>
+	concept formattable_range = !char_range<T> && (std::ranges::input_range<T> || tuple_like<T>);
+
+	template<class T>
 	concept range_using_traits_type = sized_contiguous_range<T> &&
 		std::same_as<char_type_in_use_t<traits_type_in_use_t<T>>, std::ranges::range_value_t<T>>;
 
@@ -134,6 +137,7 @@ namespace aa {
 	struct string_equal_to {
 		template<class L, same_range_char_traits_as<range_char_traits_t<L>> R>
 		static constexpr bool operator()(const L &l, const R &r) {
+			// size_t tipas, nes compare tikisi tokio tipo parametro.
 			const size_t count = std::ranges::size(l);
 			return count == std::ranges::size(r) &&
 				!range_char_traits_t<L>::compare(std::ranges::data(l), std::ranges::data(r), count);

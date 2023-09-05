@@ -55,7 +55,7 @@ namespace aa {
 					}
 
 				case lexing_state::VALUE:
-					if (!(consumer.*target)(character)) {
+					if ((consumer.*target)(character)) return; else {
 						switch (character) {
 							default:
 								phase2 = lexing_state::SKIP_VALUE;
@@ -64,7 +64,7 @@ namespace aa {
 								phase2 = lexing_state::KEY;
 								return;
 						}
-					} else return;
+					}
 
 				case lexing_state::SKIP_VALUE:
 					switch (character) {

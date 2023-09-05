@@ -7,7 +7,6 @@
 #include <string_view> // basic_string_view
 #include <streambuf> // basic_streambuf
 #include <format> // basic_format_string
-#include <ranges> // input_range
 
 
 
@@ -39,10 +38,5 @@ namespace aa {
 
 	template<class T>
 	concept istream_like = ref_convertible_to<T, istream_t<T> &>;
-
-
-
-	template<class T>
-	concept not_std_formattable_input_range = std::ranges::input_range<T>;
 
 }

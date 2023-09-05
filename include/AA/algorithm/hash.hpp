@@ -54,10 +54,12 @@ namespace aa {
 
 		template<same_range_char_traits_as<traits_type> T, class F>
 		static constexpr void operator()(const T &t, F &&f) {
+			// size_t tipas, nes reikės lyginti su size_t tipo kintamuoju.
 			const size_t count = std::ranges::size(t);
 			if (!(... || ((count == std::tuple_size_v<const_t<A>>) && apply<const_t<A>>([&]<size_t... I> -> bool {
-				return (... && traits_type::eq(std::ranges::data(t)[I], const_v<getter_v<I>(A)>)) ?
-					(invoke<pack_index_v<A, A...>>(std::forward<F>(f)), true) : false;
+				static constexpr auto V = A;
+				return (... && traits_type::eq(std::ranges::data(t)[I], const_v<getter_v<I>(V)>)) ?
+					(invoke<pack_index_v<V, A...>>(std::forward<F>(f)), true) : false;
 			}))))
 				invoke<max()>(std::forward<F>(f));
 		}

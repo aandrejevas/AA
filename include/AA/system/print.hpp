@@ -10,7 +10,7 @@
 #include <iterator> // output_iterator_tag, input_iterator_tag
 #include <format> // format_to, format_string
 #include <algorithm> // for_each
-#include <ranges> // input_range, range_value_t
+#include <ranges> // input_range, range_value_t, empty, begin, drop
 
 
 
@@ -95,14 +95,14 @@ namespace aa {
 	}
 
 	template<ref_convertible_to<std::istream &> S, class EVAL = evaluator, class A>
-	constexpr void read(A &a, S &&s, EVAL &&eval = {}) {
+	constexpr void read(A &a, S &&s, EVAL &&eval = default_value) {
 		istreambuf_iter in = {s};
 		while (eval(in++));
 		eval.evaluate(a);
 	}
 
 	template<class T, ref_convertible_to<std::istream &> S, class EVAL = evaluator>
-	constexpr std::remove_cvref_t<T> read(S &&s, EVAL &&eval = {}) {
+	constexpr std::remove_cvref_t<T> read(S &&s, EVAL &&eval = default_value) {
 		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(t, s, eval); });
 	}
 
@@ -122,12 +122,12 @@ namespace aa {
 	}
 
 	template<class EVAL = evaluator, class A>
-	constexpr void read(A &a, EVAL &&eval = {}) {
+	constexpr void read(A &a, EVAL &&eval = default_value) {
 		read(a, std::cin, eval);
 	}
 
 	template<class T, class EVAL = evaluator>
-	constexpr std::remove_cvref_t<T> read(EVAL &&eval = {}) {
+	constexpr std::remove_cvref_t<T> read(EVAL &&eval = default_value) {
 		return read<T>(std::cin, eval);
 	}
 
@@ -135,16 +135,34 @@ namespace aa {
 
 
 
-template<std::ranges::input_range R>
+// Kai bus realizuotas P2286R8, nebereikės šios specializacijos.
+template<aa::formattable_range R>
 struct std::formatter<R> {
 	constexpr aa::iterator_in_use_t<std::format_parse_context> parse(const std::format_parse_context &ctx) const {
 		return ctx.begin();
 	}
 
 	constexpr aa::iterator_in_use_t<std::format_context> format(const R &r, std::format_context &ctx) const {
-		std::ranges::for_each(r, [&](const std::ranges::range_value_t<R> &element) -> void {
-			std::format_to(ctx.out(), "{} ", element);
-		});
-		return ctx.out();
+		if constexpr (std::ranges::input_range<R>) {
+			if (std::ranges::empty(r)) {
+				return std::format_to(ctx.out(), "[]");
+			} else {
+				std::format_to(ctx.out(), "[{}", *std::ranges::begin(r));
+				std::ranges::for_each(std::views::drop(r, 1), [&](const std::ranges::range_value_t<R> &element) -> void {
+					std::format_to(ctx.out(), ", {}", element);
+				});
+				return std::format_to(ctx.out(), "]");
+			}
+		} else {
+			if constexpr (std::tuple_size_v<R>) {
+				std::format_to(ctx.out(), "{{");
+				aa::apply<(std::tuple_size_v<R>) - 1>([&]<size_t... I> -> void {
+					(std::format_to(ctx.out(), "{}, ", aa::getter_v<I>(r)), ...);
+				});
+				return std::format_to(ctx.out(), "{}}}", aa::getter_v<(std::tuple_size_v<R>) - 1>(r));
+			} else {
+				return std::format_to(ctx.out(), "{}");
+			}
+		}
 	}
 };

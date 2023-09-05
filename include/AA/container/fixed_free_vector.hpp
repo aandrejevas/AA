@@ -29,7 +29,10 @@ namespace aa {
 		//
 		// Masyvas node_type'ų yra memset'inamas, nes variant default constructor
 		// inicializuoja dalykus nors mums tokio funkcionalumo nereikia.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpadded"
 		struct node_type : std::variant<node_type *, value_type> {
+#pragma GCC diagnostic pop
 			using std::variant<node_type *, value_type>::operator=;
 		};
 
