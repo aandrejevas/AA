@@ -16,7 +16,7 @@ namespace aa {
 				case ' ': case '\t': case '\n': case '\r':
 					return token.empty();
 				default:
-					token.insert_back(static_cast<char>(c));
+					token.insert_back(cast<char>(c));
 					return true;
 			}
 		}

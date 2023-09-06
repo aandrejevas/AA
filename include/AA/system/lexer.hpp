@@ -18,7 +18,7 @@ namespace aa {
 	//
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<instance_of<string_perfect_hash<>> auto H, invocable_r_constifier<std::tuple_size_v<const_t<H>>, bool, int> CONSUMER, ref_convertible_to<std::istream &> FILE>
+	template<auto H, invocable_r_constifier<std::tuple_size_v<const_t<H>>, bool, int> CONSUMER, ref_convertible_to<std::istream &> FILE>
 	constexpr void lex(const FILE &file, CONSUMER &&consumer) {
 		// Lexing parameters
 		constifier_func_t<CONSUMER> target;
@@ -36,7 +36,7 @@ namespace aa {
 					switch (character) {
 						default:
 							// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
-							token.insert_back(static_cast<char>(character));
+							token.insert_back(cast<char>(character));
 							return;
 						case ' ': case '\t': case '\n': case '\r':
 							return;

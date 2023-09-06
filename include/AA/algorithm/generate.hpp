@@ -13,9 +13,9 @@ namespace aa {
 	template<class T, generator_result_convertible_to<T> G>
 	constexpr T int_distribution(G &g) {
 		if constexpr (!is_numeric_min(G::min()))
-			return static_cast<T>(g() - G::min());
+			return cast<T>(g() - G::min());
 		else
-			return static_cast<T>(g());
+			return cast<T>(g());
 	}
 
 	template<same_as_void = void, bits_generator G>
@@ -30,11 +30,11 @@ namespace aa {
 	// išviso nebegalėtų gražinti kai kurių reikšmių iš intervalo. Ta pati problema pasireiškia ir su double metodu.
 	//
 	// mag ir off ne generic tipo, nes taip tik apsisunkiname gyvenimą paduodami į funkcijas konstantas.
-	// Naudotojas pats turi sąmoningai atlikti static_cast, jei jis turi netinkamą tipą.
+	// Naudotojas pats turi sąmoningai atlikti cast, jei jis turi netinkamą tipą.
 	// [0, mag)
 	template<class T, distribution_result_convertible_to<T> G>
 	constexpr T int_distribution(G &g, const distribution_result_t<G> mag) {
-		return static_cast<T>((mag * static_cast<distribution_result_t<G>>(g())) >> numeric_digits_v<generator_result_t<G>>);
+		return cast<T>((mag * cast<distribution_result_t<G>>(g())) >> numeric_digits_v<generator_result_t<G>>);
 	}
 
 	template<same_as_void = void, full_range_generator G>
@@ -45,7 +45,7 @@ namespace aa {
 	// [off, mag + off)
 	template<class T, distribution_result_convertible_to<T> G>
 	constexpr T int_distribution(G &g, const distribution_result_t<G> off, const distribution_result_t<G> mag) {
-		return static_cast<T>(int_distribution(g, mag) + off);
+		return cast<T>(int_distribution(g, mag) + off);
 	}
 
 	template<same_as_void = void, full_range_generator G>
@@ -65,7 +65,7 @@ namespace aa {
 	// [0, mag)
 	template<convertible_from_floating_point U, std::floating_point T, generator_modulus_representable_by<T> G>
 	constexpr U real_distribution(G &g, const T mag) {
-		return static_cast<U>(real_distribution<T>(g) * mag);
+		return cast<U>(real_distribution<T>(g) * mag);
 	}
 
 	template<same_as_void = void, std::floating_point T, generator_modulus_representable_by<T> G>
@@ -76,7 +76,7 @@ namespace aa {
 	// [off, mag + off)
 	template<convertible_from_floating_point U, std::floating_point T, generator_modulus_representable_by<T> G>
 	constexpr U real_distribution(G &g, const T off, const T mag) {
-		return static_cast<U>(real_distribution(g, mag) + off);
+		return cast<U>(real_distribution(g, mag) + off);
 	}
 
 	template<same_as_void = void, std::floating_point T, generator_modulus_representable_by<T> G>

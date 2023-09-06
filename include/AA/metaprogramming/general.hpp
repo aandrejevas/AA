@@ -14,7 +14,7 @@
 
 #include <cstddef> // byte, size_t
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
-#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t
+#include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t, is_empty_v
 #include <concepts> // convertible_to, same_as, semiregular, regular, relation, invocable, totally_ordered_with, equality_comparable_with, constructible_from, assignable_from, integral, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
 #include <array> // array
@@ -40,10 +40,25 @@ namespace aa {
 	using value_type_in_use_t = typename std::remove_reference_t<T>::value_type;
 
 	template<class T>
+	concept uses_reference = requires { typename std::remove_reference_t<T>::reference; };
+
+	template<uses_reference T>
+	using reference_in_use_t = typename std::remove_reference_t<T>::reference;
+
+	template<class T>
+	concept uses_const_reference = requires { typename std::remove_reference_t<T>::const_reference; };
+
+	template<uses_const_reference T>
+	using const_reference_in_use_t = typename std::remove_reference_t<T>::const_reference;
+
+	template<class T>
 	concept complete = requires { sizeof(T); };
 
 	template<class T>
 	concept incomplete = !complete<T>;
+
+	template<class T>
+	concept empty_type = std::is_empty_v<T>;
 
 
 
@@ -188,21 +203,27 @@ namespace aa {
 		struct tuple_unit {
 			// Member types
 			using value_type = T;
+			using reference = value_type &;
+			using const_reference = const value_type &;
+
+			// Element access
+			constexpr reference get() { return value; }
+			constexpr const_reference get() const { return value; }
 
 			// Member objects
-			[[no_unique_address]] value_type value;
+			// Nenaudojame atributo no_unique_address, nes jis čia nieko nekeistų.
+			value_type value;
 		};
 
-		template<size_t I, incomplete T>
-		struct tuple_unit<I, T> : tuple_unit<I, std::monostate> {};
-
-		template<size_t I, class T, T V>
-		struct tuple_unit<I, std::integral_constant<T, V>> {
+		template<size_t I, empty_type T>
+		struct tuple_unit<I, T> {
 			// Member types
 			using value_type = T;
+			using reference = const value_type &;
+			using const_reference = reference;
 
-			// Member objects
-			[[no_unique_address]] value_type value = V;
+			// Element access
+			static consteval const_reference get() { return default_value_v<value_type>; }
 		};
 
 		template<class, class...>
@@ -213,21 +234,20 @@ namespace aa {
 		template<size_t... I, class... T>
 		struct tuple_base<std::index_sequence<I...>, T...> : tuple_unit<I, T>... {};
 #pragma GCC diagnostic pop
-
-		// https://ldionne.com/2015/11/29/efficient-parameter-pack-indexing/
-		// GCC bug: neleidžia vietoje decltype naudoti const_t.
-		// GCC bug: kai apibrėžiame tik using rejects valid code
-		template<size_t I, class... T>
-		struct type_pack_element : std::invoke_result_t<decltype([]<class U>(const tuple_unit<I, U> &&) consteval ->
-			std::type_identity<U> { return default_value; }), tuple_base<std::index_sequence_for<T...>, T...>> {};
 	}
 
+	// https://ldionne.com/2015/11/29/efficient-parameter-pack-indexing/
+	// GCC bug: kai apibrėžiame tik using rejects valid code
 	template<size_t I, class... T>
-	using type_pack_element_t = type_in_use_t<detail::type_pack_element<I, T...>>;
+	constexpr std::type_identity type_pack_element_v = ([]<class U>(const detail::tuple_unit<I, U>) static { return default_value_v<U>; })
+		(default_value_v<detail::tuple_base<std::index_sequence_for<T...>, std::type_identity<T>...>>);
+
+	template<size_t I, class... T>
+	using type_pack_element_t = type_in_use_t<const_t<type_pack_element_v<I, T...>>>;
 
 	template<class U, class... T>
-	constexpr size_t type_pack_index_v = std::invoke_result_t<decltype([]<size_t I>(const detail::tuple_unit<I, U> &&) consteval ->
-		size_constant<I> { return default_value; }), detail::tuple_base<std::index_sequence_for<T...>, T...>>::value;
+	constexpr size_t type_pack_index_v = ([]<size_t I>(const detail::tuple_unit<I, std::type_identity<U>>) static { return I; })
+		(default_value_v<detail::tuple_base<std::index_sequence_for<T...>, std::type_identity<T>...>>);
 
 	// https://danlark.org/2020/04/13/why-is-stdpair-broken/
 	// https://en.wikipedia.org/wiki/Tuple
@@ -247,10 +267,10 @@ namespace aa {
 		using value_type = value_type_in_use_t<unit_type<I>>;
 
 		template<size_type I>
-		using reference = value_type<I> &;
+		using reference = reference_in_use_t<unit_type<I>>;
 
 		template<size_type I>
-		using const_reference = const value_type<I> &;
+		using const_reference = const_reference_in_use_t<unit_type<I>>;
 
 		// Member constants
 		template<class U>
@@ -259,14 +279,12 @@ namespace aa {
 		// Capacity
 		static consteval size_type tuple_size() { return sizeof...(T); }
 
-
-
 		// Element access
 		template<size_type I>
-		constexpr reference<I> get() { return unit_type<I>::value; }
+		constexpr reference<I> get() { return unit_type<I>::get(); }
 
 		template<size_type I>
-		constexpr const_reference<I> get() const { return unit_type<I>::value; }
+		constexpr const_reference<I> get() const { return unit_type<I>::get(); }
 
 		template<class U>
 		constexpr reference<index<U>> get() { return get<index<U>>(); }
@@ -300,7 +318,7 @@ namespace aa {
 
 	namespace detail {
 		template<size_t, auto V>
-		struct pack_unit : constant<V> {};
+		struct pack_unit {};
 
 		template<class, auto...>
 		struct pack_base;
@@ -310,27 +328,24 @@ namespace aa {
 	}
 
 	template<size_t I, auto... V>
-	constexpr auto pack_element_v = std::invoke_result_t<decltype([]<auto A>(const detail::pack_unit<I, A> &&) consteval ->
-		constant<A> { return default_value; }), detail::pack_base<std::index_sequence_for<const_t<V>...>, V...>>::value;
+	constexpr auto pack_element_v = ([]<auto A>(const detail::pack_unit<I, A>) static { return A; })
+		(default_value_v<detail::pack_base<std::index_sequence_for<const_t<V>...>, V...>>);
 
 	template<size_t I, auto... V>
 	using pack_element_t = const_t<pack_element_v<I, V...>>;
 
 	template<auto A, auto... V>
-	constexpr size_t pack_index_v = std::invoke_result_t<decltype([]<size_t I>(const detail::pack_unit<I, A> &&) consteval ->
-		size_constant<I> { return default_value; }), detail::pack_base<std::index_sequence_for<const_t<V>...>, V...>>::value;
+	constexpr size_t pack_index_v = ([]<size_t I>(const detail::pack_unit<I, A>) static { return I; })
+		(default_value_v<detail::pack_base<std::index_sequence_for<const_t<V>...>, V...>>);
 
 	template<auto... V>
-	struct pack : detail::pack_base<std::index_sequence_for<const_t<V>...>, V...> {
+	struct pack {
 		// Member types
 		using pack_type = pack;
 		using size_type = size_t;
 
 		template<size_type I>
 		using value_type = pack_element_t<I, V...>;
-
-		template<size_type I>
-		using unit_type = detail::pack_unit<I, pack_element_v<I, V...>>;
 
 		// Member constants
 		template<auto A>
@@ -339,11 +354,9 @@ namespace aa {
 		// Capacity
 		static consteval size_type tuple_size() { return sizeof...(V); }
 
-
-
 		// Element access
 		template<size_type I>
-		static consteval value_type<I> get() { return unit_type<I>::value; }
+		static consteval value_type<I> get() { return pack_element_v<I, V...>; }
 	};
 
 
