@@ -223,7 +223,7 @@ namespace aa {
 			using const_reference = reference;
 
 			// Element access
-			static consteval const_reference get() { return default_value_v<value_type>; }
+			static consteval const_reference get() { return default_value; }
 		};
 
 		template<class, class...>
@@ -239,15 +239,15 @@ namespace aa {
 	// https://ldionne.com/2015/11/29/efficient-parameter-pack-indexing/
 	// GCC bug: kai apibrėžiame tik using rejects valid code
 	template<size_t I, class... T>
-	constexpr std::type_identity type_pack_element_v = ([]<class U>(const detail::tuple_unit<I, U>) static { return default_value_v<U>; })
-		(default_value_v<detail::tuple_base<std::index_sequence_for<T...>, std::type_identity<T>...>>);
+	constexpr std::type_identity type_pack_element_v = ([]<class U>(const detail::tuple_unit<I, U>) static -> U
+	{ return default_value; })(default_value_v<detail::tuple_base<std::index_sequence_for<T...>, std::type_identity<T>...>>);
 
 	template<size_t I, class... T>
 	using type_pack_element_t = type_in_use_t<const_t<type_pack_element_v<I, T...>>>;
 
 	template<class U, class... T>
-	constexpr size_t type_pack_index_v = ([]<size_t I>(const detail::tuple_unit<I, std::type_identity<U>>) static { return I; })
-		(default_value_v<detail::tuple_base<std::index_sequence_for<T...>, std::type_identity<T>...>>);
+	constexpr size_t type_pack_index_v = ([]<size_t I>(const detail::tuple_unit<I, std::type_identity<U>>) static -> size_t
+	{ return I; })(default_value_v<detail::tuple_base<std::index_sequence_for<T...>, std::type_identity<T>...>>);
 
 	// https://danlark.org/2020/04/13/why-is-stdpair-broken/
 	// https://en.wikipedia.org/wiki/Tuple
@@ -328,15 +328,15 @@ namespace aa {
 	}
 
 	template<size_t I, auto... V>
-	constexpr auto pack_element_v = ([]<auto A>(const detail::pack_unit<I, A>) static { return A; })
-		(default_value_v<detail::pack_base<std::index_sequence_for<const_t<V>...>, V...>>);
+	constexpr auto pack_element_v = ([]<auto A>(const detail::pack_unit<I, A>) static -> const_t<A>
+	{ return A; })(default_value_v<detail::pack_base<std::index_sequence_for<const_t<V>...>, V...>>);
 
 	template<size_t I, auto... V>
 	using pack_element_t = const_t<pack_element_v<I, V...>>;
 
 	template<auto A, auto... V>
-	constexpr size_t pack_index_v = ([]<size_t I>(const detail::pack_unit<I, A>) static { return I; })
-		(default_value_v<detail::pack_base<std::index_sequence_for<const_t<V>...>, V...>>);
+	constexpr size_t pack_index_v = ([]<size_t I>(const detail::pack_unit<I, A>) static -> size_t
+	{ return I; })(default_value_v<detail::pack_base<std::index_sequence_for<const_t<V>...>, V...>>);
 
 	template<auto... V>
 	struct pack {

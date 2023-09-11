@@ -39,13 +39,14 @@ namespace aa {
 		// Member constants
 		static constexpr size_type hole_index = 0, elem_index = 1;
 
-		template<class P1, class P2>
+		template<class P1, class P2, class O1, class O2>
 		struct variant_iterator {
 			using value_type = P1;
 			using difference_type = difference_type;
 			using reference = value_type;
 			using pointer = value_type;
 			using iterator_category = std::random_access_iterator_tag;
+			using other_iterator = variant_iterator<O1, O2, P1, P2>;
 
 			constexpr reference operator*() const { return std::get_if<elem_index>(ptr); }
 			constexpr pointer operator->() const { return std::get_if<elem_index>(ptr); }
@@ -56,7 +57,9 @@ namespace aa {
 			constexpr variant_iterator operator--(const int) { return {ptr--}; }
 
 			friend constexpr bool operator==(const variant_iterator &l, const variant_iterator &r) { return l.ptr == r.ptr; }
+			friend constexpr bool operator==(const variant_iterator &l, const other_iterator &r) { return l.ptr == r.ptr; }
 			friend constexpr std::strong_ordering operator<=>(const variant_iterator &l, const variant_iterator &r) { return l.ptr <=> r.ptr; }
+			friend constexpr std::strong_ordering operator<=>(const variant_iterator &l, const other_iterator &r) { return l.ptr <=> r.ptr; }
 
 			constexpr difference_type operator-(const variant_iterator &r) const { return ptr - r.ptr; }
 			constexpr reference operator[](const difference_type n) const { return std::get_if<elem_index>(ptr + n); }
@@ -79,8 +82,8 @@ namespace aa {
 		};
 
 	public:
-		using iterator = variant_iterator<pointer, node_type>;
-		using const_iterator = variant_iterator<const_pointer, const node_type>;
+		using iterator = variant_iterator<pointer, node_type, const_pointer, const node_type>;
+		using const_iterator = variant_iterator<const_pointer, const node_type, pointer, node_type>;
 
 
 
@@ -106,13 +109,11 @@ namespace aa {
 		constexpr iterator begin() { return {elements.begin()}; }
 		constexpr const_iterator begin() const { return {elements.begin()}; }
 
-		constexpr iterator end() { return {elements.end()}; }
 		constexpr const_iterator end() const { return {elements.end()}; }
 
 		constexpr iterator rbegin() { return {elements.rbegin()}; }
 		constexpr const_iterator rbegin() const { return {elements.rbegin()}; }
 
-		constexpr iterator rend() { return {elements.rend()}; }
 		constexpr const_iterator rend() const { return {elements.rend()}; }
 
 

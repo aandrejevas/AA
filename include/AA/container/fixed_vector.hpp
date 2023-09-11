@@ -61,23 +61,24 @@ namespace aa {
 		constexpr iterator begin() { return data(); }
 		constexpr const_iterator begin() const { return data(); }
 
-		constexpr iterator end() { return rdata() + 1; }
 		constexpr const_iterator end() const { return rdata() + 1; }
 
 		constexpr iterator rbegin() { return rdata(); }
 		constexpr const_iterator rbegin() const { return rdata(); }
 
-		constexpr iterator rend() { return r_end; }
-		constexpr const_iterator rend() const { return r_end; }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+		constexpr const_iterator rend() const { return data() - 1; }
+#pragma GCC diagnostic pop
 
 
 
 		// Capacity
-		constexpr bool empty() const { return r_begin == r_end; }
+		constexpr bool empty() const { return r_begin < data(); }
 		constexpr bool single() const { return r_begin == data(); }
 		constexpr bool full() const { return size() == max_size(); }
 
-		constexpr difference_type ssize() const { return r_begin - r_end; }
+		constexpr difference_type ssize() const { return r_begin - rend(); }
 		constexpr size_type size() const { return unsign(ssize()); }
 
 		static consteval size_type max_size() { return N; }
@@ -91,9 +92,9 @@ namespace aa {
 		// Anksčiau buvo, bet dabar nebėra elemento įdėjimo metodų overload'ų, kurie priimtų
 		// value_type&&, nes move semantics neturi prasmės trivially copyable tipams.
 		// Modifiers
-		constexpr void clear() { r_begin = r_end; }
+		constexpr void clear() { r_begin = const_cast<iterator>(rend()); }
 
-		constexpr iterator resize(const size_type count) { return r_begin = r_end + count; }
+		constexpr iterator resize(const size_type count) { return r_begin = const_cast<iterator>(rend()) + count; }
 		constexpr iterator resize(const const_iterator pos) { return r_begin = const_cast<iterator>(pos); }
 
 		constexpr iterator pop_back() { return --r_begin; }
@@ -161,23 +162,19 @@ namespace aa {
 
 
 		// Special member functions
-		// Kompiliatorius meta klaidą dėl to kaip kintamasis r_end yra inicializuojamas.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-		// Nedarome = default, nes konstrukrotius vis tiek nebus trivial,
-		// nes klasė turi kintamųjų su numatytais inicializatoriais.
-		constexpr fixed_vector() {}
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuninitialized"
+		// Nedarome = default, nes konstrukrotius vis tiek nebus trivial,
+		// nes klasė turi kintamųjų su numatytais inicializatoriais.
+		constexpr fixed_vector() : r_begin{const_cast<iterator>(rend())} {}
 		// Negalime turėti konstruktoriaus, kuris priimtų rodyklę, nes
 		// tik po konstruktoriaus įvykdymo galima gauti rodykles.
-		constexpr fixed_vector(const std::default_sentinel_t) : r_begin{elements.data()} {}
-#pragma GCC diagnostic pop
-		constexpr fixed_vector(const size_type count) : r_begin{r_end + count} {}
+		constexpr fixed_vector(const std::default_sentinel_t) : r_begin{data()} {}
+		constexpr fixed_vector(const size_type count) : r_begin{const_cast<iterator>(rend()) + count} {}
 		// Nereikia konstruktoriaus, kuriame būtų naudojama fill, nes šį funkcionalumą
 		// galima simuliuoti naudojant šį konstruktorių pavyzdžiui su repeat_view.
 		template<std::ranges::input_range R>
-		constexpr fixed_vector(R &&r) : r_begin{std::ranges::copy(r, elements.data()).out - 1} {}
+		constexpr fixed_vector(R &&r) : r_begin{std::ranges::copy(r, data()).out - 1} {}
 #pragma GCC diagnostic pop
 
 
@@ -186,7 +183,7 @@ namespace aa {
 		std::array<value_type, N> elements;
 
 	protected:
-		value_type *const r_end = elements.data() - 1, *r_begin = r_end;
+		value_type *r_begin;
 	};
 
 }

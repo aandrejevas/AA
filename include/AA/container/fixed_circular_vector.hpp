@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "fixed_vector.hpp"
 #include <memory> // construct_at
 
 
@@ -63,14 +64,15 @@ namespace aa {
 		constexpr iterator begin() { return data(); }
 		constexpr const_iterator begin() const { return data(); }
 
-		constexpr iterator end() { return rdata() + 1; }
 		constexpr const_iterator end() const { return rdata() + 1; }
 
 		constexpr iterator rbegin() { return rdata(); }
 		constexpr const_iterator rbegin() const { return rdata(); }
 
-		constexpr iterator rend() { return r_end; }
-		constexpr const_iterator rend() const { return r_end; }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+		constexpr const_iterator rend() const { return data() - 1; }
+#pragma GCC diagnostic pop
 
 
 
@@ -127,9 +129,8 @@ namespace aa {
 
 
 		// Member objects
-		std::array<value_type, N> elements;
-
 	protected:
+		fixed_vector<value_type, N> elements;
 		bool is_full = false;
 		value_type *const r_end = elements.data() - 1, *const r_begin = elements.data() + max_index(), *r_curr = r_end;
 	};

@@ -36,10 +36,13 @@ namespace aa {
 		&& std::same_as<reverse_iterator_t<R>, std::ranges::sentinel_t<R>>;
 
 	template<class R>
-	concept unusual_or_bidirectional_or_common_range = (unusual_range<R> || std::ranges::bidirectional_range<R> || std::ranges::common_range<R>);
+	concept unusual_common_range = unusual_range<R> && std::ranges::common_range<R>;
+
+	template<class R>
+	concept bidirectional_or_common_range = std::ranges::bidirectional_range<R> || std::ranges::common_range<R>;
 
 	// Nėra atitinkamos funkcijos rend iteratoriui, nes jis nėra svarbus.
-	template<unusual_or_bidirectional_or_common_range R>
+	template<bidirectional_or_common_range R>
 	constexpr std::ranges::sentinel_t<R> get_rbegin(R &&r) {
 		if constexpr (unusual_range<R>) {
 			return std::ranges::rbegin(r);
@@ -51,18 +54,19 @@ namespace aa {
 	}
 
 	template<std::ranges::contiguous_range R>
-	constexpr range_pointer_t<R> get_data_end(R &&r) {
-		if constexpr (std::same_as<range_pointer_t<R>, iter_pointer_t<std::ranges::sentinel_t<R>>>) {
-			return std::to_address(std::ranges::end(r));
-		} else if constexpr (std::same_as<range_pointer_t<R>, iter_pointer_t<reverse_iterator_t<R>>>) {
-			return std::to_address(std::ranges::rbegin(r)) + 1;
+	constexpr range_pointer_t<R> get_rdata(R &&r) {
+		if constexpr (unusual_common_range<R>) {
+			return std::to_address(std::ranges::rbegin(r));
+		} else if constexpr (std::ranges::common_range<R>) {
+			return std::to_address(std::ranges::end(r)) - 1;
 		} else {
-			return std::ranges::data(r) + std::ranges::distance(r);
+			return std::ranges::data(r) + (std::ranges::distance(r) - 1);
 		}
 	}
 
+	// Negalime naudoti views::reverse, nes funkcija reikalauja, kad range tipas būtų bidirectional.
 	template<std::ranges::range R>
-	constexpr auto get_reversed_subrange(R &&r) {
+	constexpr auto get_reversed(R &&r) {
 		if constexpr (unusual_range<R>) {
 			return std::ranges::subrange{std::make_reverse_iterator(std::ranges::end(r)), std::make_reverse_iterator(std::ranges::begin(r))};
 		} else {

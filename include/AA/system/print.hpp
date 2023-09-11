@@ -161,7 +161,7 @@ struct std::formatter<R> {
 				});
 				return std::format_to(ctx.out(), "{}}}", aa::getter_v<(std::tuple_size_v<R>) - 1>(r));
 			} else {
-				return std::format_to(ctx.out(), "{}");
+				return std::format_to(ctx.out(), "{{}}");
 			}
 		}
 	}

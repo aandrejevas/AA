@@ -59,13 +59,11 @@ namespace aa {
 		constexpr iterator begin() { return data(); }
 		constexpr const_iterator begin() const { return data(); }
 
-		constexpr iterator end() { return elements.end(); }
 		constexpr const_iterator end() const { return elements.end(); }
 
 		constexpr iterator rbegin() { return elements.rbegin(); }
 		constexpr const_iterator rbegin() const { return elements.rbegin(); }
 
-		constexpr iterator rend() { return data() - 1; }
 		constexpr const_iterator rend() const { return data() - 1; }
 
 
