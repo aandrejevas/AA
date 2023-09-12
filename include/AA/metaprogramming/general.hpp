@@ -627,9 +627,12 @@ namespace aa {
 
 
 
+	template<bool B, class T>
+	using add_const_if_t = std::conditional_t<B, const T, T>;
+
 	// Nenaudojame dangling, nes ta klasė naudojama ranges kontekste.
 	template<class T, class U = void>
-	using borrowed_t = type_pack_element_t<!lvalue_reference<T>, type_pack_element_t<!same_as_void<U>, T, U>, void>;
+	using borrowed_t = std::conditional_t<lvalue_reference<T>, std::conditional_t<same_as_void<U>, T, U>, void>;
 
 	// Reikia using šio, nes testavimui reikėjo sukurti tuple su 100 elementų ir nėra variantas turėti 100 using'ų.
 	template<template<class...> class T, auto F, size_t N>

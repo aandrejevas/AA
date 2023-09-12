@@ -204,7 +204,8 @@ namespace aa {
 		using value_type = T;
 		using reference = value_type &;
 		using const_reference = const value_type &;
-		using difference_type = type_pack_element_t<!pointer<value_type>, ptrdiff_t, value_type>;
+		// Galėtume naudoti type_pack_element_t, bet tada taptų sunkiau suprasti logiką ir nukentėtų kompiliavimo gretis.
+		using difference_type = std::conditional_t<pointer<value_type>, ptrdiff_t, value_type>;
 
 		// Member constants
 		static constexpr bool subinterval = MIN < MAX;

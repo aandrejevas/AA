@@ -17,7 +17,7 @@ namespace aa {
 		// Member types
 		using bitset_type = T;
 		using offset_type = U;
-		using value_type = type_pack_element_t<!is_offset, offset_type, bitset_type>;
+		using value_type = std::conditional_t<is_offset, offset_type, bitset_type>;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using iterator_category = std::forward_iterator_tag;

@@ -5,7 +5,6 @@
 #include "../algorithm/arithmetic.hpp"
 #include "../algorithm/hash.hpp"
 #include "../algorithm/find.hpp"
-#include "fixed_array.hpp"
 #include "fixed_vector.hpp"
 #include "unsafe_subrange.hpp"
 #include "bitset_view.hpp"

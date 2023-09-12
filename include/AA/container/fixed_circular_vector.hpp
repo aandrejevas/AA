@@ -9,8 +9,11 @@
 namespace aa {
 
 	// https://en.wikipedia.org/wiki/Circular_buffer
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpadded"
 	template<trivially_copyable T, size_t N>
 	struct fixed_circular_vector {
+#pragma GCC diagnostic pop
 		// Member types
 		using value_type = T;
 		using size_type = size_t;
@@ -25,17 +28,17 @@ namespace aa {
 
 
 		// Element access
-		constexpr reference operator[](const size_type pos) { return get(pos); }
-		constexpr const_reference operator[](const size_type pos) const { return get(pos); }
+		constexpr reference operator[](const size_type pos) { return elements.get(pos); }
+		constexpr const_reference operator[](const size_type pos) const { return elements.get(pos); }
 
-		constexpr reference get(const size_type pos) { return *data(pos); }
-		constexpr const_reference get(const size_type pos) const { return *data(pos); }
+		constexpr reference get(const size_type pos) { return elements.get(pos); }
+		constexpr const_reference get(const size_type pos) const { return elements.get(pos); }
 
 		constexpr reference rget(const size_type pos) { return *rdata(pos); }
 		constexpr const_reference rget(const size_type pos) const { return *rdata(pos); }
 
-		constexpr pointer data(const size_type pos) { return data() + pos; }
-		constexpr const_pointer data(const size_type pos) const { return data() + pos; }
+		constexpr pointer data(const size_type pos) { return elements.data(pos); }
+		constexpr const_pointer data(const size_type pos) const { return elements.data(pos); }
 
 		constexpr pointer rdata(const size_type pos) { return rdata() - pos; }
 		constexpr const_pointer rdata(const size_type pos) const { return rdata() - pos; }
@@ -43,67 +46,67 @@ namespace aa {
 		constexpr pointer data() { return elements.data(); }
 		constexpr const_pointer data() const { return elements.data(); }
 
-		constexpr pointer rdata() { return full() ? r_begin : r_curr; }
-		constexpr const_pointer rdata() const { return full() ? r_begin : r_curr; }
+		constexpr pointer rdata() { return is_full ? data(max_index()) : tdata(); }
+		constexpr const_pointer rdata() const { return is_full ? data(max_index()) : tdata(); }
 
-		constexpr pointer tdata() { return r_curr; }
-		constexpr const_pointer tdata() const { return r_curr; }
+		constexpr pointer tdata() { return elements.rdata(); }
+		constexpr const_pointer tdata() const { return elements.rdata(); }
 
-		constexpr reference front() { return *data(); }
-		constexpr const_reference front() const { return *data(); }
+		constexpr reference front() { return elements.front(); }
+		constexpr const_reference front() const { return elements.front(); }
 
 		constexpr reference back() { return *rdata(); }
 		constexpr const_reference back() const { return *rdata(); }
 
-		constexpr reference top() { return *tdata(); }
-		constexpr const_reference top() const { return *tdata(); }
+		constexpr reference top() { return elements.back(); }
+		constexpr const_reference top() const { return elements.back(); }
 
 
 
 		// Iterators
-		constexpr iterator begin() { return data(); }
-		constexpr const_iterator begin() const { return data(); }
+		constexpr iterator begin() { return elements.begin(); }
+		constexpr const_iterator begin() const { return elements.begin(); }
 
 		constexpr const_iterator end() const { return rdata() + 1; }
 
 		constexpr iterator rbegin() { return rdata(); }
 		constexpr const_iterator rbegin() const { return rdata(); }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-		constexpr const_iterator rend() const { return data() - 1; }
-#pragma GCC diagnostic pop
+		constexpr const_iterator rend() const { return elements.rend(); }
 
 
 
 		// Capacity
-		constexpr bool empty() const { return r_curr == r_end; }
-		constexpr bool single() const { return !full() && r_curr == data(); }
+		constexpr bool empty() const { return elements.empty(); }
+		constexpr bool single() const {
+			if constexpr (N == 1)	return elements.single();
+			else					return !is_full && elements.single();
+		}
 		constexpr bool full() const { return is_full; }
 
-		constexpr difference_type ssize() const { return full() ? N : (r_curr - r_end); }
-		constexpr size_type size() const { return unsign(ssize()); }
+		constexpr difference_type ssize() const { return sign(size()); }
+		constexpr size_type size() const { return is_full ? max_size() : elements.size(); }
 
 		static consteval size_type max_size() { return N; }
 		static consteval size_type max_index() { return N - 1; }
 
-		constexpr difference_type sindexl() const { return full() ? max_index() : (r_curr - data()); }
-		constexpr size_type indexl() const { return unsign(sindexl()); }
+		constexpr difference_type sindexl() const { return sign(indexl()); }
+		constexpr size_type indexl() const { return is_full ? max_index() : elements.indexl(); }
 
 
 
 		// Modifiers
 		constexpr void clear() {
 			is_full = false;
-			r_curr = r_end;
+			elements.clear();
 		}
 
 		constexpr iterator push() {
-			if (r_curr == r_begin) {
+			if (elements.full()) {
 				is_full = true;
-				return r_curr = data();
+				return elements.resize(data());
 			} else {
-				return ++r_curr;
+				return elements.push_back();
 			}
 		}
 
@@ -121,10 +124,7 @@ namespace aa {
 
 
 		// Special member functions
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
 		constexpr fixed_circular_vector() {}
-#pragma GCC diagnostic pop
 
 
 
@@ -132,7 +132,6 @@ namespace aa {
 	protected:
 		fixed_vector<value_type, N> elements;
 		bool is_full = false;
-		value_type *const r_end = elements.data() - 1, *const r_begin = elements.data() + max_index(), *r_curr = r_end;
 	};
 
 }

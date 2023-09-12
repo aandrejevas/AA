@@ -39,14 +39,14 @@ namespace aa {
 		// Member constants
 		static constexpr size_type hole_index = 0, elem_index = 1;
 
-		template<class P1, class P2, class O1, class O2>
+		template<bool CONST>
 		struct variant_iterator {
-			using value_type = P1;
+			using value_type = add_const_if_t<CONST, value_type> *;
 			using difference_type = difference_type;
 			using reference = value_type;
 			using pointer = value_type;
 			using iterator_category = std::random_access_iterator_tag;
-			using other_iterator = variant_iterator<O1, O2, P1, P2>;
+			using other_iterator = variant_iterator<!CONST>;
 
 			constexpr reference operator*() const { return std::get_if<elem_index>(ptr); }
 			constexpr pointer operator->() const { return std::get_if<elem_index>(ptr); }
@@ -62,6 +62,7 @@ namespace aa {
 			friend constexpr std::strong_ordering operator<=>(const variant_iterator &l, const other_iterator &r) { return l.ptr <=> r.ptr; }
 
 			constexpr difference_type operator-(const variant_iterator &r) const { return ptr - r.ptr; }
+			constexpr difference_type operator-(const other_iterator &r) const { return ptr - r.ptr; }
 			constexpr reference operator[](const difference_type n) const { return std::get_if<elem_index>(ptr + n); }
 			constexpr variant_iterator operator+(const difference_type n) const { return {ptr + n}; }
 			constexpr variant_iterator operator-(const difference_type n) const { return {ptr - n}; }
@@ -70,20 +71,21 @@ namespace aa {
 			friend constexpr variant_iterator operator+(const difference_type n, const variant_iterator &r) { return {n + r.ptr}; }
 
 			consteval variant_iterator() = default;
+			constexpr variant_iterator(const other_iterator &o) requires (CONST) : ptr{o.ptr} {}
 
 		protected:
 			friend fixed_free_vector;
-			using node_type = P2;
+			using node_pointer = add_const_if_t<CONST, node_type> *;
 
-			constexpr variant_iterator(node_type *const p) : ptr{p} {}
+			constexpr variant_iterator(const node_pointer p) : ptr{p} {}
 
 			// Kintamasis protected, nes prie duomenų patekti reikia specifiniu būdu (žr. operator*).
-			node_type *ptr;
+			node_pointer ptr;
 		};
 
 	public:
-		using iterator = variant_iterator<pointer, node_type, const_pointer, const node_type>;
-		using const_iterator = variant_iterator<const_pointer, const node_type, pointer, node_type>;
+		using iterator = variant_iterator<false>;
+		using const_iterator = variant_iterator<true>;
 
 
 

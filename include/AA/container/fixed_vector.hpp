@@ -76,7 +76,7 @@ namespace aa {
 		// Capacity
 		constexpr bool empty() const { return r_begin < data(); }
 		constexpr bool single() const { return r_begin == data(); }
-		constexpr bool full() const { return size() == max_size(); }
+		constexpr bool full() const { return r_begin == data(max_index()); }
 
 		constexpr difference_type ssize() const { return r_begin - rend(); }
 		constexpr size_type size() const { return unsign(ssize()); }

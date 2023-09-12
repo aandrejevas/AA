@@ -89,7 +89,7 @@ namespace aa {
 		constexpr alloc_array(alloc_array<value_type> &&o)
 			: elements{std::move(o.elements)}, r_begin{o.r_begin} {}
 		constexpr alloc_array(const size_t size)
-			: elements{std::make_unique_for_overwrite<value_type[]>(size)}, r_begin{rend() + size} {}
+			: elements{std::make_unique_for_overwrite<value_type[]>(size)}, r_begin{const_cast<iterator>(rend()) + size} {}
 
 
 
