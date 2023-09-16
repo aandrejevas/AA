@@ -74,10 +74,8 @@ namespace aa {
 							phase2 = lexing_state::KEY;
 							return;
 					}
-
-				default:
-					std::unreachable();
 			}
+			std::unreachable();
 		};
 
 		// Lexing comments
@@ -151,10 +149,10 @@ namespace aa {
 							phase1 = preprocessing_state::MULTILINE;
 							continue;
 					}
-
-				default:
-					std::unreachable();
 			}
+			// Neturime default case su unreachable, nes tokiu atveju pasikeitus enum,
+			// kompiliatorius mūsų neperspėtų apie case'us, kurie būtų nepanaudoti.
+			std::unreachable();
 		} while (true);
 		// Parametro apibrėžimo forma: PARAMETRO_VARDAS =PARAMETRO_REIKŠMĖ'\n'
 		// Svarbu nepamiršti, kad jei parametrą bandoma apibrėžti failo pabaigoje,
