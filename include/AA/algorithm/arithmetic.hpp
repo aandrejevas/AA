@@ -149,7 +149,7 @@ namespace aa {
 	// https://cp-algorithms.com/algebra/binary-exp.html
 	// https://en.wikipedia.org/wiki/Modular_exponentiation
 	template<std::unsigned_integral T, std::unsigned_integral U>
-	constexpr T power(T a, U b) {
+	constexpr T pow(T a, U b) {
 		T res = 1;
 		do {
 			if (b & 1) res *= a;
@@ -165,19 +165,23 @@ namespace aa {
 		else if constexpr (is_value<1>(N))	return x;
 		else if constexpr (is_value<2>(N))	return x * x;
 		else if constexpr (is_value<3>(N))	return x * x * x;
-		else								return pow<2>(pow<2>(x));
+		else								return pow(pow(x));
 	}
 
 	// https://en.wikipedia.org/wiki/Smoothstep
 	template<size_t N = 1, std::floating_point T>
-		requires (N <= 2)
+		requires (N <= 3)
 	constexpr T smoothstep(const T x) {
-		/**/ if constexpr (is_value<0>(N)) return x;
-		else if constexpr (is_value<1>(N)) {
-			return pow<2>(x) * ((value_v<T, -2>) * x + (value_v<T, 3>));
+		/*  */ if constexpr (is_value<0>(N)) {
+			return x;
+		} else if constexpr (is_value<1>(N)) {
+			return pow(x) * (product<-2>(x) + value_v<T, 3>);
+		} else if constexpr (is_value<2>(N)) {
+			const T xx = pow(x);
+			return xx * x * (product<6>(xx) + product<-15>(x) + value_v<T, 10>);
 		} else {
-			const T xx = pow<2>(x);
-			return xx * x * ((value_v<T, 6>) * xx + (value_v<T, -15>) * x + (value_v<T, 10>));
+			const T x2 = pow(x), x3 = x2 * x;
+			return x3 * x * (product<-20>(x3) + product<70>(x2) + product<-84>(x) + value_v<T, 35>);
 		}
 	}
 

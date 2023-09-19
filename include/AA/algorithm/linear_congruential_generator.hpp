@@ -35,7 +35,7 @@ namespace aa {
 			modulus = representable_values_v<result_type>;
 		static constexpr result_type
 			multiplier = A, increment = C,
-			inverse = power(multiplier, (modulus >> 1) - 1);
+			inverse = pow(multiplier, (modulus >> 1) - 1);
 
 
 
