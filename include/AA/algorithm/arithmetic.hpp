@@ -158,9 +158,27 @@ namespace aa {
 		} while (true);
 	}
 
-	template<arithmetic T>
-	constexpr T sq(const T x) {
-		return x * x;
+	template<size_t N = 2, arithmetic T>
+		requires (N <= 4)
+	constexpr T pow(const T x) {
+		/**/ if constexpr (is_value<0>(N))	return value_v<T, 1>;
+		else if constexpr (is_value<1>(N))	return x;
+		else if constexpr (is_value<2>(N))	return x * x;
+		else if constexpr (is_value<3>(N))	return x * x * x;
+		else								return pow<2>(pow<2>(x));
+	}
+
+	// https://en.wikipedia.org/wiki/Smoothstep
+	template<size_t N = 1, std::floating_point T>
+		requires (N <= 2)
+	constexpr T smoothstep(const T x) {
+		/**/ if constexpr (is_value<0>(N)) return x;
+		else if constexpr (is_value<1>(N)) {
+			return pow<2>(x) * ((value_v<T, -2>) * x + (value_v<T, 3>));
+		} else {
+			const T xx = pow<2>(x);
+			return xx * x * ((value_v<T, 6>) * xx + (value_v<T, -15>) * x + (value_v<T, 10>));
+		}
 	}
 
 	// https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
