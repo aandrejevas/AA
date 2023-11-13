@@ -39,4 +39,12 @@ namespace aa {
 	template<class T>
 	concept istream_like = ref_convertible_to<T, istream_t<T> &>;
 
+
+
+	template<class U, class T>
+	concept evaluable_by = std::default_initializable<std::remove_reference_t<T>> && invocable_r<T, bool, int, U &>;
+
+	template<class T, class U1, class... U>
+	concept evaluator_for = evaluable_by<U1, T &> && (... && evaluable_by<U, T &>);
+
 }

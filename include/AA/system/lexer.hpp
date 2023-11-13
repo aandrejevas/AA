@@ -28,6 +28,8 @@ namespace aa {
 			VALUE, SKIP_VALUE
 		} phase2 = lexing_state::KEY;
 
+		using traits_type = std::char_traits<char>;
+
 		fixed_vector<char, 100> token;
 
 		const auto lexer = [&](const int character) -> void {
@@ -36,7 +38,7 @@ namespace aa {
 					switch (character) {
 						default:
 							// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
-							token.insert_back(cast<char>(character));
+							token.insert_back(traits_type::to_char_type(character));
 							return;
 						case ' ': case '\t': case '\n': case '\r':
 							return;
@@ -91,7 +93,7 @@ namespace aa {
 		do {
 			const int character = in++;
 
-			if (std::char_traits<char>::eq_int_type(character, std::char_traits<char>::eof())) break;
+			if (traits_type::eq_int_type(character, traits_type::eof())) break;
 
 			switch (phase1) {
 				case preprocessing_state::NONE:

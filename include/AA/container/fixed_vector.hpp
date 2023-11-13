@@ -46,7 +46,7 @@ namespace aa {
 		constexpr pointer data() { return elements.data(); }
 		constexpr const_pointer data() const { return elements.data(); }
 
-		constexpr pointer rdata() { return r_begin; }
+		constexpr pointer rdata() { return const_cast<iterator>(r_begin); }
 		constexpr const_pointer rdata() const { return r_begin; }
 
 		constexpr reference front() { return *data(); }
@@ -74,7 +74,7 @@ namespace aa {
 
 
 		// Capacity
-		constexpr bool empty() const { return r_begin < data(); }
+		constexpr bool empty() const { return r_begin == rend(); }
 		constexpr bool single() const { return r_begin == data(); }
 		constexpr bool full() const { return r_begin == data(max_index()); }
 
@@ -92,36 +92,38 @@ namespace aa {
 		// Anksčiau buvo, bet dabar nebėra elemento įdėjimo metodų overload'ų, kurie priimtų
 		// value_type&&, nes move semantics neturi prasmės trivially copyable tipams.
 		// Modifiers
-		constexpr void clear() { r_begin = const_cast<iterator>(rend()); }
+		constexpr void clear() { r_begin = rend(); }
 
-		constexpr iterator resize(const size_type count) { return r_begin = const_cast<iterator>(rend()) + count; }
-		constexpr iterator resize(const const_iterator pos) { return r_begin = const_cast<iterator>(pos); }
+		constexpr const_iterator resize(const size_type count) { return r_begin = rend() + count; }
+		constexpr const_iterator resize(const const_iterator pos) { return r_begin = pos; }
 
-		constexpr iterator pop_back() { return --r_begin; }
-		constexpr iterator push_back() { return ++r_begin; }
+		constexpr const_iterator pop_back() { return --r_begin; }
+		constexpr const_iterator push_back() { return ++r_begin; }
+		constexpr const_iterator pop_back_alt() { return r_begin--; }
+		constexpr const_iterator push_back_alt() { return r_begin++; }
 
-		constexpr iterator pop_back(const size_type count) { return r_begin -= count; }
-		constexpr iterator push_back(const size_type count) { return r_begin += count; }
+		constexpr const_iterator pop_back(const size_type count) { return r_begin -= count; }
+		constexpr const_iterator push_back(const size_type count) { return r_begin += count; }
 
 		// Neišeina emplace_back ir push_back apjungti, nes įsivaizduokime tokį svenarijų, visi masyvo elementai
 		// pradžioje sukonstruojami ir mes norime tiesiog rodyklę pastumti, emplace_back iš naujo sukonstruotų elementą.
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		constexpr iterator emplace_back(A&&... args) {
-			return std::ranges::construct_at(push_back(), std::forward<A>(args)...);
+		constexpr const_iterator emplace_back(A&&... args) {
+			return std::ranges::construct_at(const_cast<iterator>(push_back()), std::forward<A>(args)...);
 		}
 
 		template<assignable_to<reference> V>
-		constexpr void insert_back(V &&value) { *push_back() = std::forward<V>(value); }
+		constexpr void insert_back(V &&value) { *const_cast<iterator>(push_back()) = std::forward<V>(value); }
 
 		constexpr void push(const const_iterator pos) {
-			++r_begin;
-			std::ranges::copy_backward(pos, const_cast<const_iterator>(r_begin), r_begin + 1);
+			push_back();
+			std::ranges::copy_backward(pos, r_begin, const_cast<iterator>(end()));
 		}
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		constexpr iterator emplace(const const_iterator pos, A&&... args) {
+		constexpr const_iterator emplace(const const_iterator pos, A&&... args) {
 			push(pos);
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
@@ -133,13 +135,12 @@ namespace aa {
 		}
 
 		constexpr void erase(const const_iterator pos) {
-			std::ranges::copy_n(pos + 1, r_begin - pos, const_cast<iterator>(pos));
-			--r_begin;
+			std::ranges::copy_n(pos + 1, pop_back_alt() - pos, const_cast<iterator>(pos));
 		}
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		constexpr iterator fast_emplace(const const_iterator pos, A&&... args) {
+		constexpr const_iterator fast_emplace(const const_iterator pos, A&&... args) {
 			insert_back(*pos);
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
@@ -151,12 +152,12 @@ namespace aa {
 		}
 
 		constexpr void fast_erase(const const_iterator pos) {
-			*const_cast<iterator>(pos) = *r_begin--;
+			*const_cast<iterator>(pos) = *pop_back_alt();
 		}
 
 		template<std::ranges::input_range R>
 		constexpr void append_range(R &&r) {
-			r_begin = std::ranges::copy(r, r_begin + 1).out - 1;
+			r_begin = std::ranges::copy(r, const_cast<iterator>(end())).out - 1;
 		}
 
 
@@ -166,11 +167,11 @@ namespace aa {
 #pragma GCC diagnostic ignored "-Wuninitialized"
 		// Nedarome = default, nes konstrukrotius vis tiek nebus trivial,
 		// nes klasė turi kintamųjų su numatytais inicializatoriais.
-		constexpr fixed_vector() : r_begin{const_cast<iterator>(rend())} {}
+		constexpr fixed_vector() : r_begin{rend()} {}
 		// Negalime turėti konstruktoriaus, kuris priimtų rodyklę, nes
 		// tik po konstruktoriaus įvykdymo galima gauti rodykles.
-		constexpr fixed_vector(const std::default_sentinel_t) : r_begin{data()} {}
-		constexpr fixed_vector(const size_type count) : r_begin{const_cast<iterator>(rend()) + count} {}
+		constexpr fixed_vector(const std::default_sentinel_t) : r_begin{std::as_const(*this).data()} {}
+		constexpr fixed_vector(const size_type count) : r_begin{rend() + count} {}
 		// Nereikia konstruktoriaus, kuriame būtų naudojama fill, nes šį funkcionalumą
 		// galima simuliuoti naudojant šį konstruktorių pavyzdžiui su repeat_view.
 		template<std::ranges::input_range R>
@@ -181,9 +182,7 @@ namespace aa {
 
 		// Member objects
 		std::array<value_type, N> elements;
-
-	protected:
-		value_type *r_begin;
+		const value_type *r_begin;
 	};
 
 }

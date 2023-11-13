@@ -94,15 +94,15 @@ namespace aa {
 		std::format_to(ostreambuf_iter{s}, fmt, args...) = '\n';
 	}
 
-	template<ref_convertible_to<std::istream &> S, class EVAL = evaluator, class A>
-	constexpr void read(A &a, S &&s, EVAL &&eval = default_value) {
+	// eval turi būti paduotas kaip parametras, nes yra situacijų, kai EVAL gali būti ne paprasta klasė.
+	template<class EVAL = evaluator, ref_convertible_to<std::istream &> S, evaluable_by<EVAL &> A>
+	constexpr void read(A &a, S &&s, EVAL &&eval) {
 		istreambuf_iter in = {s};
-		while (eval(in++));
-		eval.evaluate(a);
+		while (eval(in++, a));
 	}
 
-	template<class T, ref_convertible_to<std::istream &> S, class EVAL = evaluator>
-	constexpr std::remove_cvref_t<T> read(S &&s, EVAL &&eval = default_value) {
+	template<class T, evaluator_for<T> EVAL = evaluator, ref_convertible_to<std::istream &> S>
+	constexpr std::remove_cvref_t<T> read(S &&s, EVAL &&eval) {
 		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(t, s, eval); });
 	}
 
@@ -121,13 +121,13 @@ namespace aa {
 		printl(std::cout, fmt, args...);
 	}
 
-	template<class EVAL = evaluator, class A>
-	constexpr void read(A &a, EVAL &&eval = default_value) {
+	template<class EVAL = evaluator, evaluable_by<EVAL &> A>
+	constexpr void read(A &a, EVAL &&eval) {
 		read(a, std::cin, eval);
 	}
 
-	template<class T, class EVAL = evaluator>
-	constexpr std::remove_cvref_t<T> read(EVAL &&eval = default_value) {
+	template<class T, evaluator_for<T> EVAL = evaluator>
+	constexpr std::remove_cvref_t<T> read(EVAL &&eval) {
 		return read<T>(std::cin, eval);
 	}
 
@@ -138,11 +138,11 @@ namespace aa {
 // Kai bus realizuotas P2286R8, nebereikės šios specializacijos.
 template<aa::formattable_range R>
 struct std::formatter<R> {
-	constexpr aa::iterator_in_use_t<std::format_parse_context> parse(const std::format_parse_context &ctx) const {
+	static constexpr aa::iterator_in_use_t<std::format_parse_context> parse(const std::format_parse_context &ctx) {
 		return ctx.begin();
 	}
 
-	constexpr aa::iterator_in_use_t<std::format_context> format(const R &r, std::format_context &ctx) const {
+	static constexpr aa::iterator_in_use_t<std::format_context> format(const R &r, std::format_context &ctx) {
 		if constexpr (std::ranges::input_range<R>) {
 			if (std::ranges::empty(r)) {
 				return std::format_to(ctx.out(), "[]");

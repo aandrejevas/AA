@@ -45,7 +45,7 @@ namespace aa {
 		constexpr pointer data() { return elements.get(); }
 		constexpr const_pointer data() const { return elements.get(); }
 
-		constexpr pointer rdata() { return r_begin; }
+		constexpr pointer rdata() { return const_cast<iterator>(r_begin); }
 		constexpr const_pointer rdata() const { return r_begin; }
 
 		constexpr reference front() { return *data(); }
@@ -70,7 +70,7 @@ namespace aa {
 
 
 		// Capacity
-		constexpr bool empty() const { return r_begin < data(); }
+		constexpr bool empty() const { return r_begin == rend(); }
 		constexpr bool single() const { return r_begin == data(); }
 
 		constexpr difference_type ssize() const { return r_begin - rend(); }
@@ -89,14 +89,16 @@ namespace aa {
 		constexpr alloc_array(alloc_array<value_type> &&o)
 			: elements{std::move(o.elements)}, r_begin{o.r_begin} {}
 		constexpr alloc_array(const size_t size)
-			: elements{std::make_unique_for_overwrite<value_type[]>(size)}, r_begin{const_cast<iterator>(rend()) + size} {}
+			: elements{std::make_unique_for_overwrite<value_type[]>(size)}, r_begin{rend() + size} {}
 
 
 
 		// Member objects
 	protected:
 		std::unique_ptr<value_type[]> elements;
-		value_type *const r_begin;
+
+	public:
+		const value_type *const r_begin;
 	};
 
 }

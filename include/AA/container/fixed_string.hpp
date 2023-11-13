@@ -112,6 +112,8 @@ namespace aa {
 
 
 		// Special member functions
+		// Neturime konstruktoriaus, kuris priimtų range, nes dėl šitos klasės ypatumų,
+		// po konstruktoriaus elements masyvas turi būti visiškai užpildytas.
 		constexpr basic_fixed_string(const value_type *const cstring) {
 			if constexpr (N)	traits_type::copy(elements.data(), cstring, N);
 		}
@@ -150,26 +152,22 @@ namespace aa {
 
 
 
-namespace std {
-
-	template<class T, size_t N>
-	struct formatter<aa::basic_fixed_string<T, N>, aa::char_type_in_use_t<T>>
-		: std::formatter<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>, aa::char_type_in_use_t<T>> {};
+template<class T, size_t N>
+struct std::formatter<aa::basic_fixed_string<T, N>, aa::char_type_in_use_t<T>>
+	: std::formatter<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>, aa::char_type_in_use_t<T>> {};
 
 
 
-	template<class T, size_t N>
-	struct hash<aa::basic_fixed_string<T, N>>
-		: std::hash<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>> {};
+template<class T, size_t N>
+struct std::hash<aa::basic_fixed_string<T, N>>
+	: std::hash<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>> {};
 
 
 
-	template<class T, class A, size_t N, template<class> class TQUAL, template<class> class QQUAL>
-	struct basic_common_reference<aa::basic_fixed_string<T, N>, std::basic_string<aa::char_type_in_use_t<T>, T, A>, TQUAL, QQUAL>
-		: std::type_identity<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>> {};
+template<class T, class A, size_t N, template<class> class TQUAL, template<class> class QQUAL>
+struct std::basic_common_reference<aa::basic_fixed_string<T, N>, std::basic_string<aa::char_type_in_use_t<T>, T, A>, TQUAL, QQUAL>
+	: std::type_identity<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>> {};
 
-	template<class T, class A, size_t N, template<class> class TQUAL, template<class> class QQUAL>
-	struct basic_common_reference<std::basic_string<aa::char_type_in_use_t<T>, T, A>, aa::basic_fixed_string<T, N>, TQUAL, QQUAL>
-		: std::type_identity<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>> {};
-
-}
+template<class T, class A, size_t N, template<class> class TQUAL, template<class> class QQUAL>
+struct std::basic_common_reference<std::basic_string<aa::char_type_in_use_t<T>, T, A>, aa::basic_fixed_string<T, N>, TQUAL, QQUAL>
+	: std::type_identity<aa::view_type_in_use_t<aa::basic_fixed_string<T, N>>> {};

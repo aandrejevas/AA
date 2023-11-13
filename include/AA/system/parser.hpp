@@ -12,14 +12,11 @@
 
 namespace aa {
 
-	// config parametrui nenurodome numatytos reikšmės, nes ji nėra constexpr reikšmė.
+	// Į evaluate nepaduodame indekso, nes naudotojas galėtų tiesiog naudoti skirtingus tipus.
 	template<auto H, class EVAL = evaluator, class FILE, same_tuple_size_as<const_t<H>> TUPLE>
 	constexpr void parse(TUPLE &t, const FILE &file, EVAL &&eval = default_value) {
 		lex<H>(file, [&]<size_t I>(const int c) -> bool {
-			if (eval(c)) return true; else {
-				eval.template evaluate<I>(getter_v<I>(t));
-				return false;
-			}
+			return eval(c, getter_v<I>(t));
 		});
 	}
 
@@ -28,9 +25,8 @@ namespace aa {
 	constexpr void safe_parse(TUPLE &t, const FILE &file, EVAL &&eval = default_value) {
 		const size_t index = unsign<size_t>(std::countr_one(make_with_invocable<0uz>([&](size_t &bitset) -> void {
 			lex<H>(file, [&]<size_t I>(const int c) -> bool {
-				if (eval(c)) return true; else {
+				if (eval(c, getter_v<I>(t))) return true; else {
 					bitset |= const_v<int_exp2(I)>;
-					eval.template evaluate<I>(getter_v<I>(t));
 					return false;
 				}
 			});

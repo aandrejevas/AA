@@ -41,32 +41,31 @@ namespace aa {
 	struct source_data {
 		// Naudojamas ostream stream, nes fixed_string galima naudoti tik su tokiu stream, o
 		// fixed_string turime naudoti dėl constantų tipo, kuriomis ši klasė inicializuojama.
-		// Input/output
 	};
 
 
 
 	// source_location neišeitų naudoti, nes turime naudoti parameter pack.
 	// ostream naudojame, nes funkcija turi galėti išspausdinti source_data.
-	template<auto D, ref_convertible_to<std::ostream &> S, class... A>
+	template<source_data D, ref_convertible_to<std::ostream &> S, class... A>
 	constexpr void log(S &&s, const std::format_string<const A&...> &fmt = "Info logged.", const A&... args) {
 		print(s, "{}: ", D);
 		printl(s, fmt, args...);
 	}
 
-	template<auto D, class... A>
+	template<source_data D, class... A>
 	constexpr void log(const std::format_string<const A&...> &fmt = "Info logged.", const A&... args) {
 		log<D>(std::clog, fmt, args...);
 	}
 
-	template<auto D, ref_convertible_to<std::ostream &> S, class... A>
+	template<source_data D, ref_convertible_to<std::ostream &> S, class... A>
 	[[noreturn]] constexpr void abort(S &&s, const std::format_string<const A&...> &fmt = "Program aborted.", const A&... args) {
 		log<D>(s, fmt, args...);
 		// Netinka abort ar kitos funkcijos, nes gali būti neišspausdintas klaidos pranešimas.
 		std::exit(EXIT_FAILURE);
 	}
 
-	template<auto D, class... A>
+	template<source_data D, class... A>
 	[[noreturn]] constexpr void abort(const std::format_string<const A&...> &fmt = "Program aborted.", const A&... args) {
 		abort<D>(std::cerr, fmt, args...);
 	}
@@ -82,11 +81,11 @@ namespace aa {
 // https://www.cppstories.com/2022/custom-stdformat-cpp20/
 template<size_t LINE, aa::fixed_string FILE, aa::fixed_string FUNC>
 struct std::formatter<aa::source_data<LINE, FILE, FUNC>> {
-	constexpr aa::iterator_in_use_t<std::format_parse_context> parse(const std::format_parse_context &ctx) const {
+	static constexpr aa::iterator_in_use_t<std::format_parse_context> parse(const std::format_parse_context &ctx) {
 		return ctx.begin();
 	}
 
-	constexpr aa::iterator_in_use_t<std::format_context> format(const aa::source_data<LINE, FILE, FUNC> &, std::format_context &ctx) const {
+	static constexpr aa::iterator_in_use_t<std::format_context> format(const aa::source_data<LINE, FILE, FUNC>, std::format_context &ctx) {
 		return std::format_to(ctx.out(), "{}:{}: `{}`", FILE, LINE, FUNC);
 	}
 };

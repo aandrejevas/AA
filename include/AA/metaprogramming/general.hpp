@@ -113,28 +113,20 @@ namespace aa {
 		template<auto V>
 		struct value_getter {
 			template<std::semiregular T>
-			consteval operator const T &() const { return value_v<T, V>; }
-			template<std::semiregular T>
 			consteval operator T() const { return value_v<T, V>; }
 		};
 
 		struct default_value_getter {
-			template<std::semiregular T>
-			consteval operator const T &() const { return default_value_v<T>; }
 			template<std::semiregular T>
 			consteval operator T() const { return default_value_v<T>; }
 		};
 
 		struct numeric_max_getter {
 			template<std::semiregular T>
-			consteval operator const T &() const { return numeric_max_v<T>; }
-			template<std::semiregular T>
 			consteval operator T() const { return numeric_max_v<T>; }
 		};
 
 		struct numeric_min_getter {
-			template<std::semiregular T>
-			consteval operator const T &() const { return numeric_min_v<T>; }
 			template<std::semiregular T>
 			consteval operator T() const { return numeric_min_v<T>; }
 		};
@@ -734,8 +726,8 @@ namespace aa {
 	template<class U, template<class> class T>
 	concept hashable_by_template = (hashable_by<U, T<U>> && trivially_default_constructible<T<U>>);
 
-	template<class T, class... U>
-	concept hasher_for = (... && hashable_by<U, const T &>);
+	template<class T, class U1, class... U>
+	concept hasher_for = hashable_by<U1, const T &> && (... && hashable_by<U, const T &>);
 
 	template<class T, class U, size_t N = numeric_max>
 	concept arithmetic_array_getter = (std::invocable<const T &, const U &>
@@ -985,20 +977,16 @@ namespace aa {
 
 
 
-namespace std {
+template<class T>
+struct std::tuple_size<T &> : aa::size_constant<std::tuple_size_v<T>> {};
 
-	template<class T>
-	struct tuple_size<T &> : aa::size_constant<std::tuple_size_v<T>> {};
+template<size_t I, class T>
+struct std::tuple_element<I, T &> : std::type_identity<std::tuple_element_t<I, T>> {};
 
-	template<size_t I, class T>
-	struct tuple_element<I, T &> : std::type_identity<std::tuple_element_t<I, T>> {};
+// Negalime tikrinti ar prieš šį momentą tuple_size<T> buvo deklaruotas tipas ar ne, nes įeitume į begalinį
+// ciklą. Reiškia turi mums pats tipas pranešti ar jis nori būti laikomas kaip tuple like tipas.
+template<aa::new_tuple_like T>
+struct std::tuple_size<T> : aa::size_constant<T::tuple_size()> {};
 
-	// Negalime tikrinti ar prieš šį momentą tuple_size<T> buvo deklaruotas tipas ar ne, nes įeitume į begalinį
-	// ciklą. Reiškia turi mums pats tipas pranešti ar jis nori būti laikomas kaip tuple like tipas.
-	template<aa::new_tuple_like T>
-	struct tuple_size<T> : aa::size_constant<T::tuple_size()> {};
-
-	template<size_t I, aa::new_tuple_like T>
-	struct tuple_element<I, T> : std::type_identity<std::remove_reference_t<aa::get_result_t<I, T>>> {};
-
-}
+template<size_t I, aa::new_tuple_like T>
+struct std::tuple_element<I, T> : std::type_identity<std::remove_reference_t<aa::get_result_t<I, T>>> {};
