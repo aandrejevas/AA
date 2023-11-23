@@ -55,8 +55,8 @@ namespace aa {
 
 
 	// https://en.wikipedia.org/wiki/Product_(mathematics)
-	// Pagal X funkcija nustato, kurį x kartotinį gražinti arba X naudoja kaip daukilį.
-	// Gražinamas tipas auto, nes expression, kuriame dalyvauja mažesni tipai negu int, gražinamas tipas yra int.
+	// Pagal X funkcija nustato, kurį x kartotinį grąžinti arba X naudoja kaip daukilį.
+	// Grąžinamas tipas auto, nes expression, kuriame dalyvauja mažesni tipai negu int, grąžinamas tipas yra int.
 	// Reikalaujama, kad T būtų unsigned, nes per shift operacijas neįmanoma pagreitinti neigiamų skaičių daugybos.
 	// Bandžiau rekursijos nenaudoti, gaunasi tas pats tik vietoje X visur atsiranda cast X į T.
 	// Turime turėti du tokius pačius return sakinius, nes apjungus sąlygas X gali sąlygoje būti float.

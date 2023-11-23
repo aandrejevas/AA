@@ -45,7 +45,7 @@ namespace aa {
 	// Rekomenduojama naudoti su templates šią klasę kaip tipo parametrą.
 	//
 	// MAX negali rodyti į kažkurį iš argumentų, nes MAX represents a failure state kai nerandamas nei vienas iš template parametrų.
-	// MAX nėra numeric_max, nes tokia reikšmė indikuotų, kad klasė gali gražinti visas reikšmes nuo 0 iki numeric_max.
+	// MAX nėra numeric_max, nes tokia reikšmė indikuotų, kad klasė gali grąžinti visas reikšmes nuo 0 iki numeric_max.
 	template<fixed_string_like auto... A>
 		requires (same_as_every<range_char_traits_t<const_t<A>>...>)
 	struct string_perfect_hash : pack<A...> {

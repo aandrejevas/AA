@@ -27,7 +27,7 @@ namespace aa {
 
 	// Gali būti paduodamas ir modulus_type tipo kintamasis, tai ne klaida, klaida būtų jei reikšmė paduoto
 	// kintamojo būtų didesnė už MODULUS. Jei būtų paduodamas kintamasis su didesne reikšme, generatorius
-	// išviso nebegalėtų gražinti kai kurių reikšmių iš intervalo. Ta pati problema pasireiškia ir su double metodu.
+	// išviso nebegalėtų grąžinti kai kurių reikšmių iš intervalo. Ta pati problema pasireiškia ir su double metodu.
 	//
 	// mag ir off ne generic tipo, nes taip tik apsisunkiname gyvenimą paduodami į funkcijas konstantas.
 	// Naudotojas pats turi sąmoningai atlikti cast, jei jis turi netinkamą tipą.

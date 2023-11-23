@@ -10,7 +10,7 @@ namespace aa {
 	// double tipas gali reprezentuoti sveikuosius skaičius tik iki 2^53 imtinai, todėl paduodamos reikšmės
 	// turėtų būti nedidesnės už 2^53. float tipas tik tik 2^24 imtinai.
 	//
-	// x generic, nes sqrt generic, taip pat sqrt gražinamos reikšmės tipas priklauso nuo paduodamo argumento tipo.
+	// x generic, nes sqrt generic, taip pat sqrt grąžinamos reikšmės tipas priklauso nuo paduodamo argumento tipo.
 	// https://en.wikipedia.org/wiki/Square_root
 	template<convertible_from_floating_point U, arithmetic T>
 	constexpr U ceil_sqrt(const T x) {

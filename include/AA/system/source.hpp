@@ -6,7 +6,7 @@
 #include "print.hpp"
 #include <cstdlib> // exit, EXIT_FAILURE
 #include <iostream> // cerr, clog
-#include <ostream> // ostream
+#include <streambuf> // streambuf
 #include <format> // format_string, formatter, format_parse_context, format_context, format_to
 
 
@@ -36,7 +36,7 @@ namespace aa {
 	// Klasės reikia, nes source_location klasės negalima naudoti kaip non type template parameter
 	// ir taip pat yra truputį keista man, kad minėtos klasės duomenys pasiekiami tik per metodus.
 	//
-	// fixed_string tipas naudojamas, nes source_location file_name, function_name metodai gražina const char*.
+	// fixed_string tipas naudojamas, nes source_location file_name, function_name metodai grąžina const char*.
 	template<size_t LINE, fixed_string FILE, fixed_string FUNC>
 	struct source_data {
 		// Naudojamas ostream stream, nes fixed_string galima naudoti tik su tokiu stream, o
@@ -47,19 +47,19 @@ namespace aa {
 
 	// source_location neišeitų naudoti, nes turime naudoti parameter pack.
 	// ostream naudojame, nes funkcija turi galėti išspausdinti source_data.
-	template<source_data D, ref_convertible_to<std::ostream &> S, class... A>
-	constexpr void log(S &&s, const std::format_string<const A&...> &fmt = "Info logged.", const A&... args) {
+	template<source_data D, class... A>
+	constexpr void log(std::streambuf &s, const std::format_string<const A&...> &fmt = "Info logged.", const A&... args) {
 		print(s, "{}: ", D);
 		printl(s, fmt, args...);
 	}
 
 	template<source_data D, class... A>
 	constexpr void log(const std::format_string<const A&...> &fmt = "Info logged.", const A&... args) {
-		log<D>(std::clog, fmt, args...);
+		log<D>(*std::clog.rdbuf(), fmt, args...);
 	}
 
-	template<source_data D, ref_convertible_to<std::ostream &> S, class... A>
-	[[noreturn]] constexpr void abort(S &&s, const std::format_string<const A&...> &fmt = "Program aborted.", const A&... args) {
+	template<source_data D, class... A>
+	[[noreturn]] constexpr void abort(std::streambuf &s, const std::format_string<const A&...> &fmt = "Program aborted.", const A&... args) {
 		log<D>(s, fmt, args...);
 		// Netinka abort ar kitos funkcijos, nes gali būti neišspausdintas klaidos pranešimas.
 		std::exit(EXIT_FAILURE);
@@ -67,7 +67,7 @@ namespace aa {
 
 	template<source_data D, class... A>
 	[[noreturn]] constexpr void abort(const std::format_string<const A&...> &fmt = "Program aborted.", const A&... args) {
-		abort<D>(std::cerr, fmt, args...);
+		abort<D>(*std::cerr.rdbuf(), fmt, args...);
 	}
 
 	// Neturime assert funkcijų, nes nereikia turėti dviejų kelių, kad pasiekti tą patį. Na ir macros

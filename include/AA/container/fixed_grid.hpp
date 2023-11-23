@@ -64,7 +64,7 @@ namespace aa {
 						t.nodes.erase(std::exchange(first, first->next));
 						// Reikia mintyje turėti tokį įdomų scenarijų, kad tame pačiame pass, mes įdedame elementą į lapą, po
 						// to išemame elementą ir tada kažką darome, pass bus tas pats, bet first tuo atveju bus nullptr.
-						if (first == nullptr) {
+						if (!first) {
 							pass = 0;
 						}
 					} else {

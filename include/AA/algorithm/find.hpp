@@ -49,7 +49,7 @@ namespace aa {
 
 
 
-	// last kintamasis nėra const&, nes naudojama standarto funkcija, kad inicializuoti jį gražina tiesiog reikšmę.
+	// last kintamasis nėra const&, nes naudojama standarto funkcija, kad inicializuoti jį grąžina tiesiog reikšmę.
 	template<std::ranges::forward_range R, class T>
 		requires (std::indirect_binary_predicate<std::ranges::equal_to, std::ranges::iterator_t<R>, const T *>)
 	constexpr std::ranges::borrowed_iterator_t<R> unsafe_find_last(R &&r, const T &value) {

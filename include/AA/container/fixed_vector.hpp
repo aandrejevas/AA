@@ -92,29 +92,31 @@ namespace aa {
 		// Anksčiau buvo, bet dabar nebėra elemento įdėjimo metodų overload'ų, kurie priimtų
 		// value_type&&, nes move semantics neturi prasmės trivially copyable tipams.
 		// Modifiers
-		constexpr void clear() { r_begin = rend(); }
+		constexpr iterator clear() { return resize(rend()); }
 
-		constexpr const_iterator resize(const size_type count) { return r_begin = rend() + count; }
-		constexpr const_iterator resize(const const_iterator pos) { return r_begin = pos; }
+		// Galima būtų laikytis mažiausio prieinamumo principo, tada reiktų grąžinti
+		// const_iterator, bet tokio principo reikia laikytis tik kai paduodame argumentus į funkcijas.
+		constexpr iterator resize(const size_type count) { return resize(rend() + count); }
+		constexpr iterator resize(const const_iterator pos) { return const_cast<iterator>(r_begin = pos); }
 
-		constexpr const_iterator pop_back() { return --r_begin; }
-		constexpr const_iterator push_back() { return ++r_begin; }
-		constexpr const_iterator pop_back_alt() { return r_begin--; }
-		constexpr const_iterator push_back_alt() { return r_begin++; }
+		constexpr iterator pop_back() { return const_cast<iterator>(--r_begin); }
+		constexpr iterator push_back() { return const_cast<iterator>(++r_begin); }
+		constexpr iterator pop_back_alt() { return const_cast<iterator>(r_begin--); }
+		constexpr iterator push_back_alt() { return const_cast<iterator>(r_begin++); }
 
-		constexpr const_iterator pop_back(const size_type count) { return r_begin -= count; }
-		constexpr const_iterator push_back(const size_type count) { return r_begin += count; }
+		constexpr iterator pop_back(const size_type count) { return resize(r_begin - count); }
+		constexpr iterator push_back(const size_type count) { return resize(r_begin + count); }
 
 		// Neišeina emplace_back ir push_back apjungti, nes įsivaizduokime tokį svenarijų, visi masyvo elementai
 		// pradžioje sukonstruojami ir mes norime tiesiog rodyklę pastumti, emplace_back iš naujo sukonstruotų elementą.
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		constexpr const_iterator emplace_back(A&&... args) {
-			return std::ranges::construct_at(const_cast<iterator>(push_back()), std::forward<A>(args)...);
+		constexpr iterator emplace_back(A&&... args) {
+			return std::ranges::construct_at(push_back(), std::forward<A>(args)...);
 		}
 
 		template<assignable_to<reference> V>
-		constexpr void insert_back(V &&value) { *const_cast<iterator>(push_back()) = std::forward<V>(value); }
+		constexpr void insert_back(V &&value) { *push_back() = std::forward<V>(value); }
 
 		constexpr void push(const const_iterator pos) {
 			push_back();
@@ -123,7 +125,7 @@ namespace aa {
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		constexpr const_iterator emplace(const const_iterator pos, A&&... args) {
+		constexpr iterator emplace(const const_iterator pos, A&&... args) {
 			push(pos);
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
@@ -140,7 +142,7 @@ namespace aa {
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		constexpr const_iterator fast_emplace(const const_iterator pos, A&&... args) {
+		constexpr iterator fast_emplace(const const_iterator pos, A&&... args) {
 			insert_back(*pos);
 			return std::ranges::construct_at(const_cast<iterator>(pos), std::forward<A>(args)...);
 		}
@@ -156,8 +158,8 @@ namespace aa {
 		}
 
 		template<std::ranges::input_range R>
-		constexpr void append_range(R &&r) {
-			r_begin = std::ranges::copy(r, const_cast<iterator>(end())).out - 1;
+		constexpr iterator append_range(R &&r) {
+			return resize(std::ranges::copy(r, const_cast<iterator>(end())).out - 1);
 		}
 
 
@@ -170,7 +172,7 @@ namespace aa {
 		constexpr fixed_vector() : r_begin{rend()} {}
 		// Negalime turėti konstruktoriaus, kuris priimtų rodyklę, nes
 		// tik po konstruktoriaus įvykdymo galima gauti rodykles.
-		constexpr fixed_vector(const std::default_sentinel_t) : r_begin{std::as_const(*this).data()} {}
+		constexpr fixed_vector(const std::default_sentinel_t) : r_begin{data()} {}
 		constexpr fixed_vector(const size_type count) : r_begin{rend() + count} {}
 		// Nereikia konstruktoriaus, kuriame būtų naudojama fill, nes šį funkcionalumą
 		// galima simuliuoti naudojant šį konstruktorių pavyzdžiui su repeat_view.

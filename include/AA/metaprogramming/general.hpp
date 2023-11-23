@@ -110,25 +110,35 @@ namespace aa {
 	constexpr size_t numeric_digits_v = std::numeric_limits<T>::digits;
 
 	namespace detail {
+		// GCC bug on 13.2 (fixed on trunk): const T & turėtų būti grąžinimas tipas, nes
+		// taip būtų išvengiamas didelių klasių kopijavimas ir panaudojamesnė būtų funkcija.
 		template<auto V>
 		struct value_getter {
 			template<std::semiregular T>
-			consteval operator T() const { return value_v<T, V>; }
+			consteval operator const T &() const { return value_v<T, V>; }
+			template<std::semiregular T>
+			consteval operator T() const { return operator const T &(); }
 		};
 
 		struct default_value_getter {
 			template<std::semiregular T>
-			consteval operator T() const { return default_value_v<T>; }
+			consteval operator const T &() const { return default_value_v<T>; }
+			template<std::semiregular T>
+			consteval operator T() const { return operator const T &(); }
 		};
 
 		struct numeric_max_getter {
 			template<std::semiregular T>
-			consteval operator T() const { return numeric_max_v<T>; }
+			consteval operator const T &() const { return numeric_max_v<T>; }
+			template<std::semiregular T>
+			consteval operator T() const { return operator const T &(); }
 		};
 
 		struct numeric_min_getter {
 			template<std::semiregular T>
-			consteval operator T() const { return numeric_min_v<T>; }
+			consteval operator const T &() const { return numeric_min_v<T>; }
+			template<std::semiregular T>
+			consteval operator T() const { return operator const T &(); }
 		};
 	}
 
@@ -726,8 +736,8 @@ namespace aa {
 	template<class U, template<class> class T>
 	concept hashable_by_template = (hashable_by<U, T<U>> && trivially_default_constructible<T<U>>);
 
-	template<class T, class U1, class... U>
-	concept hasher_for = hashable_by<U1, const T &> && (... && hashable_by<U, const T &>);
+	template<class T, class... U>
+	concept hasher_for = !!sizeof...(U) && (... && hashable_by<U, const T &>);
 
 	template<class T, class U, size_t N = numeric_max>
 	concept arithmetic_array_getter = (std::invocable<const T &, const U &>
@@ -750,8 +760,9 @@ namespace aa {
 		struct array<T, N1> : std::type_identity<std::array<T, N1>> {};
 	}
 
-	template<class T, size_t N1, size_t... N>
-	using array_t = type_in_use_t<detail::array<T, N1, N...>>;
+	template<class T, size_t... N>
+		requires (!!sizeof...(N))
+	using array_t = type_in_use_t<detail::array<T, N...>>;
 
 	namespace detail {
 		// https://mathworld.wolfram.com/Hypercube.html
@@ -804,7 +815,7 @@ namespace aa {
 	// Comparators do not declare is_transparent, nes jų ir taip neišeitų panaudoti su c++ standarto konteineriais.
 	//
 	// Mes nurodome dešinės pusės operandą su template parametru, nes realizuojame šią gražią elgseną: sakykime turime
-	// objektą tipo less<3>, šio objekto operator() gražins true tik tada kai paduotas kintamasis bus mažesnis už 3.
+	// objektą tipo less<3>, šio objekto operator() grąžins true tik tada kai paduotas kintamasis bus mažesnis už 3.
 	template<auto R = std::placeholders::_1>
 	struct less {
 		template<std::totally_ordered_with<const_t<R>> L>

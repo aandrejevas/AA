@@ -3,11 +3,9 @@
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
 #include "../metaprogramming/io.hpp"
-#include "../algorithm/init.hpp"
-#include "evaluator.hpp"
-#include <iostream> // cin, cout
-#include <istream> // istream
-#include <iterator> // output_iterator_tag, input_iterator_tag
+#include <iostream> // cout
+#include <streambuf> // streambuf
+#include <iterator> // output_iterator_tag
 #include <format> // format_to, format_string, formatter, format_parse_context, format_context
 #include <algorithm> // for_each
 #include <ranges> // input_range, range_value_t, empty, begin, drop
@@ -22,7 +20,6 @@ namespace aa {
 		using int_type = int_type_in_use_t<traits_type>;
 		using char_type = char_type_in_use_t<traits_type>;
 		using streambuf_type = streambuf_t<ostreambuf_iter>;
-		using ostream_type = ostream_t<ostreambuf_iter>;
 		using difference_type = ptrdiff_t;
 		using value_type = void;
 		using reference = void;
@@ -36,51 +33,20 @@ namespace aa {
 
 		friend constexpr bool operator==(const ostreambuf_iter &l, const ostreambuf_iter &r) { return l.file == r.file; }
 
-		template<ref_convertible_to<ostream_type &> S>
-		constexpr ostreambuf_iter(const S &s) : file{cast<const ostream_type &>(s).rdbuf()} {}
+		constexpr ostreambuf_iter(streambuf_type &s) : file{&s} {}
 
 		streambuf_type *file;
 	};
 
-	template<ostream_like S>
+	template<streambuf_like S>
 	ostreambuf_iter(const S &) -> ostreambuf_iter<traits_type_in_use_t<S>>;
-
-
-
-	template<char_traits_like T>
-	struct istreambuf_iter {
-		using traits_type = T;
-		using int_type = int_type_in_use_t<traits_type>;
-		using char_type = char_type_in_use_t<traits_type>;
-		using streambuf_type = streambuf_t<istreambuf_iter>;
-		using istream_type = istream_t<istreambuf_iter>;
-		using difference_type = ptrdiff_t;
-		using value_type = int_type;
-		using reference = int_type;
-		using pointer = void;
-		using iterator_category = std::input_iterator_tag;
-
-		constexpr int_type operator*() const { return file->sgetc(); }
-		constexpr istreambuf_iter &operator++() { return (file->sbumpc(), *this); }
-		constexpr int_type operator++(const int) const { return file->sbumpc(); }
-
-		friend constexpr bool operator==(const istreambuf_iter &l, const istreambuf_iter &r) { return l.file == r.file; }
-
-		template<ref_convertible_to<istream_type &> S>
-		constexpr istreambuf_iter(const S &s) : file{cast<const istream_type &>(s).rdbuf()} {}
-
-		streambuf_type *file;
-	};
-
-	template<istream_like S>
-	istreambuf_iter(const S &) -> istreambuf_iter<traits_type_in_use_t<S>>;
 
 
 
 	// Dėl atributo neturėtų nukentėti greitaveika, nes taip tai standartiniai srautai yra visiems pasiekiami
 	// ir atrodo nereiktų jų padavinėti per parametrus, bet template argumentai irgi ne alternatyva.
-	template<ostream_like T, class... A>
-	constexpr void print(const T &s, const format_string_t<T, const A&...> &fmt, const A&... args) {
+	template<class... A>
+	constexpr void print(std::streambuf &s, const std::format_string<const A&...> &fmt, const A&... args) {
 		std::format_to(ostreambuf_iter{s}, fmt, args...);
 	}
 
@@ -89,46 +55,22 @@ namespace aa {
 	//
 	// Neturime template parametro, per kurį paduotume eilutės galo simbolį, nes
 	// tiesiog galime kaip paprastą parametrą eilutės galo simbolį paduoti.
-	template<ostream_like T, class... A>
-	constexpr void printl(const T &s, const format_string_t<T, const A&...> &fmt = "", const A&... args) {
+	template<class... A>
+	constexpr void printl(std::streambuf &s, const std::format_string<const A&...> &fmt = "", const A&... args) {
 		std::format_to(ostreambuf_iter{s}, fmt, args...) = '\n';
 	}
-
-	// eval turi būti paduotas kaip parametras, nes yra situacijų, kai EVAL gali būti ne paprasta klasė.
-	template<class EVAL = evaluator, ref_convertible_to<std::istream &> S, evaluable_by<EVAL &> A>
-	constexpr void read(A &a, S &&s, EVAL &&eval) {
-		istreambuf_iter in = {s};
-		while (eval(in++, a));
-	}
-
-	template<class T, evaluator_for<T> EVAL = evaluator, ref_convertible_to<std::istream &> S>
-	constexpr std::remove_cvref_t<T> read(S &&s, EVAL &&eval) {
-		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(t, s, eval); });
-	}
-
-
 
 	// Čia neatliekamas perfect forwarding, nes atrodo spausdinimui užtenka const kintamųjų. Žinoma gali atsirasti
 	// situacijų, kai tai nėra tiesa, pavyzdžiui norint sekti kiek kartų kintamasis buvo išspausdintas. Bet tokiems
 	// atvejams klasė gali būti taip parašyta, kad ji ignoruotų const kvalifikatorių.
 	template<class... A>
 	constexpr void print(const std::format_string<const A&...> &fmt, const A&... args) {
-		print(std::cout, fmt, args...);
+		print(*std::cout.rdbuf(), fmt, args...);
 	}
 
 	template<class... A>
 	constexpr void printl(const std::format_string<const A&...> &fmt = "", const A&... args) {
-		printl(std::cout, fmt, args...);
-	}
-
-	template<class EVAL = evaluator, evaluable_by<EVAL &> A>
-	constexpr void read(A &a, EVAL &&eval) {
-		read(a, std::cin, eval);
-	}
-
-	template<class T, evaluator_for<T> EVAL = evaluator>
-	constexpr std::remove_cvref_t<T> read(EVAL &&eval) {
-		return read<T>(std::cin, eval);
+		printl(*std::cout.rdbuf(), fmt, args...);
 	}
 
 }

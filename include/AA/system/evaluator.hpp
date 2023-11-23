@@ -1,16 +1,17 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../metaprogramming/io.hpp"
+#include "../preprocessor/assert.hpp"
 #include "../container/fixed_vector.hpp"
-#include <charconv> // from_chars
-#include <string> // char_traits
+#include <charconv> // from_chars_result, from_chars
 
 
 
 namespace aa {
 
 	struct evaluator {
-		using traits_type = std::char_traits<char>;
+		using traits_type = char_traits_t;
 
 		fixed_vector<char, 100> token;
 
@@ -20,14 +21,12 @@ namespace aa {
 				case ' ': case '\t': case '\n': case '\r':
 					if (token.empty()) return true;
 					[[fallthrough]];
-				case traits_type::eof():
-					// Įvykus klaidai from_chars kintamojo nemodifikuos, bet t privalo būti modifikuotas.
-					if (!is_default_value(std::from_chars(std::as_const(token).begin(), token.end(), t).ec)) {
-						t = numeric_max;
-					}
+				case traits_type::eof(): {
+					const std::from_chars_result r = std::from_chars(std::as_const(token).begin(), token.end(), t);
+					AA_TRACE_ASSERT(is_default_value(r.ec) && r.ptr == token.end());
 					token.clear();
 					return false;
-				default:
+				} default:
 					token.insert_back(traits_type::to_char_type(c));
 					return true;
 			}

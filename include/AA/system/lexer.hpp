@@ -4,9 +4,8 @@
 #include "../metaprogramming/io.hpp"
 #include "../algorithm/hash.hpp"
 #include "../container/fixed_vector.hpp"
-#include "print.hpp"
-#include <istream> // istream
-#include <string> // char_traits
+#include "read.hpp"
+#include <streambuf> // streambuf
 
 
 
@@ -18,8 +17,8 @@ namespace aa {
 	//
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<auto H, invocable_r_constifier<std::tuple_size_v<const_t<H>>, bool, int> CONSUMER, ref_convertible_to<std::istream &> FILE>
-	constexpr void lex(const FILE &file, CONSUMER &&consumer) {
+	template<string_perfect_hash H, invocable_r_constifier<std::tuple_size_v<const_t<H>>, bool, int> CONSUMER>
+	constexpr void lex(std::streambuf &file, CONSUMER &&consumer) {
 		// Lexing parameters
 		constifier_func_t<CONSUMER> target;
 
@@ -28,8 +27,7 @@ namespace aa {
 			VALUE, SKIP_VALUE
 		} phase2 = lexing_state::KEY;
 
-		using traits_type = std::char_traits<char>;
-
+		// Nereikia token kaip parametro turėti, nes nieko nekainuoja jį sukonstruoti.
 		fixed_vector<char, 100> token;
 
 		const auto lexer = [&](const int character) -> void {
@@ -38,9 +36,9 @@ namespace aa {
 					switch (character) {
 						default:
 							// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
-							token.insert_back(traits_type::to_char_type(character));
+							token.insert_back(char_traits_t::to_char_type(character));
 							return;
-						case ' ': case '\t': case '\n': case '\r':
+						case ' ': case '\t': case '\n': case '\r': case char_traits_t::eof():
 							return;
 						case '=':
 							H(token, [&]<size_t I> -> void {
@@ -89,36 +87,34 @@ namespace aa {
 			CHECKMULTI
 		} phase1 = preprocessing_state::NONE;
 
-		istreambuf_iter in = {file};
+		const istreambuf_iter in = {file};
 		do {
-			const int character = in++;
-
-			if (traits_type::eq_int_type(character, traits_type::eof())) break;
+			const int character = *in;
 
 			switch (phase1) {
 				case preprocessing_state::NONE:
 					switch (character) {
 						case '/':
 							phase1 = preprocessing_state::CHECK;
-							continue;
+							goto CONTINUE;
 						default:
 							lexer(character);
-							continue;
+							goto CONTINUE;
 					}
 
 				case preprocessing_state::CHECK:
 					switch (character) {
 						case '/':
 							phase1 = preprocessing_state::COMMENT;
-							continue;
+							goto CONTINUE;
 						case '*':
 							phase1 = preprocessing_state::MULTILINE;
-							continue;
+							goto CONTINUE;
 						default:
 							phase1 = preprocessing_state::NONE;
 							lexer('/');
 							lexer(character);
-							continue;
+							goto CONTINUE;
 					}
 
 				case preprocessing_state::COMMENT:
@@ -128,37 +124,38 @@ namespace aa {
 							// Pasibaigus paprastam komentarui vis tiek į lekserį turime nusiųsti '\n' simbolį,
 							// nes kitaip gali lekseris nepastebėti, kad pasibaigė parametro reikšmės leksema.
 							lexer('\n');
-							continue;
+							goto CONTINUE;
 						default:
-							continue;
+							goto CONTINUE;
 					}
 
 				case preprocessing_state::MULTILINE:
 					switch (character) {
 						case '*':
 							phase1 = preprocessing_state::CHECKMULTI;
-							continue;
+							goto CONTINUE;
 						default:
-							continue;
+							goto CONTINUE;
 					}
 
 				case preprocessing_state::CHECKMULTI:
 					switch (character) {
 						case '/':
 							phase1 = preprocessing_state::NONE;
-							continue;
+							goto CONTINUE;
 						default:
 							phase1 = preprocessing_state::MULTILINE;
-							continue;
+							goto CONTINUE;
 					}
 			}
 			// Neturime default case su unreachable, nes tokiu atveju pasikeitus enum,
 			// kompiliatorius mūsų neperspėtų apie case'us, kurie būtų nepanaudoti.
 			std::unreachable();
-		} while (true);
+
+		CONTINUE:
+			switch (character) { case char_traits_t::eof(): return; }
+		} while ((in++, true));
 		// Parametro apibrėžimo forma: PARAMETRO_VARDAS =PARAMETRO_REIKŠMĖ'\n'
-		// Svarbu nepamiršti, kad jei parametrą bandoma apibrėžti failo pabaigoje,
-		// tai failo paskutinis simbolis turės būti '\n', kitaip parametras nebus apibrėžtas.
 	}
 
 }
