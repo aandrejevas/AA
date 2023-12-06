@@ -4,7 +4,7 @@
 #include "../metaprogramming/range.hpp"
 #include "../metaprogramming/io.hpp"
 #include <iostream> // cout
-#include <streambuf> // streambuf
+#include <streambuf> // streambuf, basic_streambuf
 #include <iterator> // output_iterator_tag
 #include <format> // format_to, format_string, formatter, format_parse_context, format_context
 #include <algorithm> // for_each
@@ -33,13 +33,11 @@ namespace aa {
 
 		friend constexpr bool operator==(const ostreambuf_iter &l, const ostreambuf_iter &r) { return l.file == r.file; }
 
-		constexpr ostreambuf_iter(streambuf_type &s) : file{&s} {}
-
 		streambuf_type *file;
 	};
 
-	template<streambuf_like S>
-	ostreambuf_iter(const S &) -> ostreambuf_iter<traits_type_in_use_t<S>>;
+	template<char_traits_like T>
+	ostreambuf_iter(std::basic_streambuf<char_type_in_use_t<T>, T> *const) -> ostreambuf_iter<T>;
 
 
 
@@ -47,7 +45,7 @@ namespace aa {
 	// ir atrodo nereiktų jų padavinėti per parametrus, bet template argumentai irgi ne alternatyva.
 	template<class... A>
 	constexpr void print(std::streambuf &s, const std::format_string<const A&...> &fmt, const A&... args) {
-		std::format_to(ostreambuf_iter{s}, fmt, args...);
+		std::format_to(ostreambuf_iter{&s}, fmt, args...);
 	}
 
 	// Tikriname ar į output_stream galima insert'inti visus paduotus tipus, nes tarp jų
@@ -57,7 +55,7 @@ namespace aa {
 	// tiesiog galime kaip paprastą parametrą eilutės galo simbolį paduoti.
 	template<class... A>
 	constexpr void printl(std::streambuf &s, const std::format_string<const A&...> &fmt = "", const A&... args) {
-		std::format_to(ostreambuf_iter{s}, fmt, args...) = '\n';
+		std::format_to(ostreambuf_iter{&s}, fmt, args...) = '\n';
 	}
 
 	// Čia neatliekamas perfect forwarding, nes atrodo spausdinimui užtenka const kintamųjų. Žinoma gali atsirasti
@@ -71,6 +69,12 @@ namespace aa {
 	template<class... A>
 	constexpr void printl(const std::format_string<const A&...> &fmt = "", const A&... args) {
 		printl(*std::cout.rdbuf(), fmt, args...);
+	}
+
+
+
+	constexpr int flush(std::streambuf &s = *std::cout.rdbuf()) {
+		return s.pubsync();
 	}
 
 }

@@ -37,14 +37,14 @@ namespace aa {
 
 	template<class G, class I>
 	concept differences_generator_for = (full_range_generator<G>
-		&& std::convertible_to<std::iter_difference_t<I>, distribution_result_t<G>>
-		&& std::convertible_to<distribution_result_t<G>, std::iter_difference_t<I>>);
+		&& std::constructible_from<std::iter_difference_t<I>, distribution_result_t<G>>
+		&& std::constructible_from<distribution_result_t<G>, std::iter_difference_t<I>>);
 
 	template<class G, class T>
-	concept generator_result_convertible_to = std::convertible_to<generator_result_t<G>, T>;
+	concept generator_result_constructible_to = std::constructible_from<T, generator_result_t<G>>;
 
 	template<class G, class T>
-	concept distribution_result_convertible_to = std::convertible_to<distribution_result_t<G>, T>;
+	concept distribution_result_constructible_to = std::constructible_from<T, distribution_result_t<G>>;
 
 	template<class G, class T>
 	concept generator_modulus_representable_by = (numeric_digits_v<T> >= std::bit_width(generator_modulus_v<G>));

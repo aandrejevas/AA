@@ -14,7 +14,7 @@ namespace aa {
 
 	// https://stackoverflow.com/questions/41946007/efficient-and-well-explained-implementation-of-a-quadtree-for-2d-collision-det
 	// Klasė neturi iteratorių, nes ji pati savyje nelaiko elementų, reiktų iteruoti struktūrą, kuri juos laiko.
-	template<class T, size_t W, size_t H, size_t N, arithmetic_array_getter<T, 2> L = std::identity, bool ERASABLE = false>
+	template<class T, size_t W, size_t H, size_t N, arithmetic_array_getter_like<T, 2> L = std::identity, bool ERASABLE = false>
 	struct fixed_grid {
 		// Member types
 		using value_type = T;

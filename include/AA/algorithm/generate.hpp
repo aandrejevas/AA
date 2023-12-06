@@ -10,7 +10,7 @@ namespace aa {
 
 	// Naudotojas turėtų naudoti g(), nebent tikrai nuo 0 kažkodėl jam reiktų reikšmės.
 	// [0, MAX - MIN + 1)
-	template<class T, generator_result_convertible_to<T> G>
+	template<class T, generator_result_constructible_to<T> G>
 	constexpr T int_distribution(G &g) {
 		if constexpr (!is_numeric_min(G::min()))
 			return cast<T>(g() - G::min());
@@ -32,7 +32,7 @@ namespace aa {
 	// mag ir off ne generic tipo, nes taip tik apsisunkiname gyvenimą paduodami į funkcijas konstantas.
 	// Naudotojas pats turi sąmoningai atlikti cast, jei jis turi netinkamą tipą.
 	// [0, mag)
-	template<class T, distribution_result_convertible_to<T> G>
+	template<class T, distribution_result_constructible_to<T> G>
 	constexpr T int_distribution(G &g, const distribution_result_t<G> mag) {
 		return cast<T>((mag * cast<distribution_result_t<G>>(g())) >> numeric_digits_v<generator_result_t<G>>);
 	}
@@ -43,7 +43,7 @@ namespace aa {
 	}
 
 	// [off, mag + off)
-	template<class T, distribution_result_convertible_to<T> G>
+	template<class T, distribution_result_constructible_to<T> G>
 	constexpr T int_distribution(G &g, const distribution_result_t<G> off, const distribution_result_t<G> mag) {
 		return cast<T>(int_distribution(g, mag) + off);
 	}
@@ -63,7 +63,7 @@ namespace aa {
 	}
 
 	// [0, mag)
-	template<convertible_from_floating_point U, std::floating_point T, generator_modulus_representable_by<T> G>
+	template<constructible_from_floating_point U, std::floating_point T, generator_modulus_representable_by<T> G>
 	constexpr U real_distribution(G &g, const T mag) {
 		return cast<U>(real_distribution<T>(g) * mag);
 	}
@@ -74,7 +74,7 @@ namespace aa {
 	}
 
 	// [off, mag + off)
-	template<convertible_from_floating_point U, std::floating_point T, generator_modulus_representable_by<T> G>
+	template<constructible_from_floating_point U, std::floating_point T, generator_modulus_representable_by<T> G>
 	constexpr U real_distribution(G &g, const T off, const T mag) {
 		return cast<U>(real_distribution(g, mag) + off);
 	}

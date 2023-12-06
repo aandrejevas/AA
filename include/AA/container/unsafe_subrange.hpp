@@ -60,9 +60,10 @@ namespace aa {
 		// Reikia konstruktorių, nes kitaip metami warnings -Wmissing-field-initializers.
 		constexpr unsafe_subrange() = default;
 
-		// convertible_to, nes std::ranges::subrange klasė taip pat realizuota.
-		// convertible constraint yra griežtesnis negu constructable constraint.
-		template<std::convertible_to<I> T1 = I, std::convertible_to<S> T2 = S>
+		// convertible_to constraint yra naudojamas klasėje std::ranges::subrange.
+		// Bet constructable constraint naudojame, nes jis griežtesnis.
+		// Pagal mano padarytus testus tie constraints labai mažai kuo skiriasi.
+		template<constructible_to<I> T1 = I, constructible_to<S> T2 = S>
 		constexpr unsafe_subrange(T1 &&t1, T2 &&t2) : tuple_type{std::forward<T1>(t1), std::forward<T2>(t2)} {}
 
 		template<std::ranges::borrowed_range R>

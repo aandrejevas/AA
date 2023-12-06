@@ -12,7 +12,7 @@ namespace aa {
 	//
 	// x generic, nes sqrt generic, taip pat sqrt grąžinamos reikšmės tipas priklauso nuo paduodamo argumento tipo.
 	// https://en.wikipedia.org/wiki/Square_root
-	template<convertible_from_floating_point U, arithmetic T>
+	template<constructible_from_floating_point U, arithmetic T>
 	constexpr U ceil_sqrt(const T x) {
 		return cast<U>(std::ceil(std::sqrt(x)));
 	}
@@ -23,7 +23,7 @@ namespace aa {
 	}
 
 	// https://en.wikipedia.org/wiki/Exponentiation
-	template<convertible_from_floating_point U, arithmetic T, arithmetic E>
+	template<constructible_from_floating_point U, arithmetic T, arithmetic E>
 	constexpr U ceil_pow(const T x, const E exp) {
 		return cast<U>(std::ceil(std::pow(x, exp)));
 	}
@@ -34,7 +34,7 @@ namespace aa {
 	}
 
 	// https://en.wikipedia.org/wiki/Linear_interpolation
-	template<convertible_from_floating_point U, arithmetic A, arithmetic B, arithmetic E>
+	template<constructible_from_floating_point U, arithmetic A, arithmetic B, arithmetic E>
 	constexpr U round_lerp(const A a, const B b, const E t) {
 		return cast<U>(std::round(std::lerp(a, b, t)));
 	}

@@ -87,7 +87,7 @@ namespace aa {
 			CHECKMULTI
 		} phase1 = preprocessing_state::NONE;
 
-		const istreambuf_iter in = {file};
+		const istreambuf_iter in = {&file};
 		do {
 			const int character = *in;
 

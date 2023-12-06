@@ -32,7 +32,7 @@ namespace aa {
 	using reverse_sentinel_t = decltype(std::ranges::rend(std::declval<R &>()));
 
 	template<class R>
-	concept typical_range = std::ranges::range<R> && std::convertible_to<std::ranges::iterator_t<R>, std::ranges::sentinel_t<R>>;
+	concept typical_range = std::ranges::range<R> && std::constructible_from<std::ranges::sentinel_t<R>, std::ranges::iterator_t<R>>;
 
 	template<class R>
 	concept unusual_range = std::ranges::bidirectional_range<R> && typical_range<R>
@@ -76,9 +76,9 @@ namespace aa {
 	// Turėtų ne convertible_to<bool> būti naudojamas, o boolean-testable, bet toks concept kol kas yra tik exposition only.
 	// https://en.cppreference.com/w/cpp/concepts/boolean-testable.
 	template<class B, class I>
-	concept key_bool_iterator_for = (std::random_access_iterator<B> && std::convertible_to<std::iter_value_t<B>, bool>
-		&& std::output_iterator<B, bool> && std::convertible_to<std::iter_value_t<I>, std::iter_difference_t<B>>
-		&& std::convertible_to<std::iter_difference_t<B>, std::iter_value_t<I>>);
+	concept key_bool_iterator_for = (std::random_access_iterator<B> && std::constructible_from<bool, std::iter_value_t<B>>
+		&& std::output_iterator<B, bool> && std::constructible_from<std::iter_value_t<I>, std::iter_difference_t<B>>
+		&& std::constructible_from<std::iter_difference_t<B>, std::iter_value_t<I>>);
 
 	template<class O, class I>
 	concept trivial_output_iterator_for = std::contiguous_iterator<O> && std::contiguous_iterator<I>

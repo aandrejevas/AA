@@ -22,8 +22,11 @@ namespace aa {
 					if (token.empty()) return true;
 					[[fallthrough]];
 				case traits_type::eof(): {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 					const std::from_chars_result r = std::from_chars(std::as_const(token).begin(), token.end(), t);
-					AA_TRACE_ASSERT(is_default_value(r.ec) && r.ptr == token.end());
+#pragma GCC diagnostic pop
+					AA_TRACE_ASSERT(is_default_value(r.ec) && r.ptr == token.end(), "{}", std::to_underlying(r.ec));
 					token.clear();
 					return false;
 				} default:

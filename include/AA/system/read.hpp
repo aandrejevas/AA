@@ -9,7 +9,7 @@
 #include <fstream> // filebuf
 #include <ios> // ios_base
 #include <iterator> // input_iterator_tag
-#include <streambuf> // streambuf
+#include <streambuf> // streambuf, basic_streambuf
 
 
 
@@ -35,44 +35,33 @@ namespace aa {
 
 		friend constexpr bool operator==(const istreambuf_iter &l, const istreambuf_iter &r) { return l.file == r.file; }
 
-		constexpr istreambuf_iter(streambuf_type &s) : file{&s} {}
-
 		streambuf_type *file;
 	};
 
-	template<streambuf_like S>
-	istreambuf_iter(const S &) -> istreambuf_iter<traits_type_in_use_t<S>>;
+	template<char_traits_like T>
+	istreambuf_iter(std::basic_streambuf<char_type_in_use_t<T>, T> *const) -> istreambuf_iter<T>;
 
 
 
 	// eval turi būti paduotas kaip parametras, nes yra situacijų, kai EVAL gali būti ne paprasta klasė.
-	template<class EVAL = evaluator, evaluable_by<EVAL &>... A>
-		requires (!!sizeof...(A))
-	constexpr void read(std::streambuf &s, EVAL &&eval, A&... a) {
-		const istreambuf_iter in = {s};
-		(([&] -> void {
-			do {
-				const int character = *in;
-				switch (character) {
-					case char_traits_t::eof():
-						eval(char_traits_t::eof(), a);
-						return;
-					default:
-						if (eval(character, a)) continue; else return;
-				}
-			} while ((in++, true));
-		})(), ...);
+	template<class EVAL = evaluator, evaluable_by<EVAL &> A>
+	constexpr void read(A &a, std::streambuf &s = *std::cin.rdbuf(), EVAL &&eval = default_value) {
+		const istreambuf_iter in = {&s};
+		do {
+			const int character = *in;
+			switch (character) {
+				case char_traits_t::eof():
+					eval(char_traits_t::eof(), a);
+					return;
+				default:
+					if (eval(character, a)) continue; else return;
+			}
+		} while ((in++, true));
 	}
 
 	template<class T, evaluator_for<T> EVAL = evaluator>
-	constexpr std::remove_cvref_t<T> read(EVAL &&eval, std::streambuf &s = *std::cin.rdbuf()) {
-		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(s, eval, t); });
-	}
-
-	template<class EVAL = evaluator, evaluable_by<EVAL &>... A>
-		requires (!!sizeof...(A))
-	constexpr void read(EVAL &&eval, A&... a) {
-		read(*std::cin.rdbuf(), eval, a...);
+	constexpr std::remove_cvref_t<T> read(std::streambuf &s = *std::cin.rdbuf(), EVAL &&eval = default_value) {
+		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(t, s, eval); });
 	}
 
 

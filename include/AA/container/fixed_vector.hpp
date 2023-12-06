@@ -178,6 +178,8 @@ namespace aa {
 		// galima simuliuoti naudojant šį konstruktorių pavyzdžiui su repeat_view.
 		template<std::ranges::input_range R>
 		constexpr fixed_vector(R &&r) : r_begin{std::ranges::copy(r, data()).out - 1} {}
+		// Automatiškai sugeneruotas copy konstruktorius nebūtų teisingas.
+		constexpr fixed_vector(const fixed_vector &r) : r_begin{std::ranges::copy(r, data()).out - 1} {}
 #pragma GCC diagnostic pop
 
 
