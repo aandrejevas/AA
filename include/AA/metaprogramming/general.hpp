@@ -10,6 +10,8 @@
 // • <bit>, failas įterptas, kad išeitų lengvai manipuliuoti pamatinių tipų bitus.
 // • <functional>, failas įterptas, kad išeitų lengvai protauti apie funkcijų objektus.
 // • <variant> (<compare>), failas įterptas, kad turėti alternatyvą nesaugiems union tipams.
+// • <string_view> ir <string> (<compare>, <initializer_list>), failai įterpti, kad nereiktų naudoti C stiliaus teksto eilučių.
+// • <streambuf>, failas įterptas, kad būtų suteiktas būtinas funkcionalumas kontroliuoti įvestį ir išvestį į simbolių sekas.
 // Failai paminėti skliausteliose prie įterpiamo failo nurodo kokie failai yra įterpiami pačio įterpiamo failo.
 
 #include <cstddef> // byte, size_t
@@ -22,6 +24,9 @@
 #include <utility> // forward, declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence, index_sequence_for
 #include <functional> // function, invoke, _1, is_placeholder_v
 #include <variant> // monostate
+#include <string_view> // basic_string_view
+#include <streambuf> // basic_streambuf
+#include <string> // char_traits
 
 
 
@@ -429,6 +434,9 @@ namespace aa {
 	template<class T>
 	concept arithmetic = std::is_arithmetic_v<T>;
 
+	template<class T, class F>
+	concept arithmetic_or_assignable_from = arithmetic<T> || std::assignable_from<T, F>;
+
 	template<class T>
 	concept regular_scalar = arithmetic<T> || pointer<T>;
 
@@ -475,6 +483,15 @@ namespace aa {
 	template<class T>
 	concept constructible_from_floating_point =
 		(std::constructible_from<T, float> && std::constructible_from<T, double> && std::constructible_from<T, long double>);
+
+	template<class T>
+	using string_view_t = std::basic_string_view<char_type_in_use_t<traits_type_in_use_t<T>>, traits_type_in_use_t<T>>;
+
+	template<class T>
+	using streambuf_t = std::basic_streambuf<char_type_in_use_t<traits_type_in_use_t<T>>, traits_type_in_use_t<T>>;
+
+	// Sakyčiau standartinės bibliotekos klaida, kad ji nenurodo numatyto char_traits tipo.
+	using char_traits = std::char_traits<char>;
 
 
 
@@ -723,6 +740,18 @@ namespace aa {
 
 	template<class T, class U>
 	concept hasher_for = hashable_by<U, const T &>;
+
+	template<class U, class T>
+	concept evaluable_by = invocable_r<T, bool, int, U &>;
+
+	template<class T, class U>
+	concept evaluator_for = evaluable_by<U, T &>;
+
+	template<class U, class T, size_t N = numeric_max>
+	concept tuple_evaluable_by = apply<U, N>([]<size_t... I> -> bool { return (... && evaluable_by<std::tuple_element_t<I, U>, T>); });
+
+	template<class T, class U, size_t N = numeric_max>
+	concept evaluator_for_tuple = tuple_evaluable_by<U, T &, N>;
 
 	template<class T, class U, size_t N = numeric_max>
 	concept arithmetic_array_getter_like = (std::invocable<const T &, const U &>

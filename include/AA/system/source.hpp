@@ -1,12 +1,10 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/io.hpp"
 #include "../container/fixed_string.hpp"
 #include "print.hpp"
 #include <cstdlib> // exit, EXIT_FAILURE
 #include <iostream> // cerr, clog
-#include <streambuf> // streambuf
 #include <format> // format_string, formatter, format_parse_context, format_context, format_to
 
 

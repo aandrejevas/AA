@@ -2,9 +2,7 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../metaprogramming/range.hpp"
-#include "../metaprogramming/io.hpp"
 #include <iostream> // cout
-#include <streambuf> // streambuf, basic_streambuf
 #include <iterator> // output_iterator_tag
 #include <format> // format_to, format_string, formatter, format_parse_context, format_context
 #include <algorithm> // for_each
@@ -14,7 +12,7 @@
 
 namespace aa {
 
-	template<char_traits_like T>
+	template<char_traits_like T = char_traits>
 	struct ostreambuf_iter {
 		using traits_type = T;
 		using int_type = int_type_in_use_t<traits_type>;
@@ -33,7 +31,7 @@ namespace aa {
 
 		friend constexpr bool operator==(const ostreambuf_iter &l, const ostreambuf_iter &r) { return l.file == r.file; }
 
-		streambuf_type *file;
+		streambuf_type *file = std::cout.rdbuf();
 	};
 
 	template<char_traits_like T>

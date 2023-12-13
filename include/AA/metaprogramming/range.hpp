@@ -3,7 +3,6 @@
 #include "general.hpp"
 #include <iterator> // contiguous_iterator, random_access_iterator, iter_value_t, iter_difference_t, permutable, output_iterator, next, prev, distance, iter_reference_t, make_reverse_iterator
 #include <ranges> // contiguous_range, random_access_range, bidirectional_range, sized_range, common_range, iterator_t, sentinel_t, range_value_t, range_reference_t, begin, end, rbegin, rend, size, data, range, input_range, subrange
-#include <string> // char_traits
 #include <memory> // to_address
 
 
@@ -103,10 +102,7 @@ namespace aa {
 
 
 	template<class T>
-	concept char_range = sized_contiguous_range<T> && std::same_as<std::ranges::range_value_t<T>, char>;
-
-	template<class T>
-	concept formattable_range = !char_range<T> && (std::ranges::input_range<T> || tuple_like<T>);
+	concept formattable_range = !std::constructible_from<std::string_view, T> && (std::ranges::input_range<T> || tuple_like<T>);
 
 	template<class T>
 	concept range_using_traits_type = sized_contiguous_range<T> &&

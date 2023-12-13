@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/io.hpp"
 #include "../preprocessor/assert.hpp"
 #include "../algorithm/init.hpp"
 #include "evaluator.hpp"
@@ -9,13 +8,12 @@
 #include <fstream> // filebuf
 #include <ios> // ios_base
 #include <iterator> // input_iterator_tag
-#include <streambuf> // streambuf, basic_streambuf
 
 
 
 namespace aa {
 
-	template<char_traits_like T>
+	template<char_traits_like T = char_traits>
 	struct istreambuf_iter {
 		using traits_type = T;
 		using int_type = int_type_in_use_t<traits_type>;
@@ -29,13 +27,13 @@ namespace aa {
 
 		constexpr int_type operator*() const { return file->sgetc(); }
 		constexpr istreambuf_iter &operator++() { return (file->sbumpc(), *this); }
-		constexpr void operator++(const int) const { file->sbumpc(); }
+		constexpr int_type operator++(const int) const { return file->sbumpc(); }
 		constexpr istreambuf_iter &operator--() { return (file->sungetc(), *this); }
-		constexpr void operator--(const int) const { file->sungetc(); }
+		constexpr int_type operator--(const int) const { return file->sungetc(); }
 
 		friend constexpr bool operator==(const istreambuf_iter &l, const istreambuf_iter &r) { return l.file == r.file; }
 
-		streambuf_type *file;
+		streambuf_type *file = std::cin.rdbuf();
 	};
 
 	template<char_traits_like T>
@@ -46,22 +44,32 @@ namespace aa {
 	// eval turi būti paduotas kaip parametras, nes yra situacijų, kai EVAL gali būti ne paprasta klasė.
 	template<class EVAL = evaluator, evaluable_by<EVAL &> A>
 	constexpr void read(A &a, std::streambuf &s = *std::cin.rdbuf(), EVAL &&eval = default_value) {
-		const istreambuf_iter in = {&s};
 		do {
-			const int character = *in;
+			const int character = s.sgetc();
 			switch (character) {
-				case char_traits_t::eof():
-					eval(char_traits_t::eof(), a);
+				case char_traits::eof():
+					eval(char_traits::eof(), a);
 					return;
 				default:
 					if (eval(character, a)) continue; else return;
 			}
-		} while ((in++, true));
+		} while ((s.sbumpc(), true));
 	}
 
 	template<class T, evaluator_for<T> EVAL = evaluator>
 	constexpr std::remove_cvref_t<T> read(std::streambuf &s = *std::cin.rdbuf(), EVAL &&eval = default_value) {
 		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(t, s, eval); });
+	}
+
+	template<int DELIM = '\n'>
+	constexpr void ignore(std::streambuf &s = *std::cin.rdbuf()) {
+		do {
+			switch (s.sbumpc()) {
+				case char_traits::eof():
+				case DELIM:
+					return;
+			}
+		} while (true);
 	}
 
 

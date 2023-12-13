@@ -1,11 +1,9 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/io.hpp"
 #include "../algorithm/hash.hpp"
 #include "../container/fixed_vector.hpp"
 #include "read.hpp"
-#include <streambuf> // streambuf
 
 
 
@@ -36,9 +34,9 @@ namespace aa {
 					switch (character) {
 						default:
 							// cast į narrower tipą yra greita operacija ir greitesnės nėra, tik tokio pačio greičio.
-							token.insert_back(char_traits_t::to_char_type(character));
+							token.insert_back(char_traits::to_char_type(character));
 							return;
-						case ' ': case '\t': case '\n': case '\r': case char_traits_t::eof():
+						case ' ': case '\t': case '\n': case '\r': case char_traits::eof():
 							return;
 						case '=':
 							H(token, [&]<size_t I> -> void {
@@ -87,9 +85,8 @@ namespace aa {
 			CHECKMULTI
 		} phase1 = preprocessing_state::NONE;
 
-		const istreambuf_iter in = {&file};
 		do {
-			const int character = *in;
+			const int character = file.sgetc();
 
 			switch (phase1) {
 				case preprocessing_state::NONE:
@@ -153,8 +150,8 @@ namespace aa {
 			std::unreachable();
 
 		CONTINUE:
-			switch (character) { case char_traits_t::eof(): return; }
-		} while ((in++, true));
+			switch (character) { case char_traits::eof(): return; }
+		} while ((file.sbumpc(), true));
 		// Parametro apibrėžimo forma: PARAMETRO_VARDAS =PARAMETRO_REIKŠMĖ'\n'
 	}
 

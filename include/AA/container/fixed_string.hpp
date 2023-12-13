@@ -1,10 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/io.hpp"
 #include <iterator> // reverse_iterator
-#include <string_view> // hash
-#include <string> // basic_string, char_traits
 #include <format> // formatter
 
 
@@ -127,7 +124,7 @@ namespace aa {
 
 
 	template<size_t N>
-	using fixed_string = basic_fixed_string<char_traits_t, N>;
+	using fixed_string = basic_fixed_string<char_traits, N>;
 
 	// Neuždedame suvaržymų and deduction guide, kurie yra ant klasės, nes šie suvaržymai tiesiog pašalintų
 	// iš svarstymų guide, o tai bus tiesiog automatiškai padaryta todėl nėra reikalo kartotis.
