@@ -83,8 +83,8 @@ namespace aa {
 
 
 		// Operations
-		constexpr bool starts_with(const value_type &c) const { return traits_type::eq(front(), c); }
-		constexpr bool ends_with(const value_type &c) const { return traits_type::eq(back(), c); }
+		constexpr bool starts_with(const value_type c) const { return traits_type::eq(front(), c); }
+		constexpr bool ends_with(const value_type c) const { return traits_type::eq(back(), c); }
 
 		friend constexpr bool operator==(const basic_fixed_string &l, const basic_fixed_string &r) {
 			return !traits_type::compare(l.data(), r.data(), N);
@@ -101,7 +101,7 @@ namespace aa {
 			return false;
 		}
 
-		friend constexpr bool operator==(const basic_fixed_string &l, const view_type &r) {
+		friend constexpr bool operator==(const basic_fixed_string &l, const view_type r) {
 			if constexpr (N)	return (N == r.size()) && !traits_type::compare(l.data(), r.data(), N);
 			else				return (N == r.size());
 		}

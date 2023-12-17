@@ -56,22 +56,22 @@ namespace aa {
 			constexpr variant_iterator &operator--() { --ptr; return *this; }
 			constexpr variant_iterator operator--(const int) { return {ptr--}; }
 
-			friend constexpr bool operator==(const variant_iterator &l, const variant_iterator &r) { return l.ptr == r.ptr; }
-			friend constexpr bool operator==(const variant_iterator &l, const other_iterator &r) { return l.ptr == r.ptr; }
-			friend constexpr std::strong_ordering operator<=>(const variant_iterator &l, const variant_iterator &r) { return l.ptr <=> r.ptr; }
-			friend constexpr std::strong_ordering operator<=>(const variant_iterator &l, const other_iterator &r) { return l.ptr <=> r.ptr; }
+			friend constexpr bool operator==(const variant_iterator l, const variant_iterator r) { return l.ptr == r.ptr; }
+			friend constexpr bool operator==(const variant_iterator l, const other_iterator r) { return l.ptr == r.ptr; }
+			friend constexpr std::strong_ordering operator<=>(const variant_iterator l, const variant_iterator r) { return l.ptr <=> r.ptr; }
+			friend constexpr std::strong_ordering operator<=>(const variant_iterator l, const other_iterator r) { return l.ptr <=> r.ptr; }
 
-			constexpr difference_type operator-(const variant_iterator &r) const { return ptr - r.ptr; }
-			constexpr difference_type operator-(const other_iterator &r) const { return ptr - r.ptr; }
+			constexpr difference_type operator-(const variant_iterator r) const { return ptr - r.ptr; }
+			constexpr difference_type operator-(const other_iterator r) const { return ptr - r.ptr; }
 			constexpr reference operator[](const difference_type n) const { return std::get_if<elem_index>(ptr + n); }
 			constexpr variant_iterator operator+(const difference_type n) const { return {ptr + n}; }
 			constexpr variant_iterator operator-(const difference_type n) const { return {ptr - n}; }
 			constexpr variant_iterator &operator+=(const difference_type n) { ptr += n; return *this; }
 			constexpr variant_iterator &operator-=(const difference_type n) { ptr -= n; return *this; }
-			friend constexpr variant_iterator operator+(const difference_type n, const variant_iterator &r) { return {n + r.ptr}; }
+			friend constexpr variant_iterator operator+(const difference_type n, const variant_iterator r) { return {n + r.ptr}; }
 
 			consteval variant_iterator() = default;
-			constexpr variant_iterator(const other_iterator &o) requires (CONST) : ptr{o.ptr} {}
+			constexpr variant_iterator(const other_iterator o) requires (CONST) : ptr{o.ptr} {}
 
 		protected:
 			friend fixed_free_vector;

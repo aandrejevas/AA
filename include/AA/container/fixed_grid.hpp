@@ -84,11 +84,11 @@ namespace aa {
 
 			// Lookup
 			template<ref_invocable<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
-			constexpr void query_range(const P1 &tl, const P2 &br, F &&f, const fixed_grid &t) const {
+			constexpr void query_range(const P1 tl, const P2 br, F &&f, const fixed_grid &t) const {
 				if (!empty(t)) {
 					const node_type *iter = first;
 					do {
-						const position_type &l = t.locate(*iter->element);
+						const position_type l = t.locate(*iter->element);
 						if ((get_x(tl) <= get_x(l)) && (get_x(l) < get_x(br))
 						 && (get_y(tl) <= get_y(l)) && (get_y(l) < get_y(br)))
 							std::invoke(f, *iter->element);
@@ -147,7 +147,7 @@ namespace aa {
 		// Observers
 		constexpr size_type get_pass() const { return pass; }
 
-		constexpr const position_type &locate(const value_type &e) const {
+		constexpr position_type locate(const value_type &e) const {
 			return std::invoke(locator, e);
 		}
 
@@ -155,25 +155,25 @@ namespace aa {
 
 		// Lookup
 		template<array_similar_to<pair_type> P = pair_type>
-		constexpr leaf &find_leaf(const P &pos) {
+		constexpr leaf &find_leaf(const P pos) {
 			return const_cast<leaf &>(std::as_const(*this).find_leaf(pos));
 		}
 
 		template<array_similar_to<pair_type> P = pair_type>
-		constexpr const leaf &find_leaf(const P &pos) const {
+		constexpr const leaf &find_leaf(const P pos) const {
 			return
 				leaves[unsign_cast<size_type>(get_y(pos) / get_h(leaf_size))][unsign_cast<size_type>(get_x(pos) / get_w(leaf_size))];
 		}
 
 		template<ref_invocable<leaf &> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
-		constexpr void find_leaves(const P1 &tl, const P2 &br, F &&f) {
+		constexpr void find_leaves(const P1 tl, const P2 br, F &&f) {
 			std::as_const(*this).find_leaves(tl, br, [&](const leaf &l) -> void {
 				std::invoke(f, const_cast<leaf &>(l));
 			});
 		}
 
 		template<ref_invocable<const leaf &> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
-		constexpr void find_leaves(const P1 &tl, const P2 &br, F &&f) const {
+		constexpr void find_leaves(const P1 tl, const P2 br, F &&f) const {
 			if (get_x(br) < min_loc || get_y(br) < min_loc || get_x(max_loc) < get_x(tl) || get_y(max_loc) < get_y(tl)) return;
 
 			const size_type
@@ -198,14 +198,14 @@ namespace aa {
 		}
 
 		template<ref_invocable<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
-		constexpr void query_range(const P1 &tl, const P2 &br, F &&f) const {
+		constexpr void query_range(const P1 tl, const P2 br, F &&f) const {
 			find_leaves(tl, br, [&](const leaf &l) -> void {
 				l.query_range(tl, br, f, *this);
 			});
 		}
 
 		template<ref_invocable<reference> F, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
-		constexpr void query_loose_range(const P1 &tl, const P2 &br, F &&f) const {
+		constexpr void query_loose_range(const P1 tl, const P2 br, F &&f) const {
 			find_leaves(tl, br, [&](const leaf &l) -> void {
 				l.query(f, *this);
 			});
@@ -231,11 +231,11 @@ namespace aa {
 
 		// Special member functions
 		template<constructible_to<locator_type> U = const locator_type, array_similar_to<pair_type> P = pair_type>
-		constexpr fixed_grid(const P &size, U &&u = default_value)
+		constexpr fixed_grid(const P size, U &&u = default_value)
 			: fixed_grid{size, {product<W>(get_w(size)) - 1, product<H>(get_h(size)) - 1}, std::forward<U>(u)} {}
 
 		template<constructible_to<locator_type> U = const locator_type, array_similar_to<pair_type> P1 = pair_type, array_similar_to<pair_type> P2 = pair_type>
-		constexpr fixed_grid(const P1 &size, const P2 &l, U &&u = default_value)
+		constexpr fixed_grid(const P1 size, const P2 l, U &&u = default_value)
 			: leaf_size{get_w(size), get_h(size)}, max_loc{get_x(l), get_y(l)}, locator{std::forward<U>(u)} {}
 
 

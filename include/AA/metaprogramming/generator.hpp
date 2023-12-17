@@ -2,7 +2,6 @@
 
 #include "general.hpp"
 #include <random> // uniform_random_bit_generator
-#include <iterator> // iter_difference_t
 
 
 
@@ -35,10 +34,8 @@ namespace aa {
 
 
 
-	template<class G, class I>
-	concept differences_generator_for = (full_range_generator<G>
-		&& std::constructible_from<std::iter_difference_t<I>, distribution_result_t<G>>
-		&& std::constructible_from<distribution_result_t<G>, std::iter_difference_t<I>>);
+	template<class G, class T>
+	concept distribution_result_ctible_to_and_from = constructible_to_and_from<T, distribution_result_t<G>>;
 
 	template<class G, class T>
 	concept generator_result_constructible_to = std::constructible_from<T, generator_result_t<G>>;

@@ -15,8 +15,8 @@ namespace aa {
 	//
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
-	template<string_perfect_hash H, invocable_r_constifier<std::tuple_size_v<const_t<H>>, bool, int> CONSUMER>
-	constexpr void lex(std::streambuf &file, CONSUMER &&consumer) {
+	template<string_perfect_hash H, int_input_iterator T = istreambuf_iter<>, invocable_r_constifier<std::tuple_size_v<const_t<H>>, bool, int> CONSUMER>
+	constexpr void lex(T i, CONSUMER &&consumer) {
 		// Lexing parameters
 		constifier_func_t<CONSUMER> target;
 
@@ -86,7 +86,7 @@ namespace aa {
 		} phase1 = preprocessing_state::NONE;
 
 		do {
-			const int character = file.sgetc();
+			const int character = *i;
 
 			switch (phase1) {
 				case preprocessing_state::NONE:
@@ -151,7 +151,7 @@ namespace aa {
 
 		CONTINUE:
 			switch (character) { case char_traits::eof(): return; }
-		} while ((file.sbumpc(), true));
+		} while ((++i, true));
 		// Parametro apibrėžimo forma: PARAMETRO_VARDAS =PARAMETRO_REIKŠMĖ'\n'
 	}
 

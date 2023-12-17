@@ -6,7 +6,7 @@
 #include "evaluator.hpp"
 #include <iostream> // cin
 #include <fstream> // filebuf
-#include <ios> // ios_base
+#include <ios> // ios_base, streamsize
 #include <iterator> // input_iterator_tag
 
 
@@ -19,19 +19,30 @@ namespace aa {
 		using int_type = int_type_in_use_t<traits_type>;
 		using char_type = char_type_in_use_t<traits_type>;
 		using streambuf_type = streambuf_t<istreambuf_iter>;
+		template<size_t N>
+		using span_type = span_t<istreambuf_iter, N>;
 		using difference_type = ptrdiff_t;
 		using value_type = int_type;
 		using reference = int_type;
 		using pointer = void;
 		using iterator_category = std::input_iterator_tag;
 
+		struct proxy {
+			constexpr int_type operator*() const { return value; }
+
+			const int_type value;
+		};
+
+		template<size_t N>
+		constexpr std::streamsize operator()(const span_type<N> c) const { return file->sgetn(c.data(), c.size()); }
 		constexpr int_type operator*() const { return file->sgetc(); }
 		constexpr istreambuf_iter &operator++() { return (file->sbumpc(), *this); }
-		constexpr int_type operator++(const int) const { return file->sbumpc(); }
+		constexpr proxy operator++(const int) const { return {file->sbumpc()}; }
 		constexpr istreambuf_iter &operator--() { return (file->sungetc(), *this); }
-		constexpr int_type operator--(const int) const { return file->sungetc(); }
+		constexpr proxy operator--(const int) const { return {file->sungetc()}; }
+		constexpr int sync() const { return file->pubsync(); }
 
-		friend constexpr bool operator==(const istreambuf_iter &l, const istreambuf_iter &r) { return l.file == r.file; }
+		friend constexpr bool operator==(const istreambuf_iter l, const istreambuf_iter r) { return l.file == r.file; }
 
 		streambuf_type *file = std::cin.rdbuf();
 	};
@@ -42,10 +53,10 @@ namespace aa {
 
 
 	// eval turi būti paduotas kaip parametras, nes yra situacijų, kai EVAL gali būti ne paprasta klasė.
-	template<class EVAL = evaluator, evaluable_by<EVAL &> A>
-	constexpr void read(A &a, std::streambuf &s = *std::cin.rdbuf(), EVAL &&eval = default_value) {
+	template<class EVAL = evaluator, int_input_iterator I = istreambuf_iter<>, evaluable_by<EVAL &> A>
+	constexpr void read(A &a, I i = default_value, EVAL &&eval = default_value) {
 		do {
-			const int character = s.sgetc();
+			const int character = *i;
 			switch (character) {
 				case char_traits::eof():
 					eval(char_traits::eof(), a);
@@ -53,20 +64,19 @@ namespace aa {
 				default:
 					if (eval(character, a)) continue; else return;
 			}
-		} while ((s.sbumpc(), true));
+		} while ((++i, true));
 	}
 
-	template<class T, evaluator_for<T> EVAL = evaluator>
-	constexpr std::remove_cvref_t<T> read(std::streambuf &s = *std::cin.rdbuf(), EVAL &&eval = default_value) {
-		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(t, s, eval); });
+	template<class T, evaluator_for<T> EVAL = evaluator, int_input_iterator I = istreambuf_iter<>>
+	constexpr std::remove_cvref_t<T> read(I i = default_value, EVAL &&eval = default_value) {
+		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(t, i, eval); });
 	}
 
-	template<int DELIM = '\n'>
-	constexpr void ignore(std::streambuf &s = *std::cin.rdbuf()) {
+	template<int DELIM = '\n', int_input_iterator I = istreambuf_iter<>>
+	constexpr void ignore(I i = default_value) {
 		do {
-			switch (s.sbumpc()) {
-				case char_traits::eof():
-				case DELIM:
+			switch (*i++) {
+				case char_traits::eof(): case DELIM:
 					return;
 			}
 		} while (true);
@@ -89,6 +99,13 @@ namespace aa {
 	template<std::ios_base::openmode MODE = std::ios_base::in, class T>
 	constexpr std::filebuf make_ifilebuf(const T &path) {
 		return make_filebuf<MODE | std::ios_base::in>(path);
+	}
+
+
+
+	[[gnu::constructor]] constexpr void init() {
+		std::ios_base::sync_with_stdio(false);
+		AA_IF_DEBUG(AA_LOG({}, "Init function called."));
 	}
 
 }

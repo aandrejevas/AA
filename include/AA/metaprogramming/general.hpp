@@ -3,7 +3,7 @@
 // AA bibliotekos failuose elgiamasi lyg būtų įterpti toliau išdėstyti failai, nes tie failai suteikia galimybę
 // sklandžiai programuoti naudojantis esminėmis C++ kalbos savybėmis. Tie failai yra ir jų įterpimo priežastys:
 // • <cstddef> ir <cstdint>, failai įterpti, kad nereiktų naudoti daug raktažodžių, kad aprašyti pamatinius tipus.
-// • <array> (<compare>, <initializer_list>), failas įterptas, kad nereiktų naudoti C stiliaus masyvų.
+// • <span> ir <array> (<compare>, <initializer_list>), failai įterpti, kad nereiktų naudoti C stiliaus masyvų.
 // • <type_traits> ir <concepts>, failai įterpti, kad išeitų lengvai protauti apie tipus.
 // • <utility> (<compare>, <initializer_list>), failas įterptas, kad išeitų lengvai protauti apie išraiškas.
 // • <limits>, failas įterptas, kad išeitų lengvai nautotis pamatinių tipų savybėmis.
@@ -19,14 +19,15 @@
 #include <type_traits> // remove_reference_t, is_lvalue_reference_v, is_rvalue_reference_v, type_identity, integral_constant, is_void_v, has_unique_object_representations_v, is_trivial_v, is_trivially_copyable_v, is_trivially_default_constructible_v, is_const_v, is_arithmetic_v, invoke_result_t, underlying_type_t, remove_cvref_t, is_pointer_v, remove_pointer_t, make_unsigned_t, is_invocable_r_v, make_signed_t, is_empty_v
 #include <concepts> // same_as, semiregular, regular, relation, invocable, totally_ordered_with, equality_comparable_with, constructible_from, assignable_from, integral, signed_integral, unsigned_integral
 #include <limits> // numeric_limits
+#include <span> // span, dynamic_extent
 #include <array> // array
 #include <bit> // countl_zero, has_single_bit, bit_cast
 #include <utility> // forward, declval, as_const, tuple_size, tuple_size_v, tuple_element, tuple_element_t, index_sequence, make_index_sequence, index_sequence_for
 #include <functional> // function, invoke, _1, is_placeholder_v
 #include <variant> // monostate
 #include <string_view> // basic_string_view
-#include <streambuf> // basic_streambuf
 #include <string> // char_traits
+#include <streambuf> // basic_streambuf
 
 
 
@@ -188,15 +189,16 @@ namespace aa {
 			value_type value;
 		};
 
+		// Negalime paveldėti iš T, nes kažkodėl tada tuple dydis padidėja.
 		template<size_t I, empty_type T>
 		struct tuple_unit<I, T> {
 			// Member types
 			using value_type = T;
-			using reference = const value_type &;
-			using const_reference = reference;
+			using reference = value_type;
+			using const_reference = value_type;
 
 			// Element access
-			static consteval const_reference get() { return default_value; }
+			static consteval value_type get() { return default_value; }
 		};
 
 		template<class, class...>
@@ -477,6 +479,14 @@ namespace aa {
 	template<class F, class T>
 	concept constructible_to = std::constructible_from<T, F>;
 
+	template<class F, class T>
+	concept constructible_to_and_from = (std::constructible_from<T, F> && std::constructible_from<F, T>);
+
+	// https://en.cppreference.com/w/cpp/concepts/boolean-testable.
+	template<class B>
+	concept bool_testable = (std::constructible_from<bool, B>
+		&& requires(B &&b) { { !std::forward<B>(b) } -> constructible_to<bool>; });
+
 	template<class R, class L>
 	concept assignable_to = std::assignable_from<L, R>;
 
@@ -486,6 +496,9 @@ namespace aa {
 
 	template<class T>
 	using string_view_t = std::basic_string_view<char_type_in_use_t<traits_type_in_use_t<T>>, traits_type_in_use_t<T>>;
+
+	template<class T, size_t N = std::dynamic_extent>
+	using span_t = std::span<char_type_in_use_t<traits_type_in_use_t<T>>, N>;
 
 	template<class T>
 	using streambuf_t = std::basic_streambuf<char_type_in_use_t<traits_type_in_use_t<T>>, traits_type_in_use_t<T>>;
@@ -540,6 +553,9 @@ namespace aa {
 
 	template<class T, class U>
 	concept instance_of = is_instance_of_v<std::remove_reference_t<T>, U>;
+
+	template<class T, class U>
+	concept not_instance_of = !instance_of<T, U>;
 
 
 

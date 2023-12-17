@@ -77,11 +77,11 @@ namespace aa {
 			return {b, operator++().offset};
 		}
 
-		friend constexpr bool operator==(const iterator &l, const iterator &r) {
+		friend constexpr bool operator==(const iterator l, const iterator r) {
 			return l.bitset == r.bitset && l.offset == r.offset;
 		}
 
-		friend constexpr bool operator==(const iterator &l, const std::default_sentinel_t) {
+		friend constexpr bool operator==(const iterator l, const std::default_sentinel_t) {
 			return !l;
 		}
 

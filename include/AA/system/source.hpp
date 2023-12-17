@@ -45,27 +45,26 @@ namespace aa {
 
 	// source_location neišeitų naudoti, nes turime naudoti parameter pack.
 	// ostream naudojame, nes funkcija turi galėti išspausdinti source_data.
-	template<source_data D, class... A>
-	constexpr void log(std::streambuf &s, const std::format_string<const A&...> &fmt = "Info logged.", const A&... args) {
-		print(s, "{}: ", D);
-		printl(s, fmt, args...);
+	template<source_data D, char_output_iterator I = ostreambuf_iter<>, class... A>
+	constexpr I log(I i, const std::format_string<const A&...> fmt = "Info logged.", const A&... args) {
+		return printl(print(i, "{}: ", D), fmt, args...);
 	}
 
 	template<source_data D, class... A>
-	constexpr void log(const std::format_string<const A&...> &fmt = "Info logged.", const A&... args) {
-		log<D>(*std::clog.rdbuf(), fmt, args...);
+	constexpr ostreambuf_iter<> log(const std::format_string<const A&...> fmt = "Info logged.", const A&... args) {
+		return log<D>({std::clog.rdbuf()}, fmt, args...);
 	}
 
-	template<source_data D, class... A>
-	[[noreturn]] constexpr void abort(std::streambuf &s, const std::format_string<const A&...> &fmt = "Program aborted.", const A&... args) {
-		log<D>(s, fmt, args...);
+	template<source_data D, char_output_iterator I = ostreambuf_iter<>, class... A>
+	[[noreturn]] constexpr void abort(I i, const std::format_string<const A&...> fmt = "Program aborted.", const A&... args) {
+		log<D>(i, fmt, args...);
 		// Netinka abort ar kitos funkcijos, nes gali būti neišspausdintas klaidos pranešimas.
 		std::exit(EXIT_FAILURE);
 	}
 
 	template<source_data D, class... A>
-	[[noreturn]] constexpr void abort(const std::format_string<const A&...> &fmt = "Program aborted.", const A&... args) {
-		abort<D>(*std::cerr.rdbuf(), fmt, args...);
+	[[noreturn]] constexpr void abort(const std::format_string<const A&...> fmt = "Program aborted.", const A&... args) {
+		abort<D>({std::cerr.rdbuf()}, fmt, args...);
 	}
 
 	// Neturime assert funkcijų, nes nereikia turėti dviejų kelių, kad pasiekti tą patį. Na ir macros

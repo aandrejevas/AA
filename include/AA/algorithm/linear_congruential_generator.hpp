@@ -88,7 +88,7 @@ namespace aa {
 		}
 
 		// https://math.stackexchange.com/questions/2008585/computing-the-distance-between-two-linear-congruential-generator-states
-		constexpr result_type dist(const linear_congruential_generator &o) const {
+		constexpr result_type dist(const linear_congruential_generator o) const {
 			result_type d = 0, mask = 1, t_state = state,
 				cur_mult = multiplier, cur_plus = increment;
 			do {
