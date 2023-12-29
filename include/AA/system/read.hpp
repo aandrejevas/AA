@@ -2,12 +2,10 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../preprocessor/assert.hpp"
-#include "../algorithm/init.hpp"
 #include "evaluator.hpp"
 #include <iostream> // cin
 #include <fstream> // filebuf
 #include <ios> // ios_base, streamsize
-#include <iterator> // input_iterator_tag
 
 
 
@@ -54,32 +52,35 @@ namespace aa {
 
 	// eval turi būti paduotas kaip parametras, nes yra situacijų, kai EVAL gali būti ne paprasta klasė.
 	template<class EVAL = evaluator, int_input_iterator I = istreambuf_iter<>, evaluable_by<EVAL &> A>
-	constexpr void read(A &a, I i = default_value, EVAL &&eval = default_value) {
+	constexpr I read(A &a, I i = default_value, EVAL &&eval = default_value) {
 		do {
 			const int character = *i;
 			switch (character) {
 				case char_traits::eof():
 					eval(char_traits::eof(), a);
-					return;
+					break;
 				default:
-					if (eval(character, a)) continue; else return;
+					if (eval(character, a)) continue; else break;
 			}
+			return i;
 		} while ((++i, true));
 	}
 
-	template<class T, evaluator_for<T> EVAL = evaluator, int_input_iterator I = istreambuf_iter<>>
-	constexpr std::remove_cvref_t<T> read(I i = default_value, EVAL &&eval = default_value) {
-		return make_with_invocable([&](std::remove_cvref_t<T> &t) -> void { read(t, i, eval); });
+	template<not_cvref T, evaluator_for<T> EVAL = evaluator, int_input_iterator I = istreambuf_iter<>>
+	constexpr pair<T, I> read(I i = default_value, EVAL &&eval = default_value) {
+		return make_with_invocable([&](pair<T, I> &t) -> void {
+			get_1(t) = read(get_0(t), i, eval);
+		});
 	}
 
 	template<int DELIM = '\n', int_input_iterator I = istreambuf_iter<>>
-	constexpr void ignore(I i = default_value) {
+	constexpr I ignore(I i) {
 		do {
-			switch (*i++) {
-				case char_traits::eof(): case DELIM:
-					return;
+			switch (*i) {
+				case char_traits::eof():	return i;
+				case DELIM:					return ++i;
 			}
-		} while (true);
+		} while ((++i, true));
 	}
 
 
@@ -103,9 +104,11 @@ namespace aa {
 
 
 
-	[[gnu::constructor]] constexpr void init() {
-		std::ios_base::sync_with_stdio(false);
-		AA_IF_DEBUG(AA_LOG({}, "Init function called."));
+	namespace detail {
+		[[gnu::constructor]] constexpr void init() {
+			std::ios_base::sync_with_stdio(false);
+			AA_IF_DEBUG(AA_LOG({}, "Init function called."));
+		}
 	}
 
 }

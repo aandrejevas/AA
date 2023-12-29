@@ -2,8 +2,6 @@
 
 #include "../metaprogramming/general.hpp"
 #include "../algorithm/arithmetic.hpp"
-#include <ranges> // view_base
-#include <iterator> // default_sentinel_t, default_sentinel, forward_iterator_tag
 
 
 
@@ -21,10 +19,9 @@ namespace aa {
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using iterator_category = std::forward_iterator_tag;
-		using iterator = bitset_view<T, U, REVERSED>;
+		using iterator = bitset_view;
 		using const_iterator = iterator;
-		using reverse_iterator = bitset_view<T, U, !REVERSED>;
-		using const_reverse_iterator = reverse_iterator;
+		using conjugate_type = bitset_view<T, U, !REVERSED>;
 
 
 
@@ -90,8 +87,7 @@ namespace aa {
 		// Iterators
 		constexpr const_iterator begin() const { return {bitset, offset}; }
 		constexpr std::default_sentinel_t end() const { return std::default_sentinel; }
-		constexpr const_reverse_iterator rbegin() const { return {bitswap(bitset), offset}; }
-		constexpr std::default_sentinel_t rend() const { return std::default_sentinel; }
+		constexpr conjugate_type reverse() const { return {bitswap(bitset), offset}; }
 
 
 
@@ -112,6 +108,7 @@ namespace aa {
 		// Special member functions
 		consteval bitset_view() = default;
 		constexpr bitset_view(const bitset_type b, const offset_type o = default_value) : bitset{b}, offset{o} {}
+		constexpr bitset_view(const const_t<std::placeholders::_1>, const bitset_type b, const offset_type o = default_value) : bitset_view{b, o} {}
 
 
 
@@ -121,11 +118,12 @@ namespace aa {
 	};
 
 	template<class T, class U = std::monostate>
+	using reversed_bitset_view = bitset_view<T, U, true>;
+
+	template<class T, class U = std::monostate>
 	bitset_view(const T, const U = default_value) -> bitset_view<T, U>;
 
-	template<bool REVERSED = false, class T, class U = std::monostate>
-	constexpr bitset_view<T, U, REVERSED> make_bitset_view(const T t, const U u = default_value) {
-		return {t, u};
-	}
+	template<class T, class U = std::monostate>
+	bitset_view(const const_t<std::placeholders::_1>, const T, const U = default_value) -> reversed_bitset_view<T, U>;
 
 }

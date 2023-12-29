@@ -2,8 +2,6 @@
 
 #include "../metaprogramming/general.hpp"
 #include "fixed_vector.hpp"
-#include <iterator> // random_access_iterator_tag
-#include <compare> // strong_ordering
 
 
 
@@ -46,7 +44,7 @@ namespace aa {
 			using reference = value_type;
 			using pointer = value_type;
 			using iterator_category = std::random_access_iterator_tag;
-			using other_iterator = variant_iterator<!CONST>;
+			using conjugate_type = variant_iterator<!CONST>;
 
 			constexpr reference operator*() const { return std::get_if<elem_index>(ptr); }
 			constexpr pointer operator->() const { return std::get_if<elem_index>(ptr); }
@@ -57,12 +55,12 @@ namespace aa {
 			constexpr variant_iterator operator--(const int) { return {ptr--}; }
 
 			friend constexpr bool operator==(const variant_iterator l, const variant_iterator r) { return l.ptr == r.ptr; }
-			friend constexpr bool operator==(const variant_iterator l, const other_iterator r) { return l.ptr == r.ptr; }
+			friend constexpr bool operator==(const variant_iterator l, const conjugate_type r) { return l.ptr == r.ptr; }
 			friend constexpr std::strong_ordering operator<=>(const variant_iterator l, const variant_iterator r) { return l.ptr <=> r.ptr; }
-			friend constexpr std::strong_ordering operator<=>(const variant_iterator l, const other_iterator r) { return l.ptr <=> r.ptr; }
+			friend constexpr std::strong_ordering operator<=>(const variant_iterator l, const conjugate_type r) { return l.ptr <=> r.ptr; }
 
 			constexpr difference_type operator-(const variant_iterator r) const { return ptr - r.ptr; }
-			constexpr difference_type operator-(const other_iterator r) const { return ptr - r.ptr; }
+			constexpr difference_type operator-(const conjugate_type r) const { return ptr - r.ptr; }
 			constexpr reference operator[](const difference_type n) const { return std::get_if<elem_index>(ptr + n); }
 			constexpr variant_iterator operator+(const difference_type n) const { return {ptr + n}; }
 			constexpr variant_iterator operator-(const difference_type n) const { return {ptr - n}; }
@@ -71,7 +69,7 @@ namespace aa {
 			friend constexpr variant_iterator operator+(const difference_type n, const variant_iterator r) { return {n + r.ptr}; }
 
 			consteval variant_iterator() = default;
-			constexpr variant_iterator(const other_iterator o) requires (CONST) : ptr{o.ptr} {}
+			constexpr variant_iterator(const conjugate_type o) requires (CONST) : ptr{o.ptr} {}
 
 		protected:
 			friend fixed_free_vector;
@@ -154,13 +152,13 @@ namespace aa {
 		constexpr void clear() { elements.clear(); first_hole = nullptr; }
 
 		template<ref_invocable<pointer> F>
-		constexpr void clear(F &&f) {
+		constexpr void clear(F f) {
 			if (!elements.empty())
-				unsafe_clear(f);
+				unsafe_clear(std::move(f));
 		}
 
 		template<ref_invocable<pointer> F>
-		constexpr void unsafe_clear(F &&f) {
+		constexpr void unsafe_clear(F f) {
 			do {
 				std::invoke(f, back());
 				elements.pop_back();

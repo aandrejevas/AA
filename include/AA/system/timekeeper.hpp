@@ -8,14 +8,14 @@
 
 namespace aa {
 
-	template<clock C = std::chrono::steady_clock>
+	template<clock_like C = std::chrono::steady_clock>
 	struct timekeeper {
 		// Member types
 		using clock_type = C;
-		using rep = typename clock_type::rep;
-		using period = typename clock_type::period;
-		using duration = typename clock_type::duration;
-		using time_point = typename clock_type::time_point;
+		using rep = rep_in_use_t<clock_type>;
+		using period = period_in_use_t<clock_type>;
+		using duration = duration_in_use_t<clock_type>;
+		using time_point = time_point_in_use_t<clock_type>;
 
 
 
@@ -41,7 +41,7 @@ namespace aa {
 		}
 
 		constexpr void resume() {
-			begin -= std::exchange(end, value_v<rep, 0>);
+			begin -= std::exchange(end, default_v<rep>);
 			begin += now();
 		}
 
@@ -80,12 +80,12 @@ namespace aa {
 
 		// Pagal nutylėjimą, laikas pateikiamas sekundėmis.
 		template<class D = std::chrono::duration<double>>
-		constexpr typename D::rep elapsed() const {
+		constexpr rep_in_use_t<D> elapsed() const {
 			return std::chrono::duration_cast<D>(duration{end - begin}).count();
 		}
 	};
 
-	template<class T = typename std::chrono::steady_clock::rep, class U = typename std::chrono::steady_clock::rep>
+	template<class T = rep_in_use_t<std::chrono::steady_clock>, class U = rep_in_use_t<std::chrono::steady_clock>>
 	timekeeper(const T & = default_value, const U & = default_value) -> timekeeper<>;
 
 }

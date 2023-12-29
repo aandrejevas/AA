@@ -1,10 +1,8 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/range.hpp"
 #include "../system/source.hpp"
 #include "arithmetic.hpp"
-#include <ranges> // size, data
 
 
 
@@ -14,7 +12,7 @@ namespace aa {
 	struct generic_hash {
 		template<hashable_by_template<H> T>
 		static constexpr size_t operator()(const T &t) {
-			return default_value_v<H<T>>(t);
+			return default_v<H<T>>(t);
 		}
 
 		static consteval size_t min() { return numeric_min; }
@@ -31,7 +29,7 @@ namespace aa {
 	struct mod_generic_hash {
 		template<hashable_by_template<H> T>
 		static constexpr size_t operator()(const T &t) {
-			return remainder<N>(default_value_v<H<T>>(t));
+			return remainder<N>(default_v<H<T>>(t));
 		}
 
 		static consteval size_t min() { return 0; }
@@ -47,10 +45,10 @@ namespace aa {
 	// MAX negali rodyti į kažkurį iš argumentų, nes MAX represents a failure state kai nerandamas nei vienas iš template parametrų.
 	// MAX nėra numeric_max, nes tokia reikšmė indikuotų, kad klasė gali grąžinti visas reikšmes nuo 0 iki numeric_max.
 	template<fixed_string_like auto... A>
-		requires (same_as_every<range_char_traits_t<const_t<A>>...>)
+		requires (is_same_as_every_v<range_char_traits_t<const_t<A>>...>)
 	struct string_perfect_hash : pack<A...> {
 		using is_transparent = void;
-		using traits_type = first_or_void_t<range_char_traits_t<const_t<A>>...>;
+		using traits_type = first_or_t<void, range_char_traits_t<const_t<A>>...>;
 
 		template<same_range_char_traits_as<traits_type> T, class F>
 		static constexpr void operator()(const T &t, F &&f) {
@@ -58,7 +56,7 @@ namespace aa {
 			const size_t count = std::ranges::size(t);
 			if (!(... || ((count == std::tuple_size_v<const_t<A>>) && apply<const_t<A>>([&]<size_t... I> -> bool {
 				static constexpr const_t<A> V = A;
-				return (... && traits_type::eq(std::ranges::data(t)[I], const_v<getter_v<I>(V)>)) ?
+				return (... && traits_type::eq(std::ranges::data(t)[I], const_v<get_v<I>(V)>)) ?
 					(invoke<pack_index_v<V, A...>>(std::forward<F>(f)), true) : false;
 			}))))
 				invoke<max()>(std::forward<F>(f));
@@ -73,5 +71,22 @@ namespace aa {
 
 	template<size_t N>
 	using sequence_perfect_hash = const_t<apply<N>([]<size_t... I> -> literal_name_perfect_hash<I...> { return default_value; })>;
+
+
+
+	// Neturime klasės iš kurios tiesiog galėtume paveldėti is_transparent, nes gcc taip elgiasi. Taip pat, nes
+	// tai nėra neįprasta, konteineriai ir iteratoriai turi tokių pačių aliases ir iš sandarto buvo pašalintas tipas
+	// std::iterator, kuris buvo naudojamas tokiu pačiu principu, tai reiškia nerekomenduojama tokia realizacija.
+	struct string_equal_to {
+		template<class L, same_range_char_traits_as<range_char_traits_t<L>> R>
+		static constexpr bool operator()(const L &l, const R &r) {
+			// size_t tipas, nes compare tikisi tokio tipo parametro.
+			const size_t count = std::ranges::size(l);
+			return count == std::ranges::size(r) &&
+				!range_char_traits_t<L>::compare(std::ranges::data(l), std::ranges::data(r), count);
+		}
+
+		using is_transparent = void;
+	};
 
 }

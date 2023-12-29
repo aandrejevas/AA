@@ -3,7 +3,6 @@
 #include "../metaprogramming/general.hpp"
 #include "../algorithm/find.hpp"
 #include "fixed_vector.hpp"
-#include <iterator> // default_sentinel
 
 
 
@@ -182,12 +181,12 @@ namespace aa {
 		// Nėra esmės turėti default konstruktoriaus, nes comparer vis tiek reikėtų inicializuoti,
 		// nes comparer tipas yra const. Perfect forwarding naudojame, kad palaikyti move semantics
 		// ir pass by reference, jei parametras būtų const& tai neišeitų palaikyti move semantics.
-		template<constructible_to<comparer_type> U = const comparer_type>
+		template<constructible_to<comparer_type> U = comparer_type>
 		constexpr fixed_flat_set(U &&c = default_value) : comparer{std::forward<U>(c)} {}
 
-		template<assignable_to<reference> V, constructible_to<comparer_type> U = const comparer_type>
+		template<assignable_to<reference> V, constructible_to<comparer_type> U = comparer_type>
 		constexpr fixed_flat_set(V &&value, U &&c = default_value)
-			: elements{std::default_sentinel}, comparer{std::forward<U>(c)} { elements.back() = std::forward<V>(value); }
+			: elements{std::placeholders::_1}, comparer{std::forward<U>(c)} { elements.back() = std::forward<V>(value); }
 
 
 

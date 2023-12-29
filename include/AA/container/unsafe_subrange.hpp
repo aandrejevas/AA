@@ -1,9 +1,6 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/range.hpp"
-#include <iterator> // next, prev, bidirectional_iterator, random_access_iterator, contiguous_iterator, iter_value_t, iter_difference_t, iter_reference_t
-#include <ranges> // view_base, iterator_t, begin, borrowed_range
 #include <memory> // to_address
 
 
@@ -22,7 +19,7 @@ namespace aa {
 		using size_type = iter_size_t<I>;
 		using difference_type = std::iter_difference_t<I>;
 		using reference = std::iter_reference_t<I>;
-		using pointer = iter_pointer_t<I>;
+		using pointer = pointer_in_use_t<std::iterator_traits<I>>;
 		using iterator = I;
 
 

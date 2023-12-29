@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <cmath> // fmod
+#include <cmath> // fmod, fma
 #include <numeric> // midpoint
 
 
@@ -9,47 +9,23 @@
 namespace aa {
 
 	template<std::floating_point T>
-	constexpr T norm(const T value, const T mag) {
-		return value / mag;
+	constexpr T map(const T value, const T mag1, const T mag2) {
+		return value * (mag2 / mag1);
 	}
 
 	template<std::floating_point T>
-	constexpr T norm(const T value, const T start, const T mag) {
-		return (value - start) / mag;
-	}
-
-
-
-	template<std::floating_point T>
-	constexpr T map(const T value, const T mag) {
-		return value * mag;
+	constexpr T map(const T value, const pair<T> p1, const T mag2) {
+		return (value - get_0(p1)) * (mag2 / get_1(p1));
 	}
 
 	template<std::floating_point T>
-	constexpr T map(const T value, const T start, const T mag) {
-		return start + value * mag;
-	}
-
-
-
-	template<std::floating_point T>
-	constexpr T norm_map(const T value, const T mag1, const T mag2) {
-		return aa::map(aa::norm(value, mag1), mag2);
-	}
-
-	template<placeholder<1> auto, std::floating_point T>
-	constexpr T norm_map(const T value, const T start1, const T mag1, const T mag2) {
-		return aa::map(aa::norm(value, start1, mag1), mag2);
-	}
-
-	template<placeholder<2> auto, std::floating_point T>
-	constexpr T norm_map(const T value, const T mag1, const T start2, const T mag2) {
-		return aa::map(aa::norm(value, mag1), start2, mag2);
+	constexpr T map(const T value, const T mag1, const pair<T> p2) {
+		return std::fma(value, (get_1(p2) / mag1), get_0(p2));
 	}
 
 	template<std::floating_point T>
-	constexpr T norm_map(const T value, const T start1, const T mag1, const T start2, const T mag2) {
-		return aa::map(aa::norm(value, start1, mag1), start2, mag2);
+	constexpr T map(const T value, const T start1, const T mag1, const T start2, const T mag2) {
+		return std::fma((value - start1), (mag2 / mag1), start2);
 	}
 
 
@@ -60,50 +36,40 @@ namespace aa {
 	// Reikalaujama, kad T būtų unsigned, nes per shift operacijas neįmanoma pagreitinti neigiamų skaičių daugybos.
 	// Bandžiau rekursijos nenaudoti, gaunasi tas pats tik vietoje X visur atsiranda cast X į T.
 	// Turime turėti du tokius pačius return sakinius, nes apjungus sąlygas X gali sąlygoje būti float.
-	template<arithmetic T, T X>
+	template<arithmetic auto V, arithmetic T>
 	constexpr T product(const T x) {
-		/**/ if constexpr (is_value<0>(X))				return value_v<T, 0>;
+		static constexpr T X = V;
+		/**/ if constexpr (is_value<0>(X))				return default_value;
 		else if constexpr (is_value<1>(X))				return x;
 		else if constexpr (!std::unsigned_integral<T>)	return x * X;
 		else if constexpr (!std::has_single_bit(X))		return x * X;
 		else											return x << const_v<int_log2(X)>;
 	}
 
-	template<auto X, arithmetic T>
-	constexpr T product(const T x) {
-		return product<T, value_v<T, X>>(x);
-	}
-
 	// https://en.wikipedia.org/wiki/Remainder
-	template<arithmetic T, T X>
-		requires (!is_value<0>(X))
+	// Nepaduodame pack V, nes arithmetic tipo iš pack neišeitų sukonstruoti.
+	// Viduje requires reikia naudoti value_v, nes kitaip pvz. būtų float'ai neteisingai patikrinami kai T int.
+	template<arithmetic auto V, arithmetic T>
+		requires (!is_value<0>(value_v<T, V>))
 	constexpr T remainder(const T x) {
-		/**/ if constexpr (is_value<1>(X))				return value_v<T, 0>;
+		static constexpr T X = V;
+		/**/ if constexpr (is_value<1>(X))				return default_value;
 		else if constexpr (std::floating_point<T>)		return std::fmod(x, X);
 		else if constexpr (std::signed_integral<T>)		return x % X;
 		else if constexpr (!std::has_single_bit(X))		return x % X;
 		else											return x & const_v<X - 1>;
 	}
 
-	template<auto X, arithmetic T>
-	constexpr T remainder(const T x) {
-		return remainder<T, value_v<T, X>>(x);
-	}
-
 	// https://en.wikipedia.org/wiki/Quotient
-	template<arithmetic T, T X>
-		requires (!is_value<0>(X))
+	template<arithmetic auto V, arithmetic T>
+		requires (!is_value<0>(value_v<T, V>))
 	constexpr T quotient(const T x) {
+		static constexpr T X = V;
 		/**/ if constexpr (is_value<1>(X))				return x;
 		else if constexpr (std::floating_point<T>)		return x * const_v<value_v<T, 1> / X>;
 		else if constexpr (std::signed_integral<T>)		return x / X;
 		else if constexpr (!std::has_single_bit(X))		return x / X;
 		else											return x >> const_v<int_log2(X)>;
-	}
-
-	template<auto X, arithmetic T>
-	constexpr T quotient(const T x) {
-		return quotient<T, value_v<T, X>>(x);
 	}
 
 
@@ -128,6 +94,7 @@ namespace aa {
 
 	template<std::unsigned_integral U = size_t, std::unsigned_integral T>
 	constexpr U magic_binary_number(const T x) {
+		// exp expression tipai galėtų būti: uint << (size_t << uint). Bet greitaveikos neprarandame.
 		return numeric_max_v<U> / (int_exp2<U>(int_exp2(x)) | 1);
 	}
 
@@ -139,6 +106,16 @@ namespace aa {
 	template<arithmetic T>
 	constexpr T redouble(const T x) {
 		return product<2>(x);
+	}
+
+	template<std::integral T>
+	constexpr bool is_even(const T x) {
+		return !remainder<2>(unsign(x));
+	}
+
+	template<std::integral T>
+	constexpr bool is_odd(const T x) {
+		return !!remainder<2>(unsign(x));
 	}
 
 	template<class T>
@@ -227,7 +204,7 @@ namespace aa {
 		using reference = value_type &;
 		using const_reference = const value_type &;
 		// Galėtume naudoti type_pack_element_t, bet tada taptų sunkiau suprasti logiką ir nukentėtų kompiliavimo gretis.
-		using difference_type = std::conditional_t<pointer<value_type>, ptrdiff_t, value_type>;
+		using difference_type = std::conditional_t<object_pointer_like<value_type>, ptrdiff_t, value_type>;
 
 		// Member constants
 		static constexpr bool subinterval = MIN < MAX;

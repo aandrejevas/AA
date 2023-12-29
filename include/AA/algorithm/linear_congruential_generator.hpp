@@ -1,8 +1,9 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "../metaprogramming/time.hpp"
 #include "arithmetic.hpp"
-#include <chrono> // system_clock
+#include <chrono> // steady_clock
 #include <numeric> // gcd
 
 
@@ -45,6 +46,12 @@ namespace aa {
 
 
 
+		// Special member functions
+		constexpr linear_congruential_generator() { seed(); }
+		constexpr linear_congruential_generator(const result_type s) { seed(s); }
+
+
+
 		// Member objects
 		// Sena praktika yra inicializuoti pradinę būseną su esamu laiku.
 		// Paleidus tą patį .exe pradinė būsena būsena turi būti kita todėl negalima naudoti compile time SEED'o (__TIME__).
@@ -56,7 +63,7 @@ namespace aa {
 		// bet nors šališkumas metodo toks pat kaip ir dabar naudojamo metodo, jo greitaveika yra mažesnė.
 		// Greičiausias būdas kaip generuoti nešališkus atsitiktinius skaičius intervale: https://arxiv.org/abs/1805.10941.
 		// Naudojami metodai su šališkumu, nes mums svarbiausia greitaveika, o šališkumas nėra didelis.
-		result_type state = unsign<result_type>(std::chrono::system_clock::now().time_since_epoch().count());
+		result_type state;
 
 
 
@@ -106,8 +113,10 @@ namespace aa {
 		}
 
 		// Seeding
+		// steady_clock naudojame, nes jis negali grįžti į tą patį momentą.
+		template<clock_like CLOCK = std::chrono::steady_clock>
 		constexpr void seed() {
-			state = unsign<result_type>(std::chrono::system_clock::now().time_since_epoch().count());
+			seed(unsign<result_type>(CLOCK::now().time_since_epoch().count()));
 		}
 
 		constexpr void seed(const result_type s) {

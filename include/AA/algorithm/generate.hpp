@@ -8,19 +8,13 @@
 
 namespace aa {
 
+	// In the int distribution generate a random number.
 	// Naudotojas turėtų naudoti g(), nebent tikrai nuo 0 kažkodėl jam reiktų reikšmės.
 	// [0, MAX - MIN + 1)
-	template<class T, generator_result_constructible_to<T> G>
-	constexpr T int_distribution(G &g) {
-		if constexpr (!is_numeric_min(G::min()))
-			return cast<T>(g() - G::min());
-		else
-			return cast<T>(g());
-	}
-
-	template<same_as_void = void, bits_generator G>
-	constexpr generator_result_t<G> int_distribution(G &g) {
-		return int_distribution<generator_result_t<G>>(g);
+	template<bits_generator G>
+	constexpr generator_result_t<G> int_generate(G &g) {
+		if constexpr (!is_numeric_min(G::min()))	return g() - G::min();
+		else										return g();
 	}
 
 
@@ -32,25 +26,22 @@ namespace aa {
 	// mag ir off ne generic tipo, nes taip tik apsisunkiname gyvenimą paduodami į funkcijas konstantas.
 	// Naudotojas pats turi sąmoningai atlikti cast, jei jis turi netinkamą tipą.
 	// [0, mag)
-	template<class T, distribution_result_constructible_to<T> G>
-	constexpr T int_distribution(G &g, const distribution_result_t<G> mag) {
-		return cast<T>((mag * cast<distribution_result_t<G>>(g())) >> numeric_digits_v<generator_result_t<G>>);
-	}
-
-	template<same_as_void = void, full_range_generator G>
-	constexpr distribution_result_t<G> int_distribution(G &g, const distribution_result_t<G> mag) {
-		return int_distribution<distribution_result_t<G>>(g, mag);
+	template<full_range_generator G>
+	constexpr distribution_result_t<G> int_generate(G &g, const distribution_result_t<G> mag) {
+		return (mag * cast<distribution_result_t<G>>(g())) >> numeric_digits_v<generator_result_t<G>>;
 	}
 
 	// [off, mag + off)
-	template<class T, distribution_result_constructible_to<T> G>
-	constexpr T int_distribution(G &g, const distribution_result_t<G> off, const distribution_result_t<G> mag) {
-		return cast<T>(int_distribution(g, mag) + off);
+	template<full_range_generator G>
+	constexpr distribution_result_t<G> int_generate(G &g, const distribution_result_t<G> off, const distribution_result_t<G> mag) {
+		return int_generate(g, mag) + off;
 	}
 
-	template<same_as_void = void, full_range_generator G>
-	constexpr distribution_result_t<G> int_distribution(G &g, const distribution_result_t<G> off, const distribution_result_t<G> mag) {
-		return int_distribution<distribution_result_t<G>>(g, off, mag);
+	// {[0, mag1), [0, mag2)}
+	template<full_range_generator G>
+	constexpr pair<distribution_result_t<G>> int_generate_two(G &g, const distribution_result_t<G> mag1, const distribution_result_t<G> mag2) {
+		const distribution_result_t<G> x = int_generate(g, mag1 * mag2);
+		return {(x / mag2), (x % mag2)};
 	}
 
 
@@ -58,30 +49,20 @@ namespace aa {
 	// Čia nėra daromas atsitiktinio skaičiaus cast į kažkokį paduotą tipą, nes T negalime nustatyti iš paduoto argumento tipo.
 	// [0, 1)
 	template<std::floating_point T = double, generator_modulus_representable_by<T> G>
-	constexpr T real_distribution(G &g) {
-		return quotient<generator_modulus_v<G>>(int_distribution<T>(g));
+	constexpr T real_generate(G &g) {
+		return quotient<generator_modulus_v<G>>(cast<T>(int_generate(g)));
 	}
 
 	// [0, mag)
-	template<constructible_from_floating_point U, std::floating_point T, generator_modulus_representable_by<T> G>
-	constexpr U real_distribution(G &g, const T mag) {
-		return cast<U>(real_distribution<T>(g) * mag);
-	}
-
-	template<same_as_void = void, std::floating_point T, generator_modulus_representable_by<T> G>
-	constexpr T real_distribution(G &g, const T mag) {
-		return real_distribution<T>(g, mag);
+	template<std::floating_point T, generator_modulus_representable_by<T> G>
+	constexpr T real_generate(G &g, const T mag) {
+		return real_generate<T>(g) * mag;
 	}
 
 	// [off, mag + off)
-	template<constructible_from_floating_point U, std::floating_point T, generator_modulus_representable_by<T> G>
-	constexpr U real_distribution(G &g, const T off, const T mag) {
-		return cast<U>(real_distribution(g, mag) + off);
-	}
-
-	template<same_as_void = void, std::floating_point T, generator_modulus_representable_by<T> G>
-	constexpr T real_distribution(G &g, const T off, const T mag) {
-		return real_distribution<T>(g, off, mag);
+	template<std::floating_point T, generator_modulus_representable_by<T> G>
+	constexpr T real_generate(G &g, const T off, const T mag) {
+		return real_generate(g, mag) + off;
 	}
 
 }

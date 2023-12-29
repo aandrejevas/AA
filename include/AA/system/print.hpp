@@ -1,12 +1,8 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/range.hpp"
 #include <iostream> // cout
-#include <iterator> // output_iterator_tag
 #include <format> // format_to, format_string, formatter, format_parse_context, format_context
-#include <algorithm> // for_each
-#include <ranges> // input_range, range_value_t, empty, begin, drop
 #include <ios> // streamsize
 
 
@@ -100,9 +96,9 @@ struct std::formatter<R> {
 			if constexpr (std::tuple_size_v<R>) {
 				std::format_to(ctx.out(), "{{");
 				aa::apply<(std::tuple_size_v<R>) - 1>([&]<size_t... I> -> void {
-					(std::format_to(ctx.out(), "{}, ", aa::getter_v<I>(r)), ...);
+					(std::format_to(ctx.out(), "{}, ", aa::get_v<I>(r)), ...);
 				});
-				return std::format_to(ctx.out(), "{}}}", aa::getter_v<(std::tuple_size_v<R>) - 1>(r));
+				return std::format_to(ctx.out(), "{}}}", aa::get_v<(std::tuple_size_v<R>) - 1>(r));
 			} else {
 				return std::format_to(ctx.out(), "{{}}");
 			}

@@ -2,9 +2,6 @@
 
 #include "../metaprogramming/general.hpp"
 #include <memory> // construct_at
-#include <algorithm> // copy, copy_n, copy_backward
-#include <ranges> // input_range
-#include <iterator> // default_sentinel_t
 
 
 
@@ -162,6 +159,16 @@ namespace aa {
 			return resize(std::ranges::copy(r, const_cast<iterator>(end())).out - 1);
 		}
 
+		template<std::ranges::input_range R>
+		constexpr iterator assign_range(R &&r) {
+			return resize(std::ranges::copy(r, data()).out - 1);
+		}
+
+		template<std::ranges::input_range R>
+		constexpr fixed_vector &operator=(R &&r) {
+			return (assign_range(r), *this);
+		}
+
 
 
 		// Special member functions
@@ -169,17 +176,17 @@ namespace aa {
 #pragma GCC diagnostic ignored "-Wuninitialized"
 		// Nedarome = default, nes konstrukrotius vis tiek nebus trivial,
 		// nes klasė turi kintamųjų su numatytais inicializatoriais.
-		constexpr fixed_vector() : r_begin{rend()} {}
+		constexpr fixed_vector() { clear(); }
 		// Negalime turėti konstruktoriaus, kuris priimtų rodyklę, nes
 		// tik po konstruktoriaus įvykdymo galima gauti rodykles.
-		constexpr fixed_vector(const std::default_sentinel_t) : r_begin{data()} {}
-		constexpr fixed_vector(const size_type count) : r_begin{rend() + count} {}
+		constexpr fixed_vector(const const_t<std::placeholders::_1>) { resize(data()); }
+		constexpr fixed_vector(const size_type count) { resize(count); }
 		// Nereikia konstruktoriaus, kuriame būtų naudojama fill, nes šį funkcionalumą
 		// galima simuliuoti naudojant šį konstruktorių pavyzdžiui su repeat_view.
 		template<std::ranges::input_range R>
-		constexpr fixed_vector(R &&r) : r_begin{std::ranges::copy(r, data()).out - 1} {}
+		constexpr fixed_vector(R &&r) { assign_range(r); }
 		// Automatiškai sugeneruotas copy konstruktorius nebūtų teisingas.
-		constexpr fixed_vector(const fixed_vector &r) : r_begin{std::ranges::copy(r, data()).out - 1} {}
+		constexpr fixed_vector(const fixed_vector &r) { assign_range(r); }
 #pragma GCC diagnostic pop
 
 

@@ -16,13 +16,13 @@ namespace aa {
 	// Nereikalaujame, kad file kintamasis su savimi neštųsi failo kelią, nes šioje funkcijoje kelio mums nereikia.
 	// Patariama pačiam naudoti naudotojui pathed_stream klasę, nes ji automatiškai taip pat patikrina failed state.
 	template<string_perfect_hash H, int_input_iterator T = istreambuf_iter<>, invocable_r_constifier<std::tuple_size_v<const_t<H>>, bool, int> CONSUMER>
-	constexpr void lex(T i, CONSUMER &&consumer) {
+	constexpr void lex(T i, CONSUMER consumer) {
 		// Lexing parameters
 		constifier_func_t<CONSUMER> target;
 
 		enum struct lexing_state : size_t {
 			KEY,
-			VALUE, SKIP_VALUE
+			VALUE, SKIP_VALUE,
 		} phase2 = lexing_state::KEY;
 
 		// Nereikia token kaip parametro turėti, nes nieko nekainuoja jį sukonstruoti.
@@ -82,7 +82,7 @@ namespace aa {
 			CHECK,
 			COMMENT,
 			MULTILINE,
-			CHECKMULTI
+			CHECKMULTI,
 		} phase1 = preprocessing_state::NONE;
 
 		do {

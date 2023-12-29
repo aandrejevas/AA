@@ -6,8 +6,8 @@
 #
 #
 #
-#define AA_PRETTY_SOURCE_DATA ::aa::default_value_v<::aa::source_data<__LINE__, __FILE__, __PRETTY_FUNCTION__>>
-#define AA_SOURCE_DATA ::aa::default_value_v<::aa::source_data<__LINE__, __FILE__, __FUNCTION__>>
+#define AA_PRETTY_SOURCE_DATA ::aa::default_v<::aa::source_data<__LINE__, __FILE__, __PRETTY_FUNCTION__>>
+#define AA_SOURCE_DATA ::aa::default_v<::aa::source_data<__LINE__, __FILE__, __FUNCTION__>>
 #
 #
 #

@@ -1,14 +1,12 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/range.hpp"
 #include "../algorithm/arithmetic.hpp"
 #include "../algorithm/hash.hpp"
 #include "../algorithm/find.hpp"
 #include "fixed_vector.hpp"
 #include "unsafe_subrange.hpp"
 #include "bitset_view.hpp"
-#include <algorithm> // fill
 
 
 
@@ -94,7 +92,7 @@ namespace aa {
 
 
 			// Special member functions
-			template<constructible_to<hasher_type> U = const hasher_type>
+			template<constructible_to<hasher_type> U = hasher_type>
 			constexpr fixed_hashes_set_base(U &&h = default_value) : hasher{std::forward<U>(h)} {}
 
 
@@ -189,7 +187,7 @@ namespace aa {
 
 		constexpr void unsafe_clear() {
 			do {
-				*dirty.back() = value<0>;
+				*dirty.back() = default_value;
 				dirty.pop_back();
 			} while (!dirty.empty());
 		}
@@ -264,7 +262,7 @@ namespace aa {
 			return single_bucket_dirty() && bucket(dirty.min()).size() == 1;
 		}
 		constexpr bool all_buckets_dirty() const {
-			return dirty.eq(this->bins.data(), get_rdata(this->bins));
+			return dirty.eq(this->bins.data(), get_rbegin(this->bins));
 		}
 		constexpr bool dirty_buckets_full() const {
 			return empty() || unsafe_all_of(dirty_subrange(), [&](const bucket_type bin) ->
@@ -300,7 +298,7 @@ namespace aa {
 		constexpr void shrink_dirty_region(const bucket_pointer bin) {
 			const bool f_not_dirty = dirty.min_eq(bin), l_not_dirty = dirty.max_eq(bin);
 			if (f_not_dirty && l_not_dirty) {
-				dirty.reset(this->bins.data(), get_rdata(this->bins));
+				dirty.reset(this->bins.data(), get_rbegin(this->bins));
 
 			} else if (f_not_dirty) {
 				while (this->bucket(++dirty.min()).empty());
@@ -318,8 +316,8 @@ namespace aa {
 		}
 
 		constexpr void unsafe_clear() {
-			std::ranges::fill(dirty.min(), dirty.max() + 1, value_v<bucket_type, 0>);
-			dirty.reset(this->bins.data(), get_rdata(this->bins));
+			std::ranges::fill(dirty.min(), dirty.max() + 1, default_v<bucket_type>);
+			dirty.reset(this->bins.data(), get_rbegin(this->bins));
 		}
 
 		constexpr void clear_bucket(const size_type index) {
@@ -354,7 +352,7 @@ namespace aa {
 
 		// Member objects
 	protected:
-		interval<bucket_type *> dirty = {this->bins.data(), get_rdata(this->bins)};
+		interval<bucket_type *> dirty = {this->bins.data(), get_rbegin(this->bins)};
 	};
 
 
@@ -404,7 +402,7 @@ namespace aa {
 
 		// Modifiers
 		constexpr void clear() {
-			std::ranges::fill(this->bins, value_v<bucket_type, 0>);
+			std::ranges::fill(this->bins, default_v<bucket_type>);
 		}
 
 		constexpr void clear_bucket(const size_type index) {

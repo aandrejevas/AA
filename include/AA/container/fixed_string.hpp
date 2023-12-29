@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <iterator> // reverse_iterator
 #include <format> // formatter
 
 
@@ -31,10 +30,10 @@ namespace aa {
 
 		// Element access
 		// Ribojame indeksus, nes klaida būtų pažvelgti į atmintį, kuri mums nepriklauso.
-		template<size_type I>
-		constexpr reference get() requires (std::cmp_less(I, N)) { return get(I); }
-		template<size_type I>
-		constexpr const_reference get() const requires (std::cmp_less(I, N)) { return get(I); }
+		template<size_t I>
+		constexpr reference get() requires ((I < N)) { return get(I); }
+		template<size_t I>
+		constexpr const_reference get() const requires ((I < N)) { return get(I); }
 
 		constexpr reference operator[](const size_type pos) { return get(pos); }
 		constexpr const_reference operator[](const size_type pos) const { return get(pos); }
@@ -96,7 +95,7 @@ namespace aa {
 			return true;
 		}
 
-		template<size_type N2>
+		template<size_t N2>
 		friend consteval bool operator==(const basic_fixed_string &, const basic_fixed_string<traits_type, N2> &) {
 			return false;
 		}
