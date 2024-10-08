@@ -36,7 +36,7 @@ namespace aa {
 		}
 
 	public:
-		// Neturime operator[] funckijos, nes nėra būdo indeksuoti nustatytų bitų. Ir ji negalėtų tiesiog
+		// Neturime operator[] funkcijos, nes nėra būdo indeksuoti nustatytų bitų. Ir ji negalėtų tiesiog
 		// parodyti ar nurodytas bitas yra nustatytas, nes nesutaptų realizacija su front ir back.
 		// Modifikuojančių metodų neapibrėžiame, naudotojas gali pats modifikuoti laukus kaip nori.
 
@@ -98,7 +98,6 @@ namespace aa {
 		constexpr bool single() const { return std::has_single_bit(bitset); }
 
 		constexpr size_type size() const { return unsign<size_type>(std::popcount(bitset)); }
-		constexpr difference_type ssize() const { return sign(size()); }
 
 		static consteval size_type max_size() { return numeric_digits_v<bitset_type>; }
 		static consteval size_type max_index() { return max_size() - 1; }

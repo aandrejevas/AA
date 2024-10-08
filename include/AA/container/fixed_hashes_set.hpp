@@ -5,7 +5,7 @@
 #include "../algorithm/hash.hpp"
 #include "../algorithm/find.hpp"
 #include "fixed_vector.hpp"
-#include "unsafe_subrange.hpp"
+#include "nonempty_subrange.hpp"
 #include "bitset_view.hpp"
 
 
@@ -152,7 +152,6 @@ namespace aa {
 				return sum;
 			} else return 0;
 		}
-		constexpr difference_type ssize() const { return sign(size()); }
 
 		// Daugybos nepaverčiame į postūmio operaciją, nes kompiliavimo metu ilgiau užtruktų nustatyti ar galime daryti
 		// postūmį negu tiesiog įvykdyti daugybos operaciją, programos veikimo laikui irgi nepadėtų tokios kostrukcijos.
@@ -172,7 +171,7 @@ namespace aa {
 
 
 		// Observers
-		constexpr aa::unsafe_subrange<const_iterator> dirty_subrange() const {
+		constexpr aa::nonempty_subrange<const_iterator> dirty_subrange() const {
 			return {dirty};
 		}
 
@@ -278,7 +277,6 @@ namespace aa {
 				return sum;
 			} else return 0;
 		}
-		constexpr difference_type ssize() const { return sign(size()); }
 
 		static consteval size_type max_size() {
 			return local_iterator::max_size() * base_type::max_bucket_count();
@@ -287,7 +285,7 @@ namespace aa {
 
 
 		// Observers
-		constexpr aa::unsafe_subrange<const_iterator> dirty_subrange() const {
+		constexpr aa::nonempty_subrange<const_iterator> dirty_subrange() const {
 			return {dirty.min(), dirty.max()};
 		}
 
@@ -392,7 +390,6 @@ namespace aa {
 				void { sum += this->bucket(bin).size(); });
 			return sum;
 		}
-		constexpr difference_type ssize() const { return sign(size()); }
 
 		static consteval size_type max_size() {
 			return local_iterator::max_size() * base_type::max_bucket_count();

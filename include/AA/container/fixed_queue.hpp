@@ -72,14 +72,11 @@ namespace aa {
 		constexpr bool single() const { return f_begin == elements.rdata(); }
 		constexpr bool full() const { return elements.full(); }
 
-		constexpr difference_type ssize() const { return sindexl() + 1; }
-		constexpr size_type size() const { return indexl() + 1; }
+		constexpr size_type size() const { return last_index() + 1; }
+		constexpr size_type last_index() const { return unsign(elements.rdata() - f_begin); }
 
 		static consteval size_type max_size() { return N; }
 		static consteval size_type max_index() { return N - 1; }
-
-		constexpr difference_type sindexl() const { return elements.rdata() - f_begin; }
-		constexpr size_type indexl() const { return unsign(sindexl()); }
 
 
 

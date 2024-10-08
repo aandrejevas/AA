@@ -35,7 +35,7 @@ namespace aa {
 
 
 	template<class G, class T>
-	concept distribution_result_ctible_to_and_from = constructible_to_and_from<T, distribution_result_t<G>>;
+	concept distribution_result_constructible_between = constructible_between<T, distribution_result_t<G>>;
 
 	template<class G, class T>
 	concept generator_result_constructible_to = std::constructible_from<T, generator_result_t<G>>;

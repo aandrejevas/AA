@@ -73,10 +73,8 @@ namespace aa {
 		constexpr bool empty() const { return r_begin == rend(); }
 		constexpr bool single() const { return r_begin == data(); }
 
-		constexpr difference_type ssize() const { return r_begin - rend(); }
-		constexpr size_type size() const { return unsign(ssize()); }
-		constexpr difference_type sindexl() const { return r_begin - data(); }
-		constexpr size_type indexl() const { return unsign(sindexl()); }
+		constexpr size_type size() const { return unsign(r_begin - rend()); }
+		constexpr size_type last_index() const { return unsign(r_begin - data()); }
 
 		static consteval size_type max_size() { return numeric_max; }
 		static consteval size_type max_index() { return max_size() - 1; }

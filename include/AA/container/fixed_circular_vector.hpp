@@ -84,14 +84,11 @@ namespace aa {
 		}
 		constexpr bool full() const { return is_full; }
 
-		constexpr difference_type ssize() const { return sign(size()); }
 		constexpr size_type size() const { return is_full ? max_size() : elements.size(); }
+		constexpr size_type last_index() const { return is_full ? max_index() : elements.last_index(); }
 
 		static consteval size_type max_size() { return N; }
 		static consteval size_type max_index() { return N - 1; }
-
-		constexpr difference_type sindexl() const { return sign(indexl()); }
-		constexpr size_type indexl() const { return is_full ? max_index() : elements.indexl(); }
 
 
 

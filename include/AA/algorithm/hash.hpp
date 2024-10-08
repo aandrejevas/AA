@@ -45,32 +45,27 @@ namespace aa {
 	// MAX negali rodyti į kažkurį iš argumentų, nes MAX represents a failure state kai nerandamas nei vienas iš template parametrų.
 	// MAX nėra numeric_max, nes tokia reikšmė indikuotų, kad klasė gali grąžinti visas reikšmes nuo 0 iki numeric_max.
 	template<fixed_string_like auto... A>
-		requires (is_same_as_every_v<range_char_traits_t<const_t<A>>...>)
+		requires (!!sizeof...(A) && is_same_as_every_v<range_char_traits_t<const_t<A>>...>)
 	struct string_perfect_hash : pack<A...> {
 		using is_transparent = void;
-		using traits_type = first_or_t<void, range_char_traits_t<const_t<A>>...>;
+		using traits_type = __type_pack_element<0, range_char_traits_t<const_t<A>>...>;
 
 		template<same_range_char_traits_as<traits_type> T, class F>
 		static constexpr void operator()(const T &t, F &&f) {
 			// size_t tipas, nes reikės lyginti su size_t tipo kintamuoju.
 			const size_t count = std::ranges::size(t);
-			if (!(... || ((count == std::tuple_size_v<const_t<A>>) && apply<const_t<A>>([&]<size_t... I> -> bool {
+			if (!(... || ((count == std::tuple_size_v<const_t<A>>) && apply<std::tuple_size_v<const_t<A>>>([&]<size_t... I> -> bool {
 				static constexpr const_t<A> V = A;
 				return (... && traits_type::eq(std::ranges::data(t)[I], const_v<get_v<I>(V)>)) ?
 					(invoke<pack_index_v<V, A...>>(std::forward<F>(f)), true) : false;
-			}))))
+			})))) {
 				invoke<max()>(std::forward<F>(f));
+			}
 		}
 
 		static consteval size_t min() { return 0; }
 		static consteval size_t max() { return sizeof...(A); }
 	};
-
-	template<auto... A>
-	using literal_name_perfect_hash = string_perfect_hash<literal_name_v<A>...>;
-
-	template<size_t N>
-	using sequence_perfect_hash = const_t<apply<N>([]<size_t... I> -> literal_name_perfect_hash<I...> { return default_value; })>;
 
 
 

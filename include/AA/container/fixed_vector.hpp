@@ -75,14 +75,13 @@ namespace aa {
 		constexpr bool single() const { return r_begin == data(); }
 		constexpr bool full() const { return r_begin == data(max_index()); }
 
-		constexpr difference_type ssize() const { return r_begin - rend(); }
-		constexpr size_type size() const { return unsign(ssize()); }
+		constexpr size_type size() const { return unsign(r_begin - rend()); }
+		// Galėtume neturėti šio metodo, nes gražinamos reikšmės yra pasiekiamos per konstantą tai
+		// neprarastume greitaveikos, bet turime juos dėl įsivaizduojamo patogumo.
+		constexpr size_type last_index() const { return unsign(r_begin - data()); }
 
 		static consteval size_type max_size() { return N; }
 		static consteval size_type max_index() { return N - 1; }
-
-		constexpr difference_type sindexl() const { return r_begin - data(); }
-		constexpr size_type indexl() const { return unsign(sindexl()); }
 
 
 

@@ -99,12 +99,12 @@ namespace aa {
 	}
 
 	template<arithmetic T>
-	constexpr T halve(const T x) {
+	constexpr T half(const T x) {
 		return quotient<2>(x);
 	}
 
 	template<arithmetic T>
-	constexpr T redouble(const T x) {
+	constexpr T twice(const T x) {
 		return product<2>(x);
 	}
 
@@ -203,7 +203,7 @@ namespace aa {
 		using value_type = T;
 		using reference = value_type &;
 		using const_reference = const value_type &;
-		// Galėtume naudoti type_pack_element_t, bet tada taptų sunkiau suprasti logiką ir nukentėtų kompiliavimo gretis.
+		// Galėtume naudoti __type_pack_element, bet tada taptų sunkiau suprasti logiką ir nukentėtų kompiliavimo gretis.
 		using difference_type = std::conditional_t<object_pointer_like<value_type>, ptrdiff_t, value_type>;
 
 		// Member constants
@@ -258,7 +258,7 @@ namespace aa {
 			return left_expand(x) || right_expand(x);
 		}
 
-		// Logiška nenaudoti numeric_*, nes dabar yra galimybė, kad išplėčiant vieno endpoint nereikės pakeisti.
+		// Logiška nenaudoti numeric_*, nes dabar yra galimybė, kad išplečiant vieno endpoint nereikės pakeisti.
 		constexpr void reset() requires (subinterval) {
 			min() = MAX;	max() = MIN;
 		}

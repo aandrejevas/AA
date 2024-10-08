@@ -49,14 +49,11 @@ namespace aa {
 		constexpr bool single() const { return elements.single(); }
 
 		constexpr size_type size_wo_holes() const { return size() - holes_count(); }
-		constexpr difference_type ssize() const { return elements.ssize(); }
 		constexpr size_type size() const { return elements.size(); }
+		constexpr size_type last_index() const { return elements.last_index(); }
 
 		static consteval size_type max_size() { return N; }
 		static consteval size_type max_index() { return N - 1; }
-
-		constexpr difference_type sindexl() const { return elements.sindexl(); }
-		constexpr size_type indexl() const { return elements.indexl(); }
 
 
 

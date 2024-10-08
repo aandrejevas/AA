@@ -11,7 +11,7 @@ namespace aa {
 	// I ir S rodo į tos pačios sekos elementus tai S turi būti tiesiog įmanoma paversti į I.
 	// rend operaciją taip pat būtina palaikyti todėl logiška reikalauti, kad iš I galėtume gauti tą elementą.
 	template<std::bidirectional_iterator I>
-	struct unsafe_subrange : pair<I>, std::ranges::view_base {
+	struct nonempty_subrange : pair<I>, std::ranges::view_base {
 		// Member types
 		using typename pair<I>::tuple_type;
 		using tuple_type::get;
@@ -32,11 +32,8 @@ namespace aa {
 		constexpr iterator end() const { return std::ranges::next(rbegin()); }
 		constexpr iterator rend() const { return std::ranges::prev(begin()); }
 
-		constexpr difference_type ssize() const requires (std::random_access_iterator<I>) { return sindexl() + 1; }
-		constexpr size_type size() const requires (std::random_access_iterator<I>) { return indexl() + 1; }
-
-		constexpr difference_type sindexl() const requires (std::random_access_iterator<I>) { return rbegin() - begin(); }
-		constexpr size_type indexl() const requires (std::random_access_iterator<I>) { return unsign(sindexl()); }
+		constexpr size_type size() const requires (std::random_access_iterator<I>) { return last_index() + 1; }
+		constexpr size_type last_index() const requires (std::random_access_iterator<I>) { return unsign(rbegin() - begin()); }
 
 		explicit consteval operator bool() const { return true; }
 		static consteval bool empty() { return false; }
@@ -67,22 +64,22 @@ namespace aa {
 
 		// Special member functions
 		// Reikia konstruktorių, nes kitaip metami warnings -Wmissing-field-initializers.
-		constexpr unsafe_subrange() = default;
+		constexpr nonempty_subrange() = default;
 
 		// convertible_to constraint yra naudojamas klasėje std::ranges::subrange.
 		// Bet constructable constraint naudojame, nes jis griežtesnis.
 		// Pagal mano padarytus testus tie constraints labai mažai kuo skiriasi.
 		template<constructible_to<I> T1 = I, constructible_to<I> T2 = I>
-		constexpr unsafe_subrange(T1 &&t1, T2 &&t2) : tuple_type{std::forward<T1>(t1), std::forward<T2>(t2)} {}
+		constexpr nonempty_subrange(T1 &&t1, T2 &&t2) : tuple_type{std::forward<T1>(t1), std::forward<T2>(t2)} {}
 
 		template<std::ranges::borrowed_range R>
-		constexpr unsafe_subrange(R &&r) : tuple_type{std::ranges::begin(r), get_rbegin(r)} {}
+		constexpr nonempty_subrange(R &&r) : tuple_type{std::ranges::begin(r), get_rbegin(r)} {}
 	};
 
 	template<class I, class S>
-	unsafe_subrange(I &&, S &&) -> unsafe_subrange<std::common_type_t<I, S>>;
+	nonempty_subrange(I &&, S &&) -> nonempty_subrange<std::common_type_t<I, S>>;
 
 	template<class R>
-	unsafe_subrange(R &&) -> unsafe_subrange<std::ranges::iterator_t<R>>;
+	nonempty_subrange(R &&) -> nonempty_subrange<std::ranges::iterator_t<R>>;
 
 }
