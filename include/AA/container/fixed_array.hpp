@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <memory> // unique_ptr, make_unique_for_overwrite
+#include <memory>
+#include <memory_resource>
 
 
 
@@ -10,9 +11,10 @@ namespace aa {
 	// Neturime fixed_array konteinerio, nes talpinimas pabaigos rodyklės nepagreitintų funkcijų, nes
 	// greitaveika nenukenčia prie adreso pridėjus skaičių, kuris yra žinomas kompiliavimo metu.
 
+	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0316r0.html
 	// https://en.wikipedia.org/wiki/Array_data_structure
-	template<class T>
-	struct alloc_array {
+	template<class T, class D = std::default_delete<T[]>>
+	struct fixed_array {
 		// Member types
 		using value_type = T;
 		using size_type = size_t;
@@ -23,80 +25,119 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using iterator = pointer;
 		using const_iterator = const_pointer;
+		using deleter_type = D;
 
 
 
 		// Element access
-		constexpr reference operator[](const size_type pos) { return get(pos); }
-		constexpr const_reference operator[](const size_type pos) const { return get(pos); }
+		template<class S>
+		constexpr forward_like_t<S, value_type> operator[](this S &&self, const size_type pos) {
+			return std::forward_like<S>(self.elements[pos]);
+		}
 
-		constexpr reference get(const size_type pos) { return *data(pos); }
-		constexpr const_reference get(const size_type pos) const { return *data(pos); }
+		template<class S>
+		constexpr std::add_pointer_t<forward_like_t<S, value_type>> data(this S &&self) {
+			return self.elements.get();
+		}
 
-		constexpr reference rget(const size_type pos) { return *rdata(pos); }
-		constexpr const_reference rget(const size_type pos) const { return *rdata(pos); }
+		template<class S>
+		constexpr std::add_pointer_t<forward_like_t<S, value_type>> back_data(this S &&self) {
+			return self.max_data();
+		}
 
-		constexpr pointer data(const size_type pos) { return data() + pos; }
-		constexpr const_pointer data(const size_type pos) const { return data() + pos; }
+		template<class S>
+		constexpr std::add_pointer_t<forward_like_t<S, value_type>> max_data(this S &&self) {
+			return self._max_data;
+		}
 
-		constexpr pointer rdata(const size_type pos) { return rdata() - pos; }
-		constexpr const_pointer rdata(const size_type pos) const { return rdata() - pos; }
+		template<class S>
+		constexpr forward_like_t<S, value_type> front(this S &&self) {
+			return std::forward_like<S>(*self.data());
+		}
 
-		constexpr pointer data() { return elements.get(); }
-		constexpr const_pointer data() const { return elements.get(); }
-
-		constexpr pointer rdata() { return const_cast<iterator>(r_begin); }
-		constexpr const_pointer rdata() const { return r_begin; }
-
-		constexpr reference front() { return *data(); }
-		constexpr const_reference front() const { return *data(); }
-
-		constexpr reference back() { return *rdata(); }
-		constexpr const_reference back() const { return *rdata(); }
+		template<class S>
+		constexpr forward_like_t<S, value_type> back(this S &&self) {
+			return std::forward_like<S>(*self.back_data());
+		}
 
 
 
 		// Iterators
-		constexpr iterator begin() { return data(); }
-		constexpr const_iterator begin() const { return data(); }
+		template<class S>
+		constexpr std::add_pointer_t<forward_like_t<S, value_type>> begin(this S &&self) { return self.data(); }
 
-		constexpr const_iterator end() const { return rdata() + 1; }
+		// Gražiname const_iterator, nes taip uždraudžiame keitimą atminties, kuri nepriklauso konteineriui
+		// ir todėl, kad negalėtume paduoti gražinamos rodyklės į fixed_vector metodus.
+		constexpr const_iterator end(this const auto &self) { return self.back_data() + 1; }
 
-		constexpr iterator rbegin() { return rdata(); }
-		constexpr const_iterator rbegin() const { return rdata(); }
+		template<class S>
+		constexpr std::add_pointer_t<forward_like_t<S, value_type>> rbegin(this S &&self) { return self.back_data(); }
 
-		constexpr const_iterator rend() const { return data() - 1; }
+		constexpr const_iterator rend(this const auto &self) { return self.data() - 1; }
 
 
 
 		// Capacity
-		constexpr bool empty() const { return r_begin == rend(); }
-		constexpr bool single() const { return r_begin == data(); }
+		constexpr bool empty(this const auto &self) { return self.back_data() == self.rend(); }
+		constexpr bool single(this const auto &self) { return self.back_data() == self.data(); }
+		constexpr bool full(this const auto &self) { return self.back_data() == self.max_data(); }
 
-		constexpr size_type size() const { return unsign(r_begin - rend()); }
-		constexpr size_type last_index() const { return unsign(r_begin - data()); }
+		constexpr size_type size(this const auto &self) { return unsign(self.back_data() - self.rend()); }
+		constexpr size_type last_index(this const auto &self) { return unsign(self.back_data() - self.data()); }
 
-		static consteval size_type max_size() { return numeric_max; }
-		static consteval size_type max_index() { return max_size() - 1; }
+		constexpr size_type max_size(this const auto &self) { return unsign(self.max_data() - self.rend()); }
+		constexpr size_type max_index(this const auto &self) { return unsign(self.max_data() - self.data()); }
+		// Galėtume neturėti šio metodo, nes gražinamos reikšmės yra pasiekiamos per konstantą tai
+		// neprarastume greitaveikos, bet turime juos dėl įsivaizduojamo patogumo.
+
+		template<class S>
+		constexpr forward_like_t<S, deleter_type> get_deleter(this S &&self) {
+			return std::forward_like<S>(self.elements.get_deleter());
+		}
+
+
+
+		// Modifiers
+		// Neturime iš range kopijavimo metodų ar konstruktorių, nes visų atvejų kopijavimo ir taip neapimtume.
+		// Šios klasės specialūs metodai yra ištrinti dėl unique_ptr naudojimo.
+		constexpr fixed_array &operator=(fixed_array &&o) {
+			elements = std::move(o.elements);
+			_max_data = std::exchange(o._max_data, nullptr);
+			return *this;
+		}
 
 
 
 		// Special member functions
-		constexpr alloc_array()
-			: r_begin{nullptr} {}
-		constexpr alloc_array(alloc_array<value_type> &&o)
-			: elements{std::move(o.elements)}, r_begin{o.r_begin} {}
-		constexpr alloc_array(const size_t size)
-			: elements{std::make_unique_for_overwrite<value_type[]>(size)}, r_begin{rend() + size} {}
+	private:
+		constexpr fixed_array(const pointer p, const size_type size)
+			: elements{p}, _max_data{(p - 1) + size} {}
+
+	public:
+		constexpr fixed_array()
+			: elements{nullptr}, _max_data{nullptr} {}
+
+		constexpr fixed_array(fixed_array &&o)
+			: elements{std::move(o.elements)}, _max_data{std::exchange(o._max_data, nullptr)} {}
+
+		constexpr fixed_array(const size_type size) requires (std::same_as<deleter_type, std::default_delete<value_type[]>>)
+			: fixed_array{new value_type[size], size} {}
+
+		constexpr fixed_array(const size_type size, std::pmr::monotonic_buffer_resource &r) requires (std::same_as<deleter_type, std::identity>)
+			: fixed_array{std::pmr::polymorphic_allocator<value_type>{&r}.allocate(size), size} {}
 
 
 
 		// Member objects
 	protected:
-		std::unique_ptr<value_type[]> elements;
-
-	public:
-		const value_type *const r_begin;
+		std::unique_ptr<value_type[], deleter_type> elements;
+		// Ne const_pointer, nes elements ir taip nebūtų const.
+		pointer _max_data;
 	};
+
+	namespace pmr {
+		template<class T>
+		using fixed_array = aa::fixed_array<T, std::identity>;
+	}
 
 }

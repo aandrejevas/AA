@@ -212,10 +212,15 @@ namespace aa {
 
 
 		// Operations
-		constexpr reference min() { return get_0(*this); }
-		constexpr reference max() { return get_1(*this); }
-		constexpr const_reference min() const { return get_0(*this); }
-		constexpr const_reference max() const { return get_1(*this); }
+		template<class S>
+		constexpr forward_like_t<S, value_type> min(this S &&self) {
+			return std::forward<S>(self).template unit_type<0>::value;
+		}
+
+		template<class S>
+		constexpr forward_like_t<S, value_type> max(this S &&self) {
+			return std::forward<S>(self).template unit_type<1>::value;
+		}
 
 		constexpr bool min_eq(propagate_const_t<value_type> x) const { return min() == x; }
 		constexpr bool max_eq(propagate_const_t<value_type> x) const { return max() == x; }
