@@ -56,7 +56,7 @@ namespace aa {
 			const size_t count = std::ranges::size(t);
 			if (!(... || ((count == std::tuple_size_v<const_t<A>>) && apply<std::tuple_size_v<const_t<A>>>([&]<size_t... I> -> bool {
 				static constexpr const_t<A> V = A;
-				return (... && traits_type::eq(std::ranges::data(t)[I], const_v<get_v<I>(V)>)) ?
+				return (... && traits_type::eq(std::ranges::data(t)[I], const_v<get_element<I>(V)>)) ?
 					(invoke<pack_index_v<V, A...>>(std::forward<F>(f)), true) : false;
 			})))) {
 				invoke<max()>(std::forward<F>(f));

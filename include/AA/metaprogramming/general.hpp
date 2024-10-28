@@ -153,7 +153,13 @@ namespace aa {
 	constexpr bool is_same_as_any_v = (... || std::same_as<T, A>);
 
 	template<class T>
-	concept scoped_enum_like = std::is_scoped_enum_v<T>;
+	concept scoped_enum_like = std::regular<T> && std::is_scoped_enum_v<T>;
+
+	template<class T>
+	concept enum_like = std::regular<T> && std::is_enum_v<T>;
+
+	template<class T>
+	concept unscoped_enum_like = enum_like<T> && !scoped_enum_like<T>;
 
 	template<class T>
 	concept pointer_like = std::is_pointer_v<T>;
@@ -163,6 +169,9 @@ namespace aa {
 
 	template<class T>
 	concept lvalue_reference_like = std::is_lvalue_reference_v<T>;
+
+	template<class T>
+	concept not_lvalue_reference_like = !lvalue_reference_like<T>;
 
 	template<class T>
 	concept rvalue_reference_like = std::is_rvalue_reference_v<T>;
@@ -237,10 +246,10 @@ namespace aa {
 	concept constructible_from_floating_or_same_as = constructible_from_floating<T> || std::same_as<T, U>;
 
 	template<class T>
-	using string_view_t = std::basic_string_view<char_type_in_use_t<traits_type_in_use_t<T>>, traits_type_in_use_t<T>>;
+	using string_view_for_t = std::basic_string_view<char_type_in_use_t<traits_type_in_use_t<T>>, traits_type_in_use_t<T>>;
 
 	template<class T, size_t N = std::dynamic_extent>
-	using span_t = std::span<char_type_in_use_t<traits_type_in_use_t<T>>, N>;
+	using span_for_t = std::span<char_type_in_use_t<traits_type_in_use_t<T>>, N>;
 
 	template<class T>
 	concept iterator_tag_like = is_same_as_any_v<T, std::input_iterator_tag, std::output_iterator_tag, std::forward_iterator_tag,
@@ -281,8 +290,6 @@ namespace aa {
 
 	template<class T, class U>
 	using forward_like_t = override_ref_t<T &&, copy_const_t<T, std::remove_reference_t<U>>>;
-
-	using byte_t = std::underlying_type_t<std::byte>;
 
 	// Nieko tokio, kad kopijuojame konstantas, kadangi viskas vyksta kompiliavimo metu.
 	//
@@ -453,11 +460,20 @@ namespace aa {
 	template<std::movable T>
 	constexpr T numeric_max_v = numeric_max;
 
+	template<enum_like T>
+	constexpr std::underlying_type_t<T> numeric_max_v<T> = numeric_max;
+
 	template<std::movable T>
 	constexpr T numeric_min_v = numeric_min;
 
+	template<enum_like T>
+	constexpr std::underlying_type_t<T> numeric_min_v<T> = numeric_min;
+
 	template<std::movable T>
 	constexpr size_t numeric_digits_v = std::numeric_limits<T>::digits;
+
+	template<enum_like T>
+	constexpr size_t numeric_digits_v<T> = std::numeric_limits<std::underlying_type_t<T>>::digits;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -481,6 +497,17 @@ namespace aa {
 		return x == numeric_min_v<T>;
 	}
 #pragma GCC diagnostic pop
+
+	template<class T, constructible_to<T> X>
+	constexpr T cast(X &&x) {
+		return static_cast<T>(std::forward<X>(x));
+	}
+
+	// https://docs.libreoffice.org/o3tl/html/temporary_8hxx_source.html
+	template<not_lvalue_reference_like T>
+	constexpr T &stay(T &&x) {
+		return cast<T &>(x);
+	}
 
 
 
@@ -612,15 +639,15 @@ namespace aa {
 	// Negalime turėti funkcijos, nes neišeina turėti function aliases patogių.
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/p2769r1.html
 	template<size_t I>
-	constexpr auto get_v = []<gettable<I> T>(T &&t) static -> get_result_t<I, T> {
+	constexpr auto get_element = []<gettable<I> T>(T &&t) static -> get_result_t<I, T> {
 		if constexpr (member_get_exists<T, I>)	return std::forward<T>(t).template get<I>();
 		else									return get<I>(std::forward<T>(t));
 	};
 
-	constexpr const_t<get_v<0>> get_0, get_x, get_key;
-	constexpr const_t<get_v<1>> get_1, get_y, get_val;
-	constexpr const_t<get_v<2>> get_2, get_z;
-	constexpr const_t<get_v<3>> get_3;
+	constexpr const_t<get_element<0>> get_0, get_x, get_key;
+	constexpr const_t<get_element<1>> get_1, get_y, get_val;
+	constexpr const_t<get_element<2>> get_2, get_z;
+	constexpr const_t<get_element<3>> get_3;
 
 	template<class F, auto... A>
 	using call_template_t = const_t<&std::remove_cvref_t<F>::template operator()<A...>>;
@@ -681,7 +708,7 @@ namespace aa {
 	constexpr size_t pack_index_v = pack_index_v<true, (A == V)...>;
 
 	template<bool A, bool... V>
-	constexpr size_t pack_index_v<A, V...> = get_key(*std::ranges::find(std::views::enumerate(const_v<std::array{V...}>), A, get_val));
+	constexpr size_t pack_index_v<A, V...> = get_key(*std::ranges::find(std::views::enumerate(stay(std::array{V...})), A, get_val));
 
 	template<class U, class... T>
 	constexpr size_t type_pack_index_v = pack_index_v<true, std::same_as<U, T>...>;
@@ -749,7 +776,7 @@ namespace aa {
 		constexpr basic_tuple(const std::index_sequence<I...>, U&&... u) : unit_type<I>{std::forward<U>(u)}... {}
 
 		template<tuple_constructible_to<value_type<S>...> U>
-		constexpr basic_tuple(U &&u) : unit_type<S>{get_v<S>(std::forward<U>(u))}... {}
+		constexpr basic_tuple(U &&u) : unit_type<S>{get_element<S>(std::forward<U>(u))}... {}
 
 		constexpr basic_tuple() = default;
 	};
@@ -876,7 +903,7 @@ namespace aa {
 
 
 	template<class T>
-	using propagate_const_t = type_in_const_t<([]<class L, class U>(this const L lambda, const std::type_identity<U>) -> auto {
+	using propagate_const_t = type_in_const_t<([]<class U>(this const auto lambda, const std::type_identity<U>) -> auto {
 		if constexpr (pointer_like<U>) {
 			return type_v<type_in_const_t<lambda(type_v<std::remove_pointer_t<U>>)> *const>;
 		} else if constexpr (lvalue_reference_like<U>) {
@@ -909,18 +936,13 @@ namespace aa {
 	// https://mathworld.wolfram.com/Hypermatrix.html
 	template<class T, size_t... N>
 		requires (!!sizeof...(N))
-	using hypermatrix_t = type_in_const_t<([]<class L, size_t I1, size_t... I>(this const L lambda, const constant<I1>, const constant<I>... args) -> auto {
+	using hypermatrix_t = type_in_const_t<([]<size_t I1, size_t... I>(this const auto lambda, const constant<I1>, const constant<I>... args) -> auto {
 		if constexpr (sizeof...(I)) {
 			return type_v<std::array<type_in_const_t<lambda(args...)>, I1>>;
 		} else {
 			return type_v<std::array<T, I1>>;
 		}
 	})(default_v<constant<N>>...)>;
-
-	template<class T, constructible_to<T> X>
-	constexpr T cast(X &&x) {
-		return static_cast<T>(std::forward<X>(x));
-	}
 
 	template<unsigned_integral_or_same_as<void> U = void, std::integral X>
 	constexpr coalesce_t<void, U, std::make_unsigned_t<X>> unsign(const X x) {
@@ -935,15 +957,15 @@ namespace aa {
 	}
 
 	template<std::integral T, std::integral X>
-	constexpr T un_sign(const X x) {
+	constexpr T sign_cast(const X x) {
 		if constexpr (std::unsigned_integral<T>)	return unsign<T>(x);
 		else										return sign<T>(x);
 	}
 
 	template<class T, constructible_to<T> X>
-	constexpr T un_sign_or_cast(X &&x) {
+	constexpr T sign_or_cast(X &&x) {
 		if constexpr (std::integral<T> && std::integral<std::remove_reference_t<X>>) {
-			return un_sign<T>(x);
+			return sign_cast<T>(x);
 		} else {
 			return cast<T>(std::forward<X>(x));
 		}
@@ -958,7 +980,7 @@ namespace aa {
 	// [0, digits<T>) ∪ {0b(1)_digits<T>}
 	template<std::integral U = size_t, std::unsigned_integral T>
 	constexpr U int_log2(const T x) {
-		return (value_v<U, numeric_digits_v<std::make_signed_t<T>>>) - un_sign<U>(std::countl_zero(x));
+		return (value_v<U, numeric_digits_v<std::make_signed_t<T>>>) - sign_cast<U>(std::countl_zero(x));
 	}
 
 	// Naudojamas size_t tipas kaip konstantos tipas, o ne sekančio dydžio integer tipas, nes konstanta
@@ -967,7 +989,7 @@ namespace aa {
 	//
 	// Vietoje byte negalime naudoti uint8_t, nes jei sistemoje baitas būtų ne 8 bitų, tas tipas nebus apibrėžtas.
 	template<uniquely_representable T>
-	constexpr size_t representable_values_v = int_exp2(sizeof(T[numeric_digits_v<byte_t>]));
+	constexpr size_t representable_values_v = int_exp2(sizeof(T[numeric_digits_v<std::byte>]));
 
 	template<out_unary_invocable F>
 	constexpr std::remove_reference_t<function_argument_t<F>> make_with_invocable(F &&f = default_value) {

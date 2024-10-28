@@ -13,7 +13,7 @@ namespace aa {
 
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0316r0.html
 	// https://en.wikipedia.org/wiki/Array_data_structure
-	template<class T, class D = std::default_delete<T[]>>
+	template<class T, ref_invocable<T *> D = std::default_delete<T[]>>
 	struct fixed_array {
 		// Member types
 		using value_type = T;
@@ -134,6 +134,9 @@ namespace aa {
 		// Ne const_pointer, nes elements ir taip nebūtų const.
 		pointer _max_data;
 	};
+
+	template<class T, class D>
+	fixed_array(fixed_array<T, D> &&) -> fixed_array<T, D>;
 
 	namespace pmr {
 		template<class T>
