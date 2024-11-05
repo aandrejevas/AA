@@ -30,4 +30,9 @@ namespace aa {
 		return cast<coalesce_t<void, O, T>>(std::round(std::lerp(a, b, t)));
 	}
 
+	template<constructible_from_floating_or_same_as<void> O = void, arithmetic T>
+	constexpr coalesce_t<void, O, T> round(const T x) {
+		return cast<coalesce_t<void, O, T>>(std::round(x));
+	}
+
 }

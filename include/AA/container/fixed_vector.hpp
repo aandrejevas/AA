@@ -30,8 +30,7 @@ namespace aa {
 
 
 
-		// Anksčiau buvo, bet dabar nebėra elemento įdėjimo metodų overload'ų, kurie priimtų
-		// value_type&&, nes move semantics neturi prasmės trivially copyable tipams.
+		// Neturime insert metodų, nes vietoje jų be problemų galima emplace metodus naudoti.
 		// Modifiers
 		constexpr iterator clear() { return resize(const_cast<iterator>(this->rend())); }
 
@@ -54,11 +53,6 @@ namespace aa {
 			return std::ranges::construct_at(push_back(), std::forward<A>(args)...);
 		}
 
-		template<assignable_to<reference> V>
-		constexpr iterator insert_back(V &&value) {
-			return std::addressof(*push_back() = std::forward<V>(value));
-		}
-
 		constexpr iterator push(const iterator pos) {
 			push_back();
 			std::ranges::copy_backward(pos, _back_data, const_cast<iterator>(this->end()));
@@ -73,11 +67,6 @@ namespace aa {
 			return std::ranges::construct_at(push(pos), std::forward<A>(args)...);
 		}
 
-		template<assignable_to<reference> V>
-		constexpr iterator insert(const iterator pos, V &&value) {
-			return std::addressof(*push(pos) = std::forward<V>(value));
-		}
-
 		constexpr iterator erase(const iterator pos) {
 			std::ranges::copy(pos + 1, this->end(), pos);
 			pop_back();
@@ -87,18 +76,12 @@ namespace aa {
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
 		constexpr iterator fast_emplace(const iterator pos, A&&... args) {
-			insert_back(*pos);
+			emplace_back(*pos);
 			return std::ranges::construct_at(pos, std::forward<A>(args)...);
 		}
 
-		template<assignable_to<reference> V>
-		constexpr iterator fast_insert(const iterator pos, V &&value) {
-			insert_back(*pos);
-			return std::addressof(*pos = std::forward<V>(value));
-		}
-
 		constexpr iterator fast_erase(const iterator pos) {
-			return std::addressof(*pos = *pop_back_alt());
+			return std::ranges::construct_at(pos, *pop_back_alt());
 		}
 
 		template<std::ranges::input_range R>
@@ -156,6 +139,9 @@ namespace aa {
 	protected:
 		pointer _back_data;
 	};
+
+	template<class T, class D>
+	fixed_vector(fixed_vector<T, D> &&) -> fixed_vector<T, D>;
 
 	namespace pmr {
 		template<class T>
