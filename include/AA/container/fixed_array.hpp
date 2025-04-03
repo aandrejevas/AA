@@ -101,7 +101,7 @@ namespace aa {
 		// Modifiers
 		// Neturime iš range kopijavimo metodų ar konstruktorių, nes visų atvejų kopijavimo ir taip neapimtume.
 		// Šios klasės specialūs metodai yra ištrinti dėl unique_ptr naudojimo.
-		constexpr fixed_array &operator=(fixed_array &&o) {
+		constexpr fixed_array &operator=(fixed_array &&o) &{
 			elements = std::move(o.elements);
 			_max_data = std::exchange(o._max_data, nullptr);
 			return *this;
@@ -122,7 +122,7 @@ namespace aa {
 			: elements{std::move(o.elements)}, _max_data{std::exchange(o._max_data, nullptr)} {}
 
 		constexpr fixed_array(const size_type size) requires (std::same_as<deleter_type, std::default_delete<value_type[]>>)
-			: fixed_array{std::allocator<value_type>{}.allocate(size), size} {}
+			: fixed_array{std::allocator<std::remove_const_t<value_type>>{}.allocate(size), size} {}
 
 		constexpr fixed_array(const size_type size, std::pmr::monotonic_buffer_resource &r) requires (std::same_as<deleter_type, std::identity>)
 			: fixed_array{std::pmr::polymorphic_allocator<value_type>{&r}.allocate(size), size} {}

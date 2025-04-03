@@ -95,11 +95,11 @@ namespace aa {
 		}
 
 		template<std::ranges::input_range R>
-		constexpr fixed_vector &operator=(R &&r) {
+		constexpr fixed_vector &operator=(R &&r) &{
 			return (assign_range(r), *this);
 		}
 
-		constexpr fixed_vector &operator=(fixed_vector &&a) {
+		constexpr fixed_vector &operator=(fixed_vector &&a) &{
 			cast<base_type &>(*this) = std::move(a);
 			_back_data = std::exchange(a._back_data, nullptr);
 			return *this;

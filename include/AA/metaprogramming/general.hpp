@@ -206,10 +206,6 @@ namespace aa {
 	template<class T, class U>
 	concept signed_integral_or_same_as = (std::signed_integral<T> && !std::signed_integral<U>) || std::same_as<T, U>;
 
-	// https://en.wikipedia.org/wiki/Function_object
-	template<class T>
-	concept functor = requires { &T::operator(); };
-
 	template<class F, class... A>
 	concept ref_invocable = std::invocable<F &, A...>;
 
@@ -976,7 +972,7 @@ namespace aa {
 		return value_v<U, 1> << x;
 	}
 
-	// T yra tipas, kurio bitus skaičiuosime, U nurodo kokiu tipu pateikti rezutatus.
+	// T yra tipas, kurio bitus skaičiuosime, U nurodo kokiu tipu pateikti rezultatus.
 	// [0, digits<T>) ∪ {0b(1)_digits<T>}
 	template<std::integral U = size_t, std::unsigned_integral T>
 	constexpr U int_log2(const T x) {
@@ -989,7 +985,7 @@ namespace aa {
 	//
 	// Vietoje byte negalime naudoti uint8_t, nes jei sistemoje baitas būtų ne 8 bitų, tas tipas nebus apibrėžtas.
 	template<uniquely_representable T>
-	constexpr size_t representable_values_v = int_exp2(sizeof(T[numeric_digits_v<std::byte>]));
+	constexpr size_t representable_values_v = int_exp2(sizeof(T) * numeric_digits_v<std::byte>);
 
 	template<out_unary_invocable F>
 	constexpr std::remove_reference_t<function_argument_t<F>> make_with_invocable(F &&f = default_value) {
@@ -1218,11 +1214,9 @@ namespace aa {
 	// reikia šio overload tipo, kad bent jau veiktų operatoriaus () užklojimai gerai. Tačiau realizacija
 	// reikalauja, kad visi paduodami tipai turėtų būtinai tik vieną operatorių (), gal būtų galima realizuoti
 	// taip tipą, kad tokio reikalavimo neliktų, bet tokios realizacijos savybės dabar nereikalingos.
-	template<functor... T>
-	struct overload : T... {
-		using T::operator()...;
-		using is_transparent = void;
-	};
+	//
+	// Neturime overload klasės, nes funktoriai gali turėti persidengiančius
+	// captures, o lambda su generic tipo parametru tokios problemos neturi.
 
 	template<class T, class... A>
 	using next_type_t = __type_pack_element<(type_pack_index_v<T, A...>) + 1, A...>;
