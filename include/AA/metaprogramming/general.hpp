@@ -552,20 +552,7 @@ namespace aa {
 			// Element access
 			static consteval value_type get() { return default_value; }
 		};
-
-		template<size_t, auto>
-		struct pack_unit {};
-
-		template<class, auto...>
-		struct pack_base;
-
-		template<size_t... I, auto... V>
-		struct pack_base<std::index_sequence<I...>, V...> : pack_unit<I, V>... {};
 	}
-
-	template<size_t I, auto... V>
-	constexpr auto pack_element_v = ([]<auto A>(const detail::pack_unit<I, A>) static -> const_t<A>
-	{ return A; })(default_v<detail::pack_base<std::index_sequence_for<const_t<V>...>, V...>>);
 
 
 
@@ -573,20 +560,14 @@ namespace aa {
 	template<template<class...> class F, class... A>
 	using deduced_t = decltype(F(std::declval<A>()...));
 
-	// GCC ICE: kai apibrėžiame tik using rejects valid code, pvz.: `aa::make_with_invocable([](std::string &) {});`
-	namespace detail {
-		template<class F, size_t I>
-		constexpr std::type_identity function_argument_t = ([]<class R, class... A>(const std::type_identity<std::function<R(A...)>>) static -> auto {
-			if constexpr (is_numeric_max(I)) {
-				return type_v<R>;
-			} else {
-				return type_v<__type_pack_element<I, A...>>;
-			}
-		})(type_v<deduced_t<std::function, F>>);
-	}
-
 	template<class F, size_t I = 0>
-	using function_argument_t = type_in_const_t<detail::function_argument_t<F, I>>;
+	using function_argument_t = type_in_const_t<([]<class R, class... A>(const std::type_identity<std::function<R(A...)>>) static -> auto {
+		if constexpr (is_numeric_max(I)) {
+			return type_v<R>;
+		} else {
+			return type_v<A...[I]>;
+		}
+	})(type_v<deduced_t<std::function, F>>)>;
 
 	template<class F>
 	using function_result_t = function_argument_t<F, numeric_max>;
@@ -723,7 +704,7 @@ namespace aa {
 		using tuple_type = basic_tuple;
 
 		template<size_t I>
-		using unit_type = detail::tuple_unit<I, __type_pack_element<I, T...>>;
+		using unit_type = detail::tuple_unit<I, T...[I]>;
 
 		template<size_t I>
 		using value_type = value_type_in_use_t<unit_type<I>>;
@@ -801,26 +782,6 @@ namespace aa {
 	template<class T1, class T2 = T1, class T3 = T2, class T4 = T3, class T5 = T4, class T6 = T5>
 	using sextet = tuple<T1, T2, T3, T4, T5, T6>;
 
-	template<auto... V>
-	struct pack {
-		// Member types
-		using pack_type = pack;
-
-		template<size_t I>
-		using value_type = const_t<pack_element_v<I, V...>>;
-
-		// Member constants
-		template<auto A>
-		static constexpr size_t index = pack_index_v<A, V...>;
-
-		// Capacity
-		static consteval size_t tuple_size() { return sizeof...(V); }
-
-		// Element access
-		template<size_t I>
-		static consteval value_type<I> get() { return pack_element_v<I, V...>; }
-	};
-
 
 
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2098r1.pdf
@@ -856,7 +817,7 @@ namespace aa {
 
 	// Nors galėtume paveldėti tiesiog iš first, bet to nedarome, kad nekurti nereikalingų paveldėjimo ryšių.
 	template<class T, class... A>
-	using first_not_t = __type_pack_element<pack_index_v<false, std::same_as<T, A>...>, A...>;
+	using first_not_t = A...[pack_index_v<false, std::same_as<T, A>...>];
 
 	template<class N, class T, class U>
 	using coalesce_t = std::conditional_t<std::same_as<N, T>, U, T>;
@@ -1219,7 +1180,7 @@ namespace aa {
 	// captures, o lambda su generic tipo parametru tokios problemos neturi.
 
 	template<class T, class... A>
-	using next_type_t = __type_pack_element<(type_pack_index_v<T, A...>) + 1, A...>;
+	using next_type_t = A...[(type_pack_index_v<T, A...>) + 1];
 
 	template<class T>
 	using next_unsigned_t = next_type_t<T, uint8_t, uint16_t, uint32_t, uint64_t>;

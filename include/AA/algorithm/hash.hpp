@@ -46,9 +46,9 @@ namespace aa {
 	// MAX nėra numeric_max, nes tokia reikšmė indikuotų, kad klasė gali grąžinti visas reikšmes nuo 0 iki numeric_max.
 	template<fixed_string_like auto... A>
 		requires (!!sizeof...(A) && is_same_as_every_v<range_char_traits_t<const_t<A>>...>)
-	struct string_perfect_hash : pack<A...> {
+	struct string_perfect_hash {
 		using is_transparent = void;
-		using traits_type = __type_pack_element<0, range_char_traits_t<const_t<A>>...>;
+		using traits_type = range_char_traits_t<const_t<A>>...[0];
 
 		template<same_range_char_traits_as<traits_type> T, class F>
 		static constexpr void operator()(const T &t, F &&f) {
