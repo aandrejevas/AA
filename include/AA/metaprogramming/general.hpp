@@ -14,6 +14,8 @@
 // atributas, gali būti, kad tik kenkiu greitaveikai naudodamas tą atributą, geriau už kompiliatorių nenuspręsiu,
 // kur jį reikia naudoti, o kur ne, galiausiai išprotėčiau jei dar reiktų prižiūrėti ar visur tvarkingai sudėtas jis.
 
+// Stengiamės nenaudoti decltype, bet galime naudoti auto kaip gražinamos reikšmės tipą.
+
 // AA bibliotekos failuose elgiamasi lyg būtų įterpti toliau išdėstyti failai, nes tie failai suteikia galimybę
 // sklandžiai programuoti naudojantis esminėmis C++ kalbos savybėmis. Tie failai yra ir jų įterpimo priežastys:
 // • <cstddef> ir <cstdint>, failai įterpti, kad nereiktų naudoti daug raktažodžių, kad aprašyti pamatinius tipus.
@@ -25,6 +27,7 @@
 // • <functional>, failas įterptas, kad išeitų lengvai protauti apie funkcijų objektus.
 // • <variant> (<compare>), failas įterptas, kad turėti alternatyvą nesaugiems union tipams.
 // • <string_view> ir <string> (<compare>, <initializer_list>), failai įterpti, kad nereiktų naudoti C stiliaus teksto eilučių.
+// • <memory> (<compare>), failas įterptas, kad išeitų lengvai protauti apie atmintį.
 // Failai paminėti skliausteliuose prie įterpiamo failo nurodo kokie failai yra įterpiami pačio įterpiamo failo.
 
 // Nenurodome ką iš failų naudojame, nes net jei niekas nebūtų naudojama iš failo, failas turėtų būti įterptas.
@@ -44,6 +47,7 @@
 #include <iterator>
 #include <ranges>
 #include <algorithm>
+#include <memory>
 
 
 
@@ -141,16 +145,19 @@ namespace aa {
 	using iterator_in_use_t = typename std::remove_reference_t<T>::iterator;
 
 	template<class T>
+	using add_cref_t = std::add_lvalue_reference_t<std::add_const_t<T>>;
+
+	template<class T>
 	concept not_cv = std::same_as<std::remove_reference_t<T>, std::remove_cvref_t<T>>;
 
 	template<class T>
 	concept not_cvref = std::same_as<T, std::remove_cvref_t<T>>;
 
-	template<class T = void, class... A>
-	constexpr bool is_same_as_every_v = (... && std::same_as<T, A>);
+	template<class... A>
+	concept same_as_every = (... && std::same_as<A...[0], A>);
 
 	template<class T, class... A>
-	constexpr bool is_same_as_any_v = (... || std::same_as<T, A>);
+	concept same_as_any = (... || std::same_as<T, A>);
 
 	template<class T>
 	concept scoped_enum_like = std::regular<T> && std::is_scoped_enum_v<T>;
@@ -189,13 +196,7 @@ namespace aa {
 	concept uniquely_representable = std::has_unique_object_representations_v<T>;
 
 	template<class T>
-	concept trivial = std::is_trivial_v<T>;
-
-	template<class T>
 	concept trivially_copyable = std::is_trivially_copyable_v<T>;
-
-	template<class T>
-	concept trivially_default_constructible = std::is_trivially_default_constructible_v<T>;
 
 	template<class L, class R>
 	concept wo_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
@@ -207,13 +208,25 @@ namespace aa {
 	concept signed_integral_or_same_as = (std::signed_integral<T> && !std::signed_integral<U>) || std::same_as<T, U>;
 
 	template<class F, class... A>
+	concept cref_predicate = std::predicate<const F &, A...>;
+
+	template<class F, class U, class V>
+	concept cref_relation = std::relation<const F &, U, V>;
+
+	template<class F, class... A>
 	concept ref_invocable = std::invocable<F &, A...>;
 
 	template<class F, class... A>
 	concept cref_invocable = std::invocable<const F &, A...>;
 
+	template<class F, class... A>
+	concept invocable_with_one_of = (... || std::invocable<F, A>);
+
 	template<class F, class R, class... A>
 	concept invocable_r = std::is_invocable_r_v<R, F, A...>;
+
+	template<class F, class R, class... A>
+	concept cref_invocable_r = std::is_invocable_r_v<R, const F &, A...>;
 
 	template<class F, class T, class... A>
 	concept invoke_result_constructible_to = (std::invocable<F, A...> && std::constructible_from<T, std::invoke_result_t<F, A...>>);
@@ -248,7 +261,7 @@ namespace aa {
 	using span_for_t = std::span<char_type_in_use_t<traits_type_in_use_t<T>>, N>;
 
 	template<class T>
-	concept iterator_tag_like = is_same_as_any_v<T, std::input_iterator_tag, std::output_iterator_tag, std::forward_iterator_tag,
+	concept iterator_tag_like = same_as_any<T, std::input_iterator_tag, std::output_iterator_tag, std::forward_iterator_tag,
 		std::bidirectional_iterator_tag, std::random_access_iterator_tag, std::contiguous_iterator_tag>;
 
 	template<class T>
@@ -270,6 +283,12 @@ namespace aa {
 
 	template<uses_pointer T>
 	using pointer_in_use_t = typename std::remove_reference_t<T>::pointer;
+
+	template<class T>
+	concept uses_const_pointer = requires { typename std::remove_reference_t<T>::const_pointer; };
+
+	template<uses_const_pointer T>
+	using const_pointer_in_use_t = typename std::remove_reference_t<T>::const_pointer;
 
 	template<class T>
 	concept uses_difference_type = requires { typename std::remove_reference_t<T>::difference_type; };
@@ -296,7 +315,13 @@ namespace aa {
 	template<auto V>
 	using const_t = decltype(V);
 
-	// Ne movable, nes jei tipas būtų tik movable, negalėtume daryti move, nes V tipas yra const.
+	// Išmeta klaidą parašius šią išraišką const_v<AAA{}> ar constant<AAA{}>, jei tik movable uždėtas constraint.
+	// struct AAA {
+	// 	constexpr AAA &operator=(AAA &&) = default;
+	// 	constexpr AAA(AAA &&) = default;
+	// 	constexpr AAA(const AAA &) = delete;
+	// 	constexpr AAA() = default;
+	// };
 	template<std::copyable auto V>
 	constexpr const_t<V> const_v = V;
 
@@ -382,7 +407,7 @@ namespace aa {
 	// Čia turėtų būti O(1) sudėtingumo funkcija, todėl netinka naudoti distance.
 	// Algoritmai priima ranges kur tik įmanoma. Jei turime tik iteratorius tai galima paduoti iš jų sukurtą range.
 	template<rbegin_accessible_range R>
-	constexpr std::ranges::iterator_t<R> get_rbegin(R &&r) {
+	constexpr std::ranges::iterator_t<R> get_rbegin(R && r) {
 		if constexpr (unusual_range<R>) {
 			// std::reverse_iterator nėra constructible į iterator.
 			return std::ranges::rbegin(r);
@@ -405,6 +430,7 @@ namespace aa {
 
 	// T turi būti movable, nes mums reikia žinoti tik ar galime iš gražinamos reikšmės (rvalue) sukonstruoti T.
 	// Negalime naudoti NTTP, kad patikrinti ar išraiška yra constexpr, nes T gali būti ne structural tipas.
+	// struct AAA { constexpr AAA() {} };, šitas tipas nėra trivially_default_constructible, bet yra immediately_constructible.
 	template<class T, auto... A>
 	concept movable_immediately_constructible_from = movable_constructible_from<T, const_t<A>...>
 		&& (requires { ([] static consteval -> T { return T(A...); })(); });
@@ -474,34 +500,34 @@ namespace aa {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 	template<auto... A, std::regular T>
-	constexpr bool is_value(const T &x) {
+	constexpr bool is_value(const T & x) {
 		return x == value_v<T, A...>;
 	}
 
 	template<std::regular T>
-	constexpr bool is_default_value(const T &x) {
+	constexpr bool is_default_value(const T & x) {
 		return x == default_v<T>;
 	}
 
 	template<std::regular T>
-	constexpr bool is_numeric_max(const T &x) {
+	constexpr bool is_numeric_max(const T & x) {
 		return x == numeric_max_v<T>;
 	}
 
 	template<std::regular T>
-	constexpr bool is_numeric_min(const T &x) {
+	constexpr bool is_numeric_min(const T & x) {
 		return x == numeric_min_v<T>;
 	}
 #pragma GCC diagnostic pop
 
 	template<class T, constructible_to<T> X>
-	constexpr T cast(X &&x) {
+	constexpr T cast(X && x) {
 		return static_cast<T>(std::forward<X>(x));
 	}
 
 	// https://docs.libreoffice.org/o3tl/html/temporary_8hxx_source.html
 	template<not_lvalue_reference_like T>
-	constexpr T &stay(T &&x) {
+	constexpr T & stay(T && x) {
 		return cast<T &>(x);
 	}
 
@@ -523,18 +549,20 @@ namespace aa {
 			using value_type = T;
 			using reference = value_type &;
 			using const_reference = const value_type &;
+			using pointer = value_type *;
+			using const_pointer = const value_type *;
 
 			// Element access
 			template<class S>
-			constexpr forward_like_t<S, value_type> get(this S &&self) {
+			constexpr forward_like_t<S, value_type> get(this S && self) {
 				return std::forward<S>(self).value;
 			}
 
 			// Special member functions
 			constexpr tuple_unit() = default;
 			constexpr tuple_unit() requires (const_unit_param_like<value_type>) : value{default_value} {}
-			template<constructible_to<value_type> U>
-			constexpr tuple_unit(U &&u) : value{std::forward<U>(u)} {}
+			template<constructible_to<value_type> U = value_type>
+			constexpr tuple_unit(U && u) : value{std::forward<U>(u)} {}
 
 			// Member objects
 			// Nenaudojame atributo no_unique_address, nes jis čia nieko nekeistų.
@@ -546,8 +574,6 @@ namespace aa {
 		struct tuple_unit<I, T> {
 			// Member types
 			using value_type = std::remove_const_t<T>;
-			using reference = value_type;
-			using const_reference = value_type;
 
 			// Element access
 			static consteval value_type get() { return default_value; }
@@ -644,7 +670,7 @@ namespace aa {
 
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2989r2.pdf
 	template<auto... A, class F, class... T>
-	constexpr member_result_t<call_template_t<F, A...>, F, T...> invoke(F &&f, T&&... t) {
+	constexpr member_result_t<call_template_t<F, A...>, F, T...> invoke(F && f, T&&... t) {
 		return std::forward<F>(f).template operator()<A...>(std::forward<T>(t)...);
 	}
 
@@ -656,11 +682,11 @@ namespace aa {
 	// https://www.fluentcpp.com/2021/03/05/stdindex_sequence-and-its-improvement-in-c20/
 	// Jei lambdą iškeltume į funkciją, tai ji jokio funkcionalumo nesuteiktų, nes patogiau kiekvienu atveju būtų ne ją naudoti, o atitinkamą invoke.
 	template<size_t N, class F, class... A>
-	constexpr apply_result_t<N, F, A...> apply(F &&f, A&&... args) {
-		return const_v<[]<size_t... I>(const std::index_sequence<I...>, F &&_f, A&&... _args) static
+	constexpr apply_result_t<N, F, A...> apply(F && f, A&&... args) {
+		return ([&]<size_t... I>(const std::index_sequence<I...>)
 			-> member_result_t<call_template_t<F, I...>, F, A...> {
-			return invoke<I...>(std::forward<F>(_f), std::forward<A>(_args)...);
-		}>(default_v<std::make_index_sequence<N>>, std::forward<F>(f), std::forward<A>(args)...);
+			return invoke<I...>(std::forward<F>(f), std::forward<A>(args)...);
+		})(default_v<std::make_index_sequence<N>>);
 	}
 
 	template<class T, size_t N = 0>
@@ -669,7 +695,7 @@ namespace aa {
 
 	template<class F, class T, class... A>
 		requires (std::invocable<F, T &, A...>)
-	constexpr T &extend(T &t, F &&f, A&&... args) {
+	constexpr T & extend(T & t, F && f, A&&... args) {
 		std::invoke(std::forward<F>(f), t, std::forward<A>(args)...);
 		return t;
 	}
@@ -715,6 +741,12 @@ namespace aa {
 		template<size_t I>
 		using const_reference = const_reference_in_use_t<unit_type<I>>;
 
+		template<size_t I>
+		using pointer = pointer_in_use_t<unit_type<I>>;
+
+		template<size_t I>
+		using const_pointer = const_pointer_in_use_t<unit_type<I>>;
+
 		// Member constants
 		template<class U>
 		static constexpr size_t index = type_pack_index_v<U, T...>;
@@ -725,7 +757,7 @@ namespace aa {
 		// Element access
 		template<size_t I, class H>
 			requires (nonempty_unit_param_like<value_type<I>>)
-		constexpr forward_like_t<H, value_type<I>> get(this H &&self) {
+		constexpr forward_like_t<H, value_type<I>> get(this H && self) {
 			return std::forward<H>(self).unit_type<I>::value;
 		}
 
@@ -735,7 +767,7 @@ namespace aa {
 
 		template<class U, class H>
 			requires (nonempty_unit_param_like<value_type<index<U>>>)
-		constexpr forward_like_t<H, value_type<index<U>>> get(this H &&self) {
+		constexpr forward_like_t<H, value_type<index<U>>> get(this H && self) {
 			return std::forward<H>(self).unit_type<index<U>>::value;
 		}
 
@@ -752,8 +784,9 @@ namespace aa {
 			requires (!!sizeof...(I))
 		constexpr basic_tuple(const std::index_sequence<I...>, U&&... u) : unit_type<I>{std::forward<U>(u)}... {}
 
+		// Pvz: tuple<unit<int>> a = tuple{tuple{unit{1}}}; Neįmanoma šio konstruktoriaus sumaišyti su kitu konstruktoriumi.
 		template<tuple_constructible_to<value_type<S>...> U>
-		constexpr basic_tuple(U &&u) : unit_type<S>{get_element<S>(std::forward<U>(u))}... {}
+		constexpr basic_tuple(U && u) : unit_type<S>{get_element<S>(std::forward<U>(u))}... {}
 
 		constexpr basic_tuple() = default;
 	};
@@ -836,24 +869,24 @@ namespace aa {
 
 	template<class T, size_t N = 0>
 	concept uniform_tuple_like = (tuple_like<T, N>
-		&& apply<std::tuple_size_v<T>>([]<size_t... I> static -> bool { return is_same_as_every_v<get_result_t<I, T>...>; }));
+		&& apply<std::tuple_size_v<T>>([]<size_t... I> static -> bool { return same_as_every<get_result_t<I, T>...>; }));
 
 	template<class T, size_t N = 0>
 	concept fixed_string_like = range_using_traits_type<T> && uniform_tuple_like<T, N>;
 
 	template<class F, size_t N>
-	concept constifier_like = !!N && apply<N>([]<size_t... I> static -> bool { return is_same_as_every_v<call_template_t<F, I>...>; });
+	concept constexprifier_like = !!N && apply<N>([]<size_t... I> static -> bool { return same_as_every<call_template_t<F, I>...>; });
 
-	template<size_t N, constifier_like<N> F>
-	constexpr std::array constifier_table_v = apply<N>([]<size_t... I> static ->
+	template<size_t N, constexprifier_like<N> F>
+	constexpr std::array constexprifier_table_v = apply<N>([]<size_t... I> static ->
 		std::array<call_template_t<F, 0uz>, N> { return {(&std::remove_cvref_t<F>::template operator()<I>)...}; });
 
-	template<size_t N, constifier_like<N> F, class... A>
-	constexpr member_result_t<call_template_t<F, 0uz>, F, A...> constify(const size_t i, F &&f, A&&... args) {
+	template<size_t N, constexprifier_like<N> F, class... A>
+	constexpr member_result_t<call_template_t<F, 0uz>, F, A...> constexprify(const size_t i, F && f, A&&... args) {
 		if constexpr (std::is_member_function_pointer_v<call_template_t<F, 0uz>>) {
-			return (std::forward<F>(f).*constifier_table_v<N, F>[i])(std::forward<A>(args)...);
+			return (std::forward<F>(f).*constexprifier_table_v<N, F>[i])(std::forward<A>(args)...);
 		} else {
-			return constifier_table_v<N, F>[i](std::forward<A>(args)...);
+			return constexprifier_table_v<N, F>[i](std::forward<A>(args)...);
 		}
 	}
 
@@ -873,22 +906,13 @@ namespace aa {
 	})(type_v<T>)>;
 
 	template<class U, class V, class T>
-	concept in_relation_with = std::relation<T, const U &, const V &>;
-
-	template<class U, class V, class T>
-	concept in_relation_with_and_assignable_to = (in_relation_with<U, V, T> && assignable_to<const U &, V &>);
-
-	template<class T, class U, class V = U>
-	concept relation_for = in_relation_with<U, V, const T &>;
+	concept in_relation_with = cref_relation<T, const U &, const V &>;
 
 	template<class U, class T>
-	concept hashable_by = invocable_r<T, size_t, const U &>;
+	concept hashable_by = cref_invocable_r<T, size_t, const U &>;
 
 	template<class U, template<class> class T>
-	concept hashable_by_template = (hashable_by<U, T<U>> && trivially_default_constructible<T<U>>);
-
-	template<class T, class U>
-	concept hasher_for = hashable_by<U, const T &>;
+	concept hashable_by_template = (hashable_by<U, T<U>> && movable_immediately_constructible_from<T<U>>);
 
 	// https://mathworld.wolfram.com/Hypermatrix.html
 	template<class T, size_t... N>
@@ -900,6 +924,10 @@ namespace aa {
 			return type_v<std::array<T, I1>>;
 		}
 	})(default_v<constant<N>>...)>;
+
+	template<class T, auto DELETER, auto... A>
+		requires (std::invocable<const const_t<DELETER> &, T *, const const_t<A> &...>)
+	using smart_ptr = std::unique_ptr<T, const_t<[](T * const t) static -> void { DELETER(t, A...); }>>;
 
 	template<unsigned_integral_or_same_as<void> U = void, std::integral X>
 	constexpr coalesce_t<void, U, std::make_unsigned_t<X>> unsign(const X x) {
@@ -920,7 +948,7 @@ namespace aa {
 	}
 
 	template<class T, constructible_to<T> X>
-	constexpr T sign_or_cast(X &&x) {
+	constexpr T sign_or_cast(X && x) {
 		if constexpr (std::integral<T> && std::integral<std::remove_reference_t<X>>) {
 			return sign_cast<T>(x);
 		} else {
@@ -949,7 +977,7 @@ namespace aa {
 	constexpr size_t representable_values_v = int_exp2(sizeof(T) * numeric_digits_v<std::byte>);
 
 	template<out_unary_invocable F>
-	constexpr std::remove_reference_t<function_argument_t<F>> make_with_invocable(F &&f = default_value) {
+	constexpr std::remove_reference_t<function_argument_t<F>> make_with_invocable(F && f = default_value) {
 		std::remove_reference_t<function_argument_t<F>> d;
 		std::invoke(std::forward<F>(f), d);
 		return d;
@@ -957,7 +985,7 @@ namespace aa {
 
 	template<class F, class... A>
 		requires (!!sizeof...(A) && out_unary_invocable<F, A...>)
-	constexpr std::remove_reference_t<function_argument_t<F>> make_with_invocable(F &&f, A&&... args) {
+	constexpr std::remove_reference_t<function_argument_t<F>> make_with_invocable(F && f, A&&... args) {
 		std::remove_reference_t<function_argument_t<F>> d = {std::forward<A>(args)...};
 		std::invoke(std::forward<F>(f), d);
 		return d;
@@ -975,33 +1003,33 @@ namespace aa {
 
 		// Observers
 		template<class S>
-		constexpr std::add_pointer_t<forward_like_t<S, value_type>> operator->(this S &&self) {
-			return &std::forward<S>(self).value;
+		constexpr std::add_pointer_t<forward_like_t<S, value_type>> operator->(this S && self) {
+			return std::addressof(std::forward<S>(self).value);
 		}
 
 		template<class S>
-		constexpr std::add_pointer_t<forward_like_t<S, value_type>> operator&(this S &&self) {
-			return &std::forward<S>(self).value;
+		constexpr std::add_pointer_t<forward_like_t<S, value_type>> operator&(this S && self) {
+			return std::addressof(std::forward<S>(self).value);
 		}
 
 		template<class S>
-		constexpr operator forward_like_t<S, value_type>(this S &&self) {
+		constexpr operator forward_like_t<S, value_type>(this S && self) {
 			return std::forward<S>(self).value;
 		}
 
 		template<class S>
-		constexpr forward_like_t<S, value_type> operator*(this S &&self) {
+		constexpr forward_like_t<S, value_type> operator*(this S && self) {
 			return std::forward<S>(self).value;
 		}
 
 		// Special member functions
 		template<std::invocable<reference> F>
-		constexpr make(F &&f) {
+		constexpr make(F && f) {
 			std::invoke(std::forward<F>(f), unit_type::value);
 		}
 
-		template<std::invocable<reference> F, constructible_to<value_type> U>
-		constexpr make(F &&f, U &&u) : tuple_type{std::forward<U>(u)} {
+		template<std::invocable<reference> F, constructible_to<value_type> U = value_type>
+		constexpr make(F && f, U && u) : tuple_type{std::forward<U>(u)} {
 			std::invoke(std::forward<F>(f), unit_type::value);
 		}
 	};
@@ -1087,73 +1115,73 @@ namespace aa {
 	template<auto R = std::placeholders::_1>
 	struct less {
 		template<std::totally_ordered_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l < R; }
+		static constexpr bool operator()(const L & l) { return l < R; }
 	};
 
 	template<>
 	struct less<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l < R; }
+		static constexpr bool operator()(const L & l) { return l < R; }
 	};
 
 	template<auto R = std::placeholders::_1>
 	struct less_equal {
 		template<std::totally_ordered_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l <= R; }
+		static constexpr bool operator()(const L & l) { return l <= R; }
 	};
 
 	template<>
 	struct less_equal<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l <= R; }
+		static constexpr bool operator()(const L & l) { return l <= R; }
 	};
 
 	template<auto R = std::placeholders::_1>
 	struct greater {
 		template<std::totally_ordered_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l > R; }
+		static constexpr bool operator()(const L & l) { return l > R; }
 	};
 
 	template<>
 	struct greater<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l > R; }
+		static constexpr bool operator()(const L & l) { return l > R; }
 	};
 
 	template<auto R = std::placeholders::_1>
 	struct greater_equal {
 		template<std::totally_ordered_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l >= R; }
+		static constexpr bool operator()(const L & l) { return l >= R; }
 	};
 
 	template<>
 	struct greater_equal<std::placeholders::_1> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l >= R; }
+		static constexpr bool operator()(const L & l) { return l >= R; }
 	};
 
 	template<auto R = std::placeholders::_1>
 	struct equal_to {
 		template<std::equality_comparable_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l == R; }
+		static constexpr bool operator()(const L & l) { return l == R; }
 	};
 
 	template<>
 	struct equal_to<std::placeholders::_1> {
 		template<auto R, std::equality_comparable_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l == R; }
+		static constexpr bool operator()(const L & l) { return l == R; }
 	};
 
 	template<auto R = std::placeholders::_1>
 	struct not_equal_to {
 		template<std::equality_comparable_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l != R; }
+		static constexpr bool operator()(const L & l) { return l != R; }
 	};
 
 	template<>
 	struct not_equal_to<std::placeholders::_1> {
 		template<auto R, std::equality_comparable_with<const_t<R>> L>
-		static constexpr bool operator()(const L &l) { return l != R; }
+		static constexpr bool operator()(const L & l) { return l != R; }
 	};
 
 

@@ -11,7 +11,7 @@ namespace aa {
 	template<template<class> class H = std::hash>
 	struct generic_hash {
 		template<hashable_by_template<H> T>
-		static constexpr size_t operator()(const T &t) {
+		static constexpr size_t operator()(const T & t) {
 			return default_v<H<T>>(t);
 		}
 
@@ -28,7 +28,7 @@ namespace aa {
 	template<size_t N, template<class> class H = std::hash>
 	struct mod_generic_hash {
 		template<hashable_by_template<H> T>
-		static constexpr size_t operator()(const T &t) {
+		static constexpr size_t operator()(const T & t) {
 			return remainder<N>(default_v<H<T>>(t));
 		}
 
@@ -45,13 +45,13 @@ namespace aa {
 	// MAX negali rodyti į kažkurį iš argumentų, nes MAX represents a failure state kai nerandamas nei vienas iš template parametrų.
 	// MAX nėra numeric_max, nes tokia reikšmė indikuotų, kad klasė gali grąžinti visas reikšmes nuo 0 iki numeric_max.
 	template<fixed_string_like auto... A>
-		requires (!!sizeof...(A) && is_same_as_every_v<range_char_traits_t<const_t<A>>...>)
+		requires (!!sizeof...(A) && same_as_every<range_char_traits_t<const_t<A>>...>)
 	struct string_perfect_hash {
 		using is_transparent = void;
 		using traits_type = range_char_traits_t<const_t<A>>...[0];
 
 		template<same_range_char_traits_as<traits_type> T, class F>
-		static constexpr void operator()(const T &t, F &&f) {
+		static constexpr void operator()(const T & t, F && f) {
 			// size_t tipas, nes reikės lyginti su size_t tipo kintamuoju.
 			const size_t count = std::ranges::size(t);
 			if (!(... || ((count == std::tuple_size_v<const_t<A>>) && apply<std::tuple_size_v<const_t<A>>>([&]<size_t... I> -> bool {
@@ -74,7 +74,7 @@ namespace aa {
 	// std::iterator, kuris buvo naudojamas tokiu pačiu principu, tai reiškia nerekomenduojama tokia realizacija.
 	struct string_equal_to {
 		template<class L, same_range_char_traits_as<range_char_traits_t<L>> R>
-		static constexpr bool operator()(const L &l, const R &r) {
+		static constexpr bool operator()(const L & l, const R & r) {
 			// size_t tipas, nes compare tikisi tokio tipo parametro.
 			const size_t count = std::ranges::size(l);
 			return count == std::ranges::size(r) &&

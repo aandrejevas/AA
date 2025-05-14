@@ -24,7 +24,7 @@ namespace aa {
 
 		// Element access
 		template<class S>
-		constexpr std::add_pointer_t<forward_like_t<S, value_type>> back_data(this S &&self) {
+		constexpr std::add_pointer_t<forward_like_t<S, value_type>> back_data(this S && self) {
 			return self._back_data;
 		}
 
@@ -85,21 +85,21 @@ namespace aa {
 		}
 
 		template<std::ranges::input_range R>
-		constexpr iterator append_range(R &&r) {
+		constexpr iterator append_range(R && r) {
 			return resize(std::ranges::copy(r, const_cast<iterator>(this->end())).out - 1);
 		}
 
 		template<std::ranges::input_range R>
-		constexpr iterator assign_range(R &&r) {
+		constexpr iterator assign_range(R && r) {
 			return resize(std::ranges::copy(r, this->data()).out - 1);
 		}
 
 		template<std::ranges::input_range R>
-		constexpr fixed_vector &operator=(R &&r) &{
+		constexpr fixed_vector & operator=(R && r) & {
 			return (assign_range(r), *this);
 		}
 
-		constexpr fixed_vector &operator=(fixed_vector &&a) &{
+		constexpr fixed_vector & operator=(fixed_vector && a) & {
 			cast<base_type &>(*this) = std::move(a);
 			_back_data = std::exchange(a._back_data, nullptr);
 			return *this;
@@ -108,29 +108,29 @@ namespace aa {
 
 
 		// Special member functions
-		constexpr fixed_vector(fixed_vector &&a)
+		constexpr fixed_vector(fixed_vector && a)
 			: base_type{std::move(a)}, _back_data{std::exchange(a._back_data, nullptr)} {}
 
 		// Nedarome = default, nes konstruktorius vis tiek nebus trivial,
 		// nes klasė turi kintamųjų su numatytais inicializatoriais.
-		constexpr fixed_vector(base_type &&a = default_value)
+		constexpr fixed_vector(base_type && a = default_value)
 			: base_type{std::move(a)} { clear(); }
 
 		// Negalime turėti konstruktoriaus, kuris priimtų rodyklę, nes
 		// tik po konstruktoriaus įvykdymo galima gauti rodykles.
-		constexpr fixed_vector(base_type &&a, const const_t<std::placeholders::_1>)
+		constexpr fixed_vector(base_type && a, const const_t<std::placeholders::_1>)
 			: base_type{std::move(a)} { resize(this->data()); }
 
-		constexpr fixed_vector(base_type &&a, const const_t<std::placeholders::_2>)
+		constexpr fixed_vector(base_type && a, const const_t<std::placeholders::_2>)
 			: base_type{std::move(a)} { resize(this->max_data()); }
 
-		constexpr fixed_vector(base_type &&a, const size_type count)
+		constexpr fixed_vector(base_type && a, const size_type count)
 			: base_type{std::move(a)} { resize(count); }
 
 		// Nereikia konstruktoriaus, kuriame būtų naudojama fill, nes šį funkcionalumą
 		// galima simuliuoti naudojant šį konstruktorių pavyzdžiui su repeat_view.
 		template<std::ranges::input_range R>
-		constexpr fixed_vector(base_type &&a, R &&r)
+		constexpr fixed_vector(base_type && a, R && r)
 			: base_type{std::move(a)} { assign_range(r); }
 
 
