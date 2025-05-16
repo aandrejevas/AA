@@ -1,6 +1,6 @@
 #pragma once
 
-// Nerealizuojame algoritmų, kurie netikrintų ar masyvas tuščias, nes tą patį galime pasiekti su įprastais algoritmais ir atributo assume naudojimu. Nerealizuojame fixed_string, type_name, log, nes tokį funkcionalumą suteikia žurnalavimo (spdlog) ir tokios kaip nameof bibliotekos. Nerealizuojame savo lexer, nes galime naudoti tiesiog populiarų formatą kaip json. Nerealizuojame print ir read, nes galime naudoti bibliotekas fmt ir scn. Nerealizuojame AA_IF_DEBUG, AA_TRACE_ASSERT, timekeeper, nes jie realizuoti tokiose bibliotekose kaip folly.
+// Nerealizuojame algoritmų, kurie netikrintų ar masyvas tuščias, nes tą patį galime pasiekti su įprastais algoritmais ir atributo assume naudojimu. Nerealizuojame fixed_string, type_name, log, nes tokį funkcionalumą suteikia žurnalavimo (spdlog) ir tokios kaip nameof bibliotekos. Nerealizuojame savo lexer, nes galime naudoti tiesiog populiarų formatą kaip json. Nerealizuojame print ir read, nes galime naudoti bibliotekas fmt ir scn. Nerealizuojame AA_IF_DEBUG, AA_TRACE_ASSERT, timekeeper, nes jie realizuoti tokiose bibliotekose kaip Boost. Nerealizuojame to_array, nes galime naudoti std::to_array arba std::array<T, 0>{}.
 
 // Filosofija bibliotekos tokia, visos funkcijos žymimos constexpr ir tiek. Nesvarbu gali ar negali būti funkcija
 // naudojama constexpr kontekste, ji bus pažymėta constexpr. Gal naudotojams kiek neaišku gali būti ar jie gali
@@ -9,6 +9,7 @@
 // constexpr ir consteval funkcijos specifikatoriai implikuoja inline, todėl nereikia naudoti jų kartu.
 // Atitinkamai constexpr kintamojo specifikatorius implikuoja inline ir const specifikatorius.
 // Reikia stengtis turėti ir naudoti kuo mažiau macros.
+// Reikia stengtis vietoje consteval funkcijų naudoti constexpr kintamuosius nebent nėra kito pasirinkimo.
 
 // Nenaudojame atributo "always_inline", nes standartinėje bibliotekoje atributas nenaudojamas, trukdo derintuvei
 // atributas, gali būti, kad tik kenkiu greitaveikai naudodamas tą atributą, geriau už kompiliatorių nenuspręsiu,
@@ -425,6 +426,17 @@ namespace aa {
 
 	// <><><><><><><><><><><><><><><><><><><><><><><><> END RANGES <><><><><><><><><><><><><><><><><><><><><><><><>
 
+	// Negali būti concept, nes tada galėtume į F paduoti pavyzdžiui skaičius ir nemestų klaidos.
+	// Negali būti constexpr bool, nes nenorime tokių konstantų turėti.
+	// A pack negali būti tipų pack, nes kai kurios funkcijos yra constexpr tik jei yra paduodami tam tikri argumentai.
+	// https://quuxplusone.github.io/blog/2022/01/04/test-constexpr-friendliness/
+	// GCC bug?: Jei naudojame std::invoke, tai meta klaidą su tokia išraiška: is_constexpr_friendly<std::labs, 5l>()
+	template<auto F, auto... A>
+		requires (std::invocable<const const_t<F> &, const const_t<A> &...>)
+	consteval bool is_constexpr_friendly() {
+		return (requires { const_v<(F(A...), true)>; });
+	}
+
 	template<class T, class... A>
 	concept movable_constructible_from = std::movable<T> && std::constructible_from<T, A...>;
 
@@ -432,8 +444,8 @@ namespace aa {
 	// Negalime naudoti NTTP, kad patikrinti ar išraiška yra constexpr, nes T gali būti ne structural tipas.
 	// struct AAA { constexpr AAA() {} };, šitas tipas nėra trivially_default_constructible, bet yra immediately_constructible.
 	template<class T, auto... A>
-	concept movable_immediately_constructible_from = movable_constructible_from<T, const_t<A>...>
-		&& (requires { ([] static consteval -> T { return T(A...); })(); });
+	concept movable_immediately_constructible_from = movable_constructible_from<T, const const_t<A> &...>
+		&& is_constexpr_friendly<[] static consteval -> T { return T{A...}; }>();
 
 	namespace detail {
 		// T tipas nesiskiria kai esame const T & kontekste ar T kontekste. Tai reiškia, kad
@@ -444,10 +456,10 @@ namespace aa {
 		template<auto... A>
 		struct value_getter {
 			template<movable_immediately_constructible_from<A...> T>
-			consteval operator T() const { return T(A...); }
+			consteval operator T() const { return T{A...}; }
 
-			template<movable_constructible_from<const_t<A>...> T>
-			constexpr operator T() const { return T(A...); }
+			template<movable_constructible_from<const const_t<A> &...> T>
+			constexpr operator T() const { return T{A...}; }
 		};
 
 		struct numeric_max_getter {
@@ -496,6 +508,10 @@ namespace aa {
 
 	template<enum_like T>
 	constexpr size_t numeric_digits_v<T> = std::numeric_limits<std::underlying_type_t<T>>::digits;
+
+	// Leidžia vietoje lokalių kintamųjų, paduoti šį kintamąjį į funkcijas, kurios tikisi rodyklės.
+	template<movable_immediately_constructible_from T, size_t = 0>
+	inline thread_local constinit T out_v;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -584,7 +600,7 @@ namespace aa {
 
 	// Jeigu reikia kitokių template template parametrų tai tokiu atveju reikia apibrėžti atitinkamus alias.
 	template<template<class...> class F, class... A>
-	using deduced_t = decltype(F(std::declval<A>()...));
+	using deduced_t = decltype(F{std::declval<A>()...});
 
 	template<class F, size_t I = 0>
 	using function_argument_t = type_in_const_t<([]<class R, class... A>(const std::type_identity<std::function<R(A...)>>) static -> auto {
@@ -820,17 +836,6 @@ namespace aa {
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2098r1.pdf
 	template<class T, template<class...> class F>
 	concept specialization_of = ([]<class... A>(const std::type_identity<F<A...>>) static -> bool { return true; })(type_v<std::remove_cvref_t<T>>);
-
-	// Su funkcija std::to_array neišeina sukurti tuščio masyvo.
-	template<class T, T... A>
-	consteval std::array<T, sizeof...(A)> to_array() {
-		return {A...};
-	}
-
-	template<auto A1, const_t<A1>... A>
-	consteval std::array<const_t<A1>, 1 + sizeof...(A)> to_array() {
-		return {A1, A...};
-	}
 
 	template<sized_contiguous_range T>
 	using range_char_traits_t = type_in_const_t<([] static -> auto {

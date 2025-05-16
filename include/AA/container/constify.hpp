@@ -65,7 +65,15 @@ namespace aa {
 		// Special member functions
 		// Neturime default konstruktoriaus, nes pradžioje neinicializavus lauko, joks vėliau daromas tikrinimas nebūtų racionalus.
 		template<constructible_to<value_type> U = value_type>
-		constexpr constify(U && u = default_value) : tuple_type{std::forward<U>(u)} {}
+		constexpr constify(U && u = default_value) : tuple_type{std::forward<U>(u)} {
+			if (!std::invoke(PREDICATE, std::as_const(unit_type::value)))
+				std::exit(EXIT_FAILURE);
+		}
+
+		constexpr ~constify() {
+			if (std::invoke(PREDICATE, std::as_const(unit_type::value)))
+				std::exit(EXIT_FAILURE);
+		}
 	};
 
 }
