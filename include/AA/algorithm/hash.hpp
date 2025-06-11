@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../system/source.hpp"
 #include "arithmetic.hpp"
 
 
@@ -15,13 +14,10 @@ namespace aa {
 			return default_v<H<T>>(t);
 		}
 
-		static consteval size_t min() { return numeric_min; }
-		static consteval size_t max() { return numeric_max; }
+		static constexpr size_t min = numeric_min, max = numeric_max;
 
 		using is_transparent = void;
 	};
-
-	generic_hash() -> generic_hash<>;
 
 
 
@@ -32,8 +28,7 @@ namespace aa {
 			return remainder<N>(default_v<H<T>>(t));
 		}
 
-		static consteval size_t min() { return 0; }
-		static consteval size_t max() { return N - 1; }
+		static constexpr size_t min = 0, max = N - 1;
 
 		using is_transparent = void;
 	};
@@ -59,18 +54,26 @@ namespace aa {
 				return (... && traits_type::eq(std::ranges::data(t)[I], const_v<get_element<I>(V)>)) ?
 					(invoke<pack_index_v<V, A...>>(std::forward<F>(f)), true) : false;
 			})))) {
-				invoke<max()>(std::forward<F>(f));
+				invoke<max>(std::forward<F>(f));
 			}
 		}
 
-		static consteval size_t min() { return 0; }
-		static consteval size_t max() { return sizeof...(A); }
+		template<same_range_char_traits_as<traits_type> T>
+		static constexpr size_t operator()(const T & t) {
+			return make([&](size_t & hash) -> void {
+				operator()(t, [&]<size_t I> -> void {
+					hash = I;
+				});
+			});
+		}
+
+		static constexpr size_t min = 0, max = sizeof...(A);
 	};
 
 
 
 	// Neturime klasės iš kurios tiesiog galėtume paveldėti is_transparent, nes gcc taip elgiasi. Taip pat, nes
-	// tai nėra neįprasta, konteineriai ir iteratoriai turi tokių pačių aliases ir iš sandarto buvo pašalintas tipas
+	// tai nėra neįprasta, konteineriai ir iteratoriai turi tokių pačių aliases ir iš standarto buvo pašalintas tipas
 	// std::iterator, kuris buvo naudojamas tokiu pačiu principu, tai reiškia nerekomenduojama tokia realizacija.
 	struct string_equal_to {
 		template<class L, same_range_char_traits_as<range_char_traits_t<L>> R>

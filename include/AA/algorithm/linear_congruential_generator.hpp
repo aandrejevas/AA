@@ -41,6 +41,7 @@ namespace aa {
 
 
 		// Characteristics
+		// Negalime paversti į konstantas, nes standartinės bibliotekos generatoriai taip pat turi tokias funkcijas.
 		static consteval result_type min() { return numeric_min; }
 		static consteval result_type max() { return numeric_max; }
 
@@ -123,8 +124,5 @@ namespace aa {
 			state = s;
 		}
 	};
-
-	template<class T = uint32_t>
-	linear_congruential_generator(const T & = default_value) -> linear_congruential_generator<>;
 
 }

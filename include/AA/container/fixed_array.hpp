@@ -138,9 +138,6 @@ namespace aa {
 		pointer _max_data;
 	};
 
-	template<class T, class D>
-	fixed_array(fixed_array<T, D> &&) -> fixed_array<T, D>;
-
 	namespace pmr {
 		template<class T>
 		using fixed_array = aa::fixed_array<T, std::identity>;

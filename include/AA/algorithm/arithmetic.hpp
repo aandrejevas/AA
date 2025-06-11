@@ -31,7 +31,7 @@ namespace aa {
 
 
 	// https://en.wikipedia.org/wiki/Product_(mathematics)
-	// Pagal X funkcija nustato, kurį x kartotinį grąžinti arba X naudoja kaip daukilį.
+	// Pagal X funkcija nustato, kurį x kartotinį grąžinti arba X naudoja kaip daugiklį.
 	// Grąžinamas tipas auto, nes expression, kuriame dalyvauja mažesni tipai negu int, grąžinamas tipas yra int.
 	// Reikalaujama, kad T būtų unsigned, nes per shift operacijas neįmanoma pagreitinti neigiamų skaičių daugybos.
 	// Bandžiau rekursijos nenaudoti, gaunasi tas pats tik vietoje X visur atsiranda cast X į T.

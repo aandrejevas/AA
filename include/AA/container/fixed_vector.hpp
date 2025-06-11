@@ -49,7 +49,7 @@ namespace aa {
 		// pradžioje sukonstruojami ir mes norime tiesiog rodyklę pastumti, emplace_back iš naujo sukonstruotų elementą.
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		constexpr iterator emplace_back(A&&... args) {
+		constexpr iterator emplace_back(A &&... args) {
 			return std::ranges::construct_at(push_back(), std::forward<A>(args)...);
 		}
 
@@ -63,7 +63,7 @@ namespace aa {
 		// Nors funkcija teisingai veiktų ir padavus end(), būtų neteisinga end() paduoti todėl ir tai uždraudžiame.
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		constexpr iterator emplace(const iterator pos, A&&... args) {
+		constexpr iterator emplace(const iterator pos, A &&... args) {
 			return std::ranges::construct_at(push(pos), std::forward<A>(args)...);
 		}
 
@@ -75,7 +75,7 @@ namespace aa {
 
 		template<class... A>
 			requires (std::constructible_from<value_type, A...>)
-		constexpr iterator fast_emplace(const iterator pos, A&&... args) {
+		constexpr iterator fast_emplace(const iterator pos, A &&... args) {
 			emplace_back(*pos);
 			return std::ranges::construct_at(pos, std::forward<A>(args)...);
 		}
@@ -139,9 +139,6 @@ namespace aa {
 	protected:
 		pointer _back_data;
 	};
-
-	template<class T, class D>
-	fixed_vector(fixed_vector<T, D> &&) -> fixed_vector<T, D>;
 
 	namespace pmr {
 		template<class T>

@@ -16,7 +16,54 @@ namespace aa {
 			typename unit_type::reference, typename unit_type::const_reference,
 			typename unit_type::pointer, typename unit_type::const_pointer;
 
+		struct permit {
+			// Observers
+			constexpr pointer operator->() const {
+				return std::addressof(constifier.value);
+			}
+
+			constexpr pointer operator&() const {
+				return std::addressof(constifier.value);
+			}
+
+			constexpr operator reference() const {
+				return constifier.value;
+			}
+
+			constexpr reference operator*() const {
+				return constifier.value;
+			}
+
+			constexpr reference get() const {
+				return constifier.value;
+			}
+
+			// Special member functions
+			constexpr permit(constify & c) : constifier{c} {
+				constifier.assert_valueless();
+			}
+
+			constexpr ~permit() {
+				constifier.assert_valueful();
+			}
+
+			// Member objects
+			constify & constifier;
+		};
+
 		// Observers
+	protected:
+		constexpr void assert_valueless() const {
+			if (!std::invoke(PREDICATE, unit_type::value))
+				std::exit(EXIT_FAILURE);
+		}
+
+		constexpr void assert_valueful() const {
+			if (std::invoke(PREDICATE, unit_type::value))
+				std::exit(EXIT_FAILURE);
+		}
+
+	public:
 		constexpr const_pointer operator->() const {
 			return std::addressof(unit_type::value);
 		}
@@ -38,42 +85,43 @@ namespace aa {
 		}
 
 		// Modifiers
-		template<invocable_with_one_of<reference, pointer> F>
-		constexpr add_cref_t<constify> make(F && f) & {
-			if (!std::invoke(PREDICATE, std::as_const(unit_type::value)))
-				std::exit(EXIT_FAILURE);
-
-			if constexpr (std::invocable<reference>) {
-				std::invoke(std::forward<F>(f), unit_type::value);
-			} else {
-				std::invoke(std::forward<F>(f), std::addressof(unit_type::value));
-			}
-
-			if (std::invoke(PREDICATE, std::as_const(unit_type::value)))
-				std::exit(EXIT_FAILURE);
-
-			return *this;
+		// Neturime funkcijos, kuri priimtų funkciją, nes su permit galime tą patį pasiekti ir nereikia kurti lambdos.
+		constexpr permit acquire() & {
+			return permit{*this};
 		}
 
 		template<constructible_to<value_type> O = value_type>
-		constexpr add_cref_t<constify> operator=(O && other) & {
-			return make([&](const pointer ptr) -> void {
-				std::ranges::construct_at(ptr, std::forward<O>(other));
-			});
+		constexpr const constify & operator=(O && other) & {
+			const permit val = acquire();
+
+			std::ranges::construct_at(&val, std::forward<O>(other));
+
+			return val.constifier;
 		}
 
 		// Special member functions
 		// Neturime default konstruktoriaus, nes pradžioje neinicializavus lauko, joks vėliau daromas tikrinimas nebūtų racionalus.
 		template<constructible_to<value_type> U = value_type>
 		constexpr constify(U && u = default_value) : tuple_type{std::forward<U>(u)} {
-			if (!std::invoke(PREDICATE, std::as_const(unit_type::value)))
-				std::exit(EXIT_FAILURE);
+			assert_valueless();
 		}
 
+		// Jei nenorime naudoti value iš PREDICATE, tada reiktų naudoti kitokį PREDICATE.
+		constexpr constify() requires (constructible_from_value<value_type, const_t<PREDICATE>>)
+			: constify{PREDICATE.value} {}
+
+		constexpr constify() requires (constructible_from_invoke_result<value_type, const_t<PREDICATE>>)
+			: constify{PREDICATE()} {}
+
 		constexpr ~constify() {
-			if (std::invoke(PREDICATE, std::as_const(unit_type::value)))
-				std::exit(EXIT_FAILURE);
+			assert_valueful();
 		}
 	};
+
+	template<pointer_like T>
+	using constify_ptr = constify<T, overload{
+		([](const T t) static -> bool { return t == ptr_v<T, numeric_max>; }),
+		([] static -> T { return ptr_v<T, numeric_max>; })
+	}>;
 
 }
