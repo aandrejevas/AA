@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include "../metaprogramming/time.hpp"
 #include "arithmetic.hpp"
 #include <chrono> // steady_clock
 #include <numeric> // gcd
@@ -115,9 +114,8 @@ namespace aa {
 
 		// Seeding
 		// steady_clock naudojame, nes jis negali grįžti į tą patį momentą.
-		template<clock_like CLOCK = std::chrono::steady_clock>
 		constexpr void seed() {
-			seed(unsign<result_type>(CLOCK::now().time_since_epoch().count()));
+			state = sign_cast<result_type>(std::chrono::steady_clock::now().time_since_epoch().count());
 		}
 
 		constexpr void seed(const result_type s) {

@@ -24,8 +24,8 @@ namespace aa {
 
 		// Element access
 		template<class S>
-		constexpr std::add_pointer_t<forward_like_t<S, value_type>> back_data(this S && self) {
-			return self._back_data;
+		constexpr auto && back(this S && self) {
+			return std::forward_like<S>(*self.ptr_to_back);
 		}
 
 
@@ -35,15 +35,15 @@ namespace aa {
 		constexpr iterator clear() { return resize(const_cast<iterator>(this->rend())); }
 
 		constexpr iterator resize(const size_type count) { return resize(const_cast<iterator>(this->rend()) + count); }
-		constexpr iterator resize(const iterator pos) { return _back_data = pos; }
+		constexpr iterator resize(const iterator pos) { return ptr_to_back = pos; }
 
-		constexpr iterator pop_back() { return --_back_data; }
-		constexpr iterator push_back() { return ++_back_data; }
-		constexpr iterator pop_back_alt() { return _back_data--; }
-		constexpr iterator push_back_alt() { return _back_data++; }
+		constexpr iterator pop_back() { return --ptr_to_back; }
+		constexpr iterator push_back() { return ++ptr_to_back; }
+		constexpr iterator pop_back_alt() { return ptr_to_back--; }
+		constexpr iterator push_back_alt() { return ptr_to_back++; }
 
-		constexpr iterator pop_back(const size_type count) { return _back_data -= count; }
-		constexpr iterator push_back(const size_type count) { return _back_data += count; }
+		constexpr iterator pop_back(const size_type count) { return ptr_to_back -= count; }
+		constexpr iterator push_back(const size_type count) { return ptr_to_back += count; }
 
 		// Neišeina emplace_back ir push_back apjungti, nes įsivaizduokime tokį scenarijų, visi masyvo elementai
 		// pradžioje sukonstruojami ir mes norime tiesiog rodyklę pastumti, emplace_back iš naujo sukonstruotų elementą.
@@ -55,7 +55,7 @@ namespace aa {
 
 		constexpr iterator push(const iterator pos) {
 			push_back();
-			std::ranges::copy_backward(pos, _back_data, const_cast<iterator>(this->end()));
+			std::ranges::copy_backward(pos, ptr_to_back, const_cast<iterator>(this->end()));
 			return pos;
 		}
 
@@ -101,7 +101,7 @@ namespace aa {
 
 		constexpr fixed_vector & operator=(fixed_vector && a) & {
 			cast<base_type &>(*this) = std::move(a);
-			_back_data = std::exchange(a._back_data, nullptr);
+			ptr_to_back = std::exchange(a.ptr_to_back, nullptr);
 			return *this;
 		}
 
@@ -109,7 +109,7 @@ namespace aa {
 
 		// Special member functions
 		constexpr fixed_vector(fixed_vector && a)
-			: base_type{std::move(a)}, _back_data{std::exchange(a._back_data, nullptr)} {}
+			: base_type{std::move(a)}, ptr_to_back{std::exchange(a.ptr_to_back, nullptr)} {}
 
 		// Nedarome = default, nes konstruktorius vis tiek nebus trivial,
 		// nes klasė turi kintamųjų su numatytais inicializatoriais.
@@ -137,7 +137,7 @@ namespace aa {
 
 		// Member objects
 	protected:
-		pointer _back_data;
+		pointer ptr_to_back;
 	};
 
 	namespace pmr {

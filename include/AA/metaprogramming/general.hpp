@@ -1,6 +1,6 @@
 #pragma once
 
-// Nerealizuojame algoritmų, kurie netikrintų ar masyvas tuščias, nes tą patį galime pasiekti su įprastais algoritmais ir atributo assume naudojimu. Nerealizuojame fixed_string, type_name, log, nes tokį funkcionalumą suteikia žurnalavimo (spdlog) ir tokios kaip nameof bibliotekos. Nerealizuojame savo lexer, nes galime naudoti tiesiog populiarų formatą kaip json. Nerealizuojame print ir read, nes galime naudoti bibliotekas fmt ir scn. Nerealizuojame AA_IF_DEBUG, AA_TRACE_ASSERT, timekeeper, nes jie realizuoti tokiose bibliotekose kaip Boost. Nerealizuojame to_array, nes galime naudoti std::to_array arba std::array<T, 0>{}.
+// Nerealizuojame algoritmų, kurie netikrintų ar masyvas tuščias, nes tą patį galime pasiekti su įprastais algoritmais ir atributo assume naudojimu. Nerealizuojame fixed_string, type_name, log, nes tokį funkcionalumą suteikia žurnalavimo (spdlog) ir tokios kaip nameof bibliotekos. Nerealizuojame savo lexer, nes galime naudoti tiesiog populiarų formatą kaip json. Nerealizuojame print ir read, nes galime naudoti bibliotekas fmt ir scn. Nerealizuojame AA_IF_DEBUG, AA_TRACE_ASSERT, timekeeper, nes jie realizuoti tokiose bibliotekose kaip Boost. Nerealizuojame to_array, nes galime naudoti std::to_array arba std::array<T, 0>{}. Nerealizuojame int_math, nes galime tiesiogiai naudoti math funkcijas (klaidinga bandyti išrašyti math funkcijų visas kombinacijas, o tą ir darėme).
 
 // Filosofija bibliotekos tokia, visos funkcijos žymimos constexpr ir tiek. Nesvarbu gali ar negali būti funkcija
 // naudojama constexpr kontekste, ji bus pažymėta constexpr. Gal naudotojams kiek neaišku gali būti ar jie gali
@@ -15,7 +15,7 @@
 // atributas, gali būti, kad tik kenkiu greitaveikai naudodamas tą atributą, geriau už kompiliatorių nenuspręsiu,
 // kur jį reikia naudoti, o kur ne, galiausiai išprotėčiau jei dar reiktų prižiūrėti ar visur tvarkingai sudėtas jis.
 
-// Stengiamės nenaudoti decltype, bet galime naudoti auto kaip gražinamos reikšmės tipą.
+// Stengiamės nenaudoti decltype ir auto, bet galime naudoti auto nurodant gražinamos reikšmės tipą ir deducing this tipą.
 
 // AA bibliotekos failuose elgiamasi lyg būtų įterpti toliau išdėstyti failai, nes tie failai suteikia galimybę
 // sklandžiai programuoti naudojantis esminėmis C++ kalbos savybėmis. Tie failai yra ir jų įterpimo priežastys:
@@ -202,12 +202,6 @@ namespace aa {
 	template<class L, class R>
 	concept wo_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
 
-	template<class T, class U>
-	concept unsigned_integral_or_same_as = (std::unsigned_integral<T> && !std::unsigned_integral<U>) || std::same_as<T, U>;
-
-	template<class T, class U>
-	concept signed_integral_or_same_as = (std::signed_integral<T> && !std::signed_integral<U>) || std::same_as<T, U>;
-
 	template<class F, class... A>
 	concept cref_predicate = std::predicate<const F &, A...>;
 
@@ -249,15 +243,6 @@ namespace aa {
 	template<class T>
 	concept constructible_from_floating = constructible_from_every<T, float, double, long double>;
 
-	template<class T, class U>
-	concept constructible_from_floating_or_same_as = constructible_from_floating<T> || std::same_as<T, U>;
-
-	template<class T>
-	using string_view_for_t = std::basic_string_view<char_type_in_use_t<traits_type_in_use_t<T>>, traits_type_in_use_t<T>>;
-
-	template<class T, size_t N = std::dynamic_extent>
-	using span_for_t = std::span<char_type_in_use_t<traits_type_in_use_t<T>>, N>;
-
 	template<class T>
 	concept iterator_tag_like = same_as_any<T, std::input_iterator_tag, std::output_iterator_tag, std::forward_iterator_tag,
 		std::bidirectional_iterator_tag, std::random_access_iterator_tag, std::contiguous_iterator_tag>;
@@ -293,16 +278,6 @@ namespace aa {
 
 	template<uses_difference_type T>
 	using difference_type_in_use_t = typename std::remove_reference_t<T>::difference_type;
-
-	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2445r1.pdf
-	template<class T, class U>
-	using override_ref_t = std::conditional_t<std::is_rvalue_reference_v<T>, std::remove_reference_t<U> &&, U &>;
-
-	template<class T, class U>
-	using copy_const_t = std::conditional_t<std::is_const_v<std::remove_reference_t<T>>, U const, U>;
-
-	template<class T, class U>
-	using forward_like_t = override_ref_t<T &&, copy_const_t<T, std::remove_reference_t<U>>>;
 
 	// Nieko tokio, kad kopijuojame konstantas, kadangi viskas vyksta kompiliavimo metu.
 	//
@@ -545,7 +520,7 @@ namespace aa {
 	// https://docs.libreoffice.org/o3tl/html/temporary_8hxx_source.html
 	template<not_lvalue_reference_like T>
 	constexpr T & stay(T && x) {
-		return cast<T &>(x);
+		return x;
 	}
 
 	// Kartais patogiau naudoti lambda su generic tipo parametru, bet ne atvejais, kai skiriasi parametrų skaičiai.
@@ -576,7 +551,7 @@ namespace aa {
 	using function_argument_t = type_in_const_t<([]<class R, class... A>(const std::type_identity<R(A...)>) static ->
 		auto { return type_v<A...[I]>; })(type_v<function_t<F>>)>;
 
-	// GCC 15.1.0 BUG: ICE Segmentation fault when using aa::invoke
+	// GCC 15.1.0 BUG: ICE Segmentation fault when using the lambda directly
 	namespace detail {
 		template<class F>
 		constexpr std::type_identity function_result_v = ([]<class R, class... A>(const std::type_identity<R(A...)>) static ->
@@ -768,12 +743,12 @@ namespace aa {
 
 		// Element access
 		template<size_t I, class H>
-		constexpr forward_like_t<H, value_type<I>> get(this H && self) {
+		constexpr auto && get(this H && self) {
 			return std::forward<H>(self).unit_type<I>::value;
 		}
 
 		template<class U, class H>
-		constexpr forward_like_t<H, value_type<index<U>>> get(this H && self) {
+		constexpr auto && get(this H && self) {
 			return std::forward<H>(self).unit_type<index<U>>::value;
 		}
 
@@ -854,9 +829,6 @@ namespace aa {
 	template<class T, class... A>
 	using first_not_t = A...[pack_index_v<false, std::same_as<T, A>...>];
 
-	template<class N, class T, class U>
-	using coalesce_t = std::conditional_t<std::same_as<N, T>, U, T>;
-
 	template<bool B, class T>
 	using add_const_if_t = std::conditional_t<B, const T, T>;
 
@@ -930,31 +902,24 @@ namespace aa {
 		requires (std::invocable<const const_t<DELETER> &, T *, const const_t<A> &...>)
 	using smart_ptr = std::unique_ptr<T, const_t<[](T * const t) static -> void { DELETER(t, A...); }>>;
 
-	template<unsigned_integral_or_same_as<void> U = void, std::integral X>
-	constexpr coalesce_t<void, U, std::make_unsigned_t<X>> unsign(const X x) {
-		return cast<coalesce_t<void, U, std::make_unsigned_t<X>>>(
-			std::bit_cast<std::make_unsigned_t<X>>(x));
+	// Nedarome cast operacijos ant rezultato (kad, pavyzdžiui, leisti naudotojui pasirinkti gauti didesnį integral tipą),
+	// nes tokia realizacija yra visados klaidinga. Naudotojas galės, jei norės pats tokią operaciją atlikti.
+	template<std::integral X>
+	constexpr std::make_unsigned_t<X> unsign(const X x) {
+		return std::bit_cast<std::make_unsigned_t<X>>(x);
 	}
 
-	template<signed_integral_or_same_as<void> U = void, std::integral X>
-	constexpr coalesce_t<void, U, std::make_signed_t<X>> sign(const X x) {
-		using T = coalesce_t<void, U, std::make_signed_t<X>>;
-		return std::bit_cast<T>(unsign<std::make_unsigned_t<T>>(x));
+	template<std::integral X>
+	constexpr std::make_signed_t<X> sign(const X x) {
+		return std::bit_cast<std::make_signed_t<X>>(x);
 	}
 
+	// https://en.cppreference.com/w/cpp/language/implicit_cast.html#Integral_conversions
+	// Kai pirminis tipas yra signed ir rezultato tipas yra unsigned ir jis didesnis, tada reikšmė yra sign-extended. Todėl reikia šios funkcijos.
 	template<std::integral T, std::integral X>
 	constexpr T sign_cast(const X x) {
-		if constexpr (std::unsigned_integral<T>)	return unsign<T>(x);
-		else										return sign<T>(x);
-	}
-
-	template<class T, constructible_to<T> X>
-	constexpr T sign_or_cast(X && x) {
-		if constexpr (std::integral<T> && std::integral<std::remove_reference_t<X>>) {
-			return sign_cast<T>(x);
-		} else {
-			return cast<T>(std::forward<X>(x));
-		}
+		if constexpr (std::unsigned_integral<T>)	return cast<T>(unsign(x));
+		else										return cast<T>(x);
 	}
 
 	template<std::integral U = size_t, std::unsigned_integral T>
