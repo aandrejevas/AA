@@ -49,7 +49,7 @@ namespace aa {
 		static constexpr void operator()(const T & t, F && f) {
 			// size_t tipas, nes reikės lyginti su size_t tipo kintamuoju.
 			const size_t count = std::ranges::size(t);
-			if (!(... || ((count == std::tuple_size_v<const_t<A>>) && apply<std::tuple_size_v<const_t<A>>>([&]<size_t... I> -> bool {
+			if (!(... || ((count == tuple_size_v<const_t<A>>) && apply<tuple_size_v<const_t<A>>>([&]<size_t... I> -> bool {
 				static constexpr const_t<A> V = A;
 				return (... && traits_type::eq(std::ranges::data(t)[I], const_v<get_element<I>(V)>)) ?
 					(invoke<pack_index_v<V, A...>>(std::forward<F>(f)), true) : false;

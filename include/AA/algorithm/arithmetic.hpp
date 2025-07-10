@@ -118,11 +118,6 @@ namespace aa {
 		return !!remainder<2>(unsign(x));
 	}
 
-	template<class T>
-	constexpr size_t size_of(const size_t n) {
-		return product<sizeof(T)>(n);
-	}
-
 	// https://cp-algorithms.com/algebra/binary-exp.html
 	// https://en.wikipedia.org/wiki/Modular_exponentiation
 	template<std::unsigned_integral T, std::unsigned_integral U>

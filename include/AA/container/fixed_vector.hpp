@@ -101,7 +101,7 @@ namespace aa {
 
 		constexpr fixed_vector & operator=(fixed_vector && a) & {
 			cast<base_type &>(*this) = std::move(a);
-			ptr_to_back = std::exchange(a.ptr_to_back, nullptr);
+			ptr_to_back = a.ptr_to_back;
 			return *this;
 		}
 
@@ -109,7 +109,7 @@ namespace aa {
 
 		// Special member functions
 		constexpr fixed_vector(fixed_vector && a)
-			: base_type{std::move(a)}, ptr_to_back{std::exchange(a.ptr_to_back, nullptr)} {}
+			: base_type{std::move(a)}, ptr_to_back{a.ptr_to_back} {}
 
 		// Nedarome = default, nes konstruktorius vis tiek nebus trivial,
 		// nes klasė turi kintamųjų su numatytais inicializatoriais.

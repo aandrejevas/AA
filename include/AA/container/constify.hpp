@@ -7,7 +7,7 @@
 namespace aa {
 
 	// Konkretus panaudojimas struktūros yra, sakykime turime globalų kintamąjį, bet jį inicializuojame tik vėliau ir po to jo nekeičiame. Tai ši klasė leidžia jį inicializuoti ir jei bus bandoma pakeisti tą kintamąjį vėliau, iškarto bus išeinama iš programos.
-	template<std::movable T, cref_predicate<const T &> auto PREDICATE = default_v<equal_to<default_v<T>>>>
+	template<std::movable T, cref_predicate<const T &> PREDICATE = equal_to<default_value>>
 	struct constify : protected unit<T> {
 		// Member types
 		using typename unit<T>::tuple_type;
@@ -54,12 +54,12 @@ namespace aa {
 		// Observers
 	protected:
 		constexpr void assert_valueless() const {
-			if (!std::invoke(PREDICATE, unit_type::value))
+			if (!std::invoke(default_v<PREDICATE>, unit_type::value))
 				std::exit(EXIT_FAILURE);
 		}
 
 		constexpr void assert_valueful() const {
-			if (std::invoke(PREDICATE, unit_type::value))
+			if (std::invoke(default_v<PREDICATE>, unit_type::value))
 				std::exit(EXIT_FAILURE);
 		}
 
@@ -106,22 +106,12 @@ namespace aa {
 			assert_valueless();
 		}
 
-		// Jei nenorime naudoti value iš PREDICATE, tada reiktų naudoti kitokį PREDICATE.
-		constexpr constify() requires (constructible_from_value<value_type, const_t<PREDICATE>>)
-			: constify{PREDICATE.value} {}
-
-		constexpr constify() requires (constructible_from_invoke_result<value_type, const_t<PREDICATE>>)
-			: constify{PREDICATE()} {}
+		constexpr constify() requires (std::constructible_from<value_type, const_t<PREDICATE::value>>)
+			: constify{PREDICATE::value} {}
 
 		constexpr ~constify() {
 			assert_valueful();
 		}
 	};
-
-	template<pointer_like T>
-	using constify_ptr = constify<T, overload{
-		([](const T t) static -> bool { return t == ptr_v<T, numeric_max>; }),
-		([] static -> T { return ptr_v<T, numeric_max>; })
-	}>;
 
 }

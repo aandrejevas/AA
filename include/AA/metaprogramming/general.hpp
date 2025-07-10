@@ -1,6 +1,6 @@
 #pragma once
 
-// Nerealizuojame algoritmų, kurie netikrintų ar masyvas tuščias, nes tą patį galime pasiekti su įprastais algoritmais ir atributo assume naudojimu. Nerealizuojame fixed_string, type_name, log, nes tokį funkcionalumą suteikia žurnalavimo (spdlog) ir tokios kaip nameof bibliotekos. Nerealizuojame savo lexer, nes galime naudoti tiesiog populiarų formatą kaip json. Nerealizuojame print ir read, nes galime naudoti bibliotekas fmt ir scn. Nerealizuojame AA_IF_DEBUG, AA_TRACE_ASSERT, timekeeper, nes jie realizuoti tokiose bibliotekose kaip Boost. Nerealizuojame to_array, nes galime naudoti std::to_array arba std::array<T, 0>{}. Nerealizuojame int_math, nes galime tiesiogiai naudoti math funkcijas (klaidinga bandyti išrašyti math funkcijų visas kombinacijas, o tą ir darėme).
+// Nerealizuojame algoritmų, kurie netikrintų ar masyvas tuščias, nes tą patį galime pasiekti su įprastais algoritmais ir atributo assume naudojimu. Nerealizuojame fixed_string, type_name, log, nes tokį funkcionalumą suteikia žurnalavimo (spdlog) ir tokios kaip nameof bibliotekos. Nerealizuojame savo lexer, nes galime naudoti tiesiog populiarų formatą kaip json. Nerealizuojame print ir read, nes galime naudoti bibliotekas fmt ir scn. Nerealizuojame AA_IF_DEBUG, AA_TRACE_ASSERT, timekeeper, nes jie realizuoti tokiose bibliotekose kaip Boost. Nerealizuojame to_array, nes galime naudoti std::to_array arba std::array<T, 0>{}. Nerealizuojame int_math, nes galime tiesiogiai naudoti math funkcijas (klaidinga bandyti išrašyti math funkcijų visas kombinacijas, o tą ir darėme). Neturime ptr_v ir out_v, nes tokie globalūs kintamieji padidina programos dydį, ko be problemų galima išvengti.
 
 // Filosofija bibliotekos tokia, visos funkcijos žymimos constexpr ir tiek. Nesvarbu gali ar negali būti funkcija
 // naudojama constexpr kontekste, ji bus pažymėta constexpr. Gal naudotojams kiek neaišku gali būti ar jie gali
@@ -15,7 +15,7 @@
 // atributas, gali būti, kad tik kenkiu greitaveikai naudodamas tą atributą, geriau už kompiliatorių nenuspręsiu,
 // kur jį reikia naudoti, o kur ne, galiausiai išprotėčiau jei dar reiktų prižiūrėti ar visur tvarkingai sudėtas jis.
 
-// Stengiamės nenaudoti decltype ir auto, bet galime naudoti auto nurodant gražinamos reikšmės tipą ir deducing this tipą.
+// Nenaudojame decltype ir auto, bet galime naudoti auto ir decltype(auto) nurodant gražinamos reikšmės tipą, galime naudoti auto nurodant deducing this tipą.
 
 // AA bibliotekos failuose elgiamasi lyg būtų įterpti toliau išdėstyti failai, nes tie failai suteikia galimybę
 // sklandžiai programuoti naudojantis esminėmis C++ kalbos savybėmis. Tie failai yra ir jų įterpimo priežastys:
@@ -26,10 +26,10 @@
 // • <limits>, failas įterptas, kad išeitų lengvai naudotis pamatinių tipų savybėmis.
 // • <bit>, failas įterptas, kad išeitų lengvai manipuliuoti pamatinių tipų bitus.
 // • <functional>, failas įterptas, kad išeitų lengvai protauti apie funkcijų objektus.
-// • <variant> (<compare>), failas įterptas, kad turėti alternatyvą nesaugiems union tipams.
 // • <string_view> ir <string> (<compare>, <initializer_list>), failai įterpti, kad nereiktų naudoti C stiliaus teksto eilučių.
 // • <memory> (<compare>), failas įterptas, kad išeitų lengvai protauti apie atmintį.
 // Failai paminėti skliausteliuose prie įterpiamo failo nurodo kokie failai yra įterpiami pačio įterpiamo failo.
+// Neįterpiame <variant>, nes mums to failo reikėjo būtinai tik dėl std::monostate, o dabar ta struktūra randasi ir <utility> faile.
 
 // Nenurodome ką iš failų naudojame, nes net jei niekas nebūtų naudojama iš failo, failas turėtų būti įterptas.
 #include <cstddef>
@@ -42,7 +42,6 @@
 #include <bit>
 #include <utility>
 #include <functional>
-#include <variant>
 #include <string_view>
 #include <string>
 #include <iterator>
@@ -78,6 +77,7 @@ namespace aa {
 	template<uses_const_reference T>
 	using const_reference_in_use_t = typename std::remove_reference_t<T>::const_reference;
 
+	// https://devblogs.microsoft.com/oldnewthing/20190710-00/?p=102678
 	template<class T>
 	concept complete = requires { sizeof(T); };
 
@@ -176,6 +176,12 @@ namespace aa {
 	concept object_pointer_like = pointer_like<T> && std::is_object_v<std::remove_pointer_t<T>>;
 
 	template<class T>
+	concept class_like = std::is_class_v<T>;
+
+	template<class T>
+	concept reference_like = std::is_reference_v<T>;
+
+	template<class T>
 	concept lvalue_reference_like = std::is_lvalue_reference_v<T>;
 
 	template<class T>
@@ -200,7 +206,7 @@ namespace aa {
 	concept trivially_copyable = std::is_trivially_copyable_v<T>;
 
 	template<class L, class R>
-	concept wo_ref_same_as = std::same_as<std::remove_reference_t<L>, R>;
+	concept wo_cvref_same_as = std::same_as<std::remove_cvref_t<L>, R>;
 
 	template<class F, class... A>
 	concept cref_predicate = std::predicate<const F &, A...>;
@@ -228,6 +234,12 @@ namespace aa {
 
 	template<class F, class T>
 	concept constructible_between = (std::constructible_from<T, F> && std::constructible_from<F, T>);
+
+	template<class T, class U>
+	concept not_same_as_and_equality_comparable = !std::same_as<T, U> && std::equality_comparable<T>;
+
+	template<class T, class U>
+	concept not_same_as_and_totally_ordered = !std::same_as<T, U> && std::totally_ordered<T>;
 
 	// https://en.cppreference.com/w/cpp/concepts/boolean-testable.
 	template<class B>
@@ -303,6 +315,17 @@ namespace aa {
 
 	template<auto V>
 	using type_in_const_t = type_in_use_t<const_t<V>>;
+
+	template<class T, constructible_to<T> X>
+	constexpr T cast(X && x) {
+		return static_cast<T>(std::forward<X>(x));
+	}
+
+	// https://docs.libreoffice.org/o3tl/html/temporary_8hxx_source.html
+	template<not_lvalue_reference_like T>
+	constexpr T & stay(T && x) {
+		return x;
+	}
 
 	// <><><><><><><><><><><><><><><><><><><><><><><><> STR RANGES <><><><><><><><><><><><><><><><><><><><><><><><>
 
@@ -400,13 +423,21 @@ namespace aa {
 	concept movable_constructible_from = std::movable<T> && std::constructible_from<T, A...>;
 
 	namespace detail {
+		struct getter : std::monostate {
+			template<class S, not_same_as_and_equality_comparable<S> T>
+			constexpr bool operator==(this const S self, const T & t) { return cast<T>(self) == t; }
+
+			template<class S, not_same_as_and_totally_ordered<S> T>
+			constexpr auto operator<=>(this const S self, const T & t) { return cast<T>(self) <=> t; }
+		};
+
 		// T tipas nesiskiria kai esame const T & kontekste ar T kontekste. Tai reiškia, kad
 		// privalome pasirinkti grąžinti const T & arba T visiems atvejams. Yra pasirinkta grąžinti T,
 		// nes buvo nuspręsta, kad šias klases turi būti įmanoma naudoti ir ne su constexpr konstruktorius
 		// turinčiomis klasėmis ir joms neišeitų grąžinti const T &. Jei vis dėlto reikia const T &
 		// tipo, galima dirbti su atitinkamais constexpr kintamaisiais, kurie yra apibrėžti po šių klasių.
 		template<auto... A>
-		struct value_getter {
+		struct value_getter : getter {
 			// T turi būti movable, nes mums reikia žinoti ar galime iš gražinamos reikšmės sukonstruoti T.
 			// Nereikia turėti ir consteval funkcijos, nes visa esmė constexpr specifikatoriaus ir yra,
 			// kad funkcijos rezultatas bus apskaičiuotas kompiliavimo metu, jei tai yra įmanoma padaryti.
@@ -414,14 +445,25 @@ namespace aa {
 			constexpr operator T() const { return T{A...}; }
 		};
 
-		struct numeric_max_getter {
+		struct numeric_max_getter : getter {
+			// Ne consteval, nes max gali būti ne consteval funkcija.
 			template<std::movable T>
-			consteval operator T() const { return std::numeric_limits<T>::max(); }
+			constexpr operator T() const { return std::numeric_limits<T>::max(); }
 		};
 
-		struct numeric_min_getter {
+		struct numeric_min_getter : getter {
 			template<std::movable T>
-			consteval operator T() const { return std::numeric_limits<T>::min(); }
+			constexpr operator T() const { return std::numeric_limits<T>::min(); }
+		};
+
+		// Galėtų struktūra būti pakeista globaliu kintamuoju, bet tada padidėtų programos dydis ir mes su šia realizacija neprarandame greitaveikos.
+		template<uintptr_t N>
+		struct ptr_getter : std::monostate {
+			template<class T>
+			constexpr operator T * () const {
+				if constexpr (!!N)	return std::bit_cast<T *>(N);
+				else				return nullptr;
+			}
 		};
 	}
 
@@ -433,6 +475,9 @@ namespace aa {
 	constexpr detail::numeric_max_getter numeric_max;
 
 	constexpr detail::numeric_min_getter numeric_min;
+
+	template<uintptr_t N = 0>
+	constexpr detail::ptr_getter<N> ptr;
 
 	template<std::movable T, auto... A>
 	constexpr T value_v = value<A...>;
@@ -461,67 +506,7 @@ namespace aa {
 	template<enum_like T>
 	constexpr size_t numeric_digits_v<T> = std::numeric_limits<std::underlying_type_t<T>>::digits;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-	template<auto... A, std::regular T>
-	constexpr bool is_value(const T & x) {
-		return x == value_v<T, A...>;
-	}
 
-	template<std::regular T>
-	constexpr bool is_default_value(const T & x) {
-		return x == default_v<T>;
-	}
-
-	template<std::regular T>
-	constexpr bool is_numeric_max(const T & x) {
-		return x == numeric_max_v<T>;
-	}
-
-	template<std::regular T>
-	constexpr bool is_numeric_min(const T & x) {
-		return x == numeric_min_v<T>;
-	}
-#pragma GCC diagnostic pop
-
-	// Ne funkcija, nes pagalvojau, kad gal greičiau veiks, jei funkcijos nereikės kviesti, nors ir gal reikės paaukoti atminties.
-	template<pointer_like T, uintptr_t N>
-	inline const T ptr_v = std::bit_cast<T>(N);
-
-	// Leidžia vietoje lokalių kintamųjų, paduoti šį kintamąjį į funkcijas, kurios tikisi rodyklės.
-	template<movable_constructible_from T, size_t = 0>
-	inline thread_local constinit T out_v;
-
-	namespace detail {
-		template<size_t I = 0>
-		struct out_getter {
-			template<movable_constructible_from T>
-			constexpr operator T * () const {
-				return std::addressof(out_v<T, I>);
-			}
-
-			template<movable_constructible_from T>
-			constexpr operator T & () const {
-				return out_v<T, I>;
-			}
-		};
-	}
-
-	template<size_t I = 0>
-	constexpr detail::out_getter<I> out;
-
-
-
-	template<class T, constructible_to<T> X>
-	constexpr T cast(X && x) {
-		return static_cast<T>(std::forward<X>(x));
-	}
-
-	// https://docs.libreoffice.org/o3tl/html/temporary_8hxx_source.html
-	template<not_lvalue_reference_like T>
-	constexpr T & stay(T && x) {
-		return x;
-	}
 
 	// Kartais patogiau naudoti lambda su generic tipo parametru, bet ne atvejais, kai skiriasi parametrų skaičiai.
 	// Negalime tikrinti ar F turi operator(), nes gal ta funkcija yra templated ir mes neturime kaip to patikrinti.
@@ -583,8 +568,8 @@ namespace aa {
 			using value_type = T;
 			using reference = value_type &;
 			using const_reference = const value_type &;
-			using pointer = value_type *;
-			using const_pointer = const value_type *;
+			using pointer = std::remove_reference_t<value_type> *;
+			using const_pointer = const std::remove_reference_t<value_type> *;
 
 			// Special member functions
 			constexpr tuple_unit() = default;
@@ -602,48 +587,48 @@ namespace aa {
 		struct tuple_unit<I, T> {
 			// Member types
 			using value_type = const T;
+			using reference = value_type &;
+			using const_reference = value_type &;
+			using pointer = value_type *;
+			using const_pointer = value_type *;
 
 			// Member objects
 			static constexpr value_type value = default_value;
 		};
 	}
 
+	template<class T>
+	concept complete_tuple_size = complete<std::tuple_size<std::remove_reference_t<T>>>;
+
+	template<complete_tuple_size T>
+	constexpr size_t tuple_size_v = std::tuple_size_v<std::remove_reference_t<T>>;
+
+	template<class T, size_t I>
+	concept complete_tuple_element = complete<std::tuple_element<I, std::remove_reference_t<T>>>;
+
+	template<size_t I, complete_tuple_element<I> T>
+	using tuple_element_t = std::tuple_element_t<I, std::remove_reference_t<T>>;
+
 
 
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
 	template<class T, size_t I>
-	concept member_get_exists = requires(std::remove_cvref_t<T> &t) {
-		t.template get<I>();
-		std::as_const(t).template get<I>();
+	concept member_get_exists = requires(T && t) {
+		std::forward<T>(t).template get<I>();
 	};
 
 	template<class T, size_t I>
-	concept adl_get_exists = requires(std::remove_cvref_t<T> &t) {
-		get<I>(t);
-		get<I>(std::as_const(t));
+	concept adl_get_exists = requires(T && t) {
+		get<I>(std::forward<T>(t));
 	};
 
 	template<class T, size_t I>
 	concept gettable = member_get_exists<T, I> || adl_get_exists<T, I>;
 
-	// Kitaip alias galėtų būti realizuotas per specializacijas, bet tokiu atveju reiktų papildomo
-	// apibrėžimo klasės ar variable (klasės nenaudotume), nes alias apibrėžimų negalima specializuoti.
-	template<size_t I, gettable<I> T>
-	using get_result_t = type_in_const_t<([] static -> auto {
-		if constexpr (member_get_exists<T, I>) {
-			// Negalime naudoti `type_v<std::invoke_result_t<const_t<&std::remove_cvref_t<T>::template get<I>>, T>>`,
-			// nes jei get deklaruotas su deducing this (tuple get taip deklaruotas), nerasime get adreso.
-			return type_v<decltype(std::declval<T>().template get<I>())>;
-		} else {
-			// Negalime gauti funkcijos rodyklės su ADL.
-			return type_v<decltype(get<I>(std::declval<T>()))>;
-		}
-	})()>;
-
 	// Negalime turėti funkcijos, nes neišeina turėti function aliases patogių.
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/p2769r1.html
 	template<size_t I>
-	constexpr auto get_element = []<gettable<I> T>(T && t) static -> get_result_t<I, T> {
+	constexpr auto get_element = []<gettable<I> T>(T && t) static -> decltype(auto) {
 		if constexpr (member_get_exists<T, I>)	return std::forward<T>(t).template get<I>();
 		else									return get<I>(std::forward<T>(t));
 	};
@@ -653,32 +638,31 @@ namespace aa {
 	constexpr const_t<get_element<2>> get_2, get_z;
 	constexpr const_t<get_element<3>> get_3;
 
+	template<size_t I, gettable<I> T>
+	using get_result_t = std::invoke_result_t<const_t<get_element<I>>, T>;
+
 	template<class F, auto... A>
 	using call_template_t = const_t<&std::remove_cvref_t<F>::template operator()<A...>>;
 
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2989r2.pdf
 	template<auto... A, class F, class... T>
-	constexpr function_result_t<call_template_t<F, A...>> invoke(F && f, T &&... t) {
+	constexpr decltype(auto) invoke(F && f, T &&... t) {
 		return std::forward<F>(f).template operator()<A...>(std::forward<T>(t)...);
 	}
-
-	template<size_t N, class F>
-	using apply_result_t = type_in_const_t<([]<size_t... I>(const std::index_sequence<I...>) static
-		-> auto { return type_v<function_result_t<call_template_t<F, I...>>>; })(default_v<std::make_index_sequence<N>>)>;
 
 	// Nesijaudinant galima naudoti tag tipus kaip funkcijų parametrus.
 	// https://www.fluentcpp.com/2021/03/05/stdindex_sequence-and-its-improvement-in-c20/
 	// Jei lambdą iškeltume į funkciją, tai ji jokio funkcionalumo nesuteiktų, nes patogiau kiekvienu atveju būtų ne ją naudoti, o atitinkamą invoke.
 	template<size_t N, class F, class... A>
-	constexpr apply_result_t<N, F> apply(F && f, A &&... args) {
-		return ([&]<size_t... I>(const std::index_sequence<I...>) -> function_result_t<call_template_t<F, I...>> {
+	constexpr decltype(auto) apply(F && f, A &&... args) {
+		return ([&]<size_t... I>(const std::index_sequence<I...>) -> decltype(auto) {
 			return invoke<I...>(std::forward<F>(f), std::forward<A>(args)...);
 		})(default_v<std::make_index_sequence<N>>);
 	}
 
 	template<class T, size_t N = 0>
-	concept tuple_like = complete<std::tuple_size<T>> && (lvalue_reference_like<T> || ((std::tuple_size_v<T> >= N) && apply<std::tuple_size_v<T>>(
-		[]<size_t... I> static -> bool { return (... && wo_ref_same_as<get_result_t<I, T>, std::tuple_element_t<I, T>>); })));
+	concept tuple_like = (tuple_size_v<T> >= N) && apply<tuple_size_v<T>>(
+		[]<size_t... I> static -> bool { return (... && std::constructible_from<tuple_element_t<I, T>, get_result_t<I, T>>); });
 
 	template<class F, class T, class... A>
 		requires (std::invocable<F, T &, A...>)
@@ -687,9 +671,9 @@ namespace aa {
 		return t;
 	}
 
-	template<class F, class... T>
-	concept tuple_constructible_to = (tuple_like<F, sizeof...(T)> && apply<sizeof...(T)>(
-		[]<size_t... I> static -> bool { return (... && std::constructible_from<T, get_result_t<I, F>>); }));
+	template<class F, class T, size_t... I>
+	concept tuple_constructible_to = tuple_like<F, tuple_size_v<T>>
+		&& (... && std::constructible_from<tuple_element_t<I, T>, get_result_t<I, F>>);
 
 
 
@@ -762,7 +746,7 @@ namespace aa {
 		constexpr basic_tuple(const std::index_sequence<I...>, U &&... u) : unit_type<I>{std::forward<U>(u)}... {}
 
 		// Pvz: tuple<unit<int>> a = tuple{tuple{unit{1}}}; Neįmanoma šio konstruktoriaus sumaišyti su kitu konstruktoriumi.
-		template<tuple_constructible_to<value_type<S>...> U>
+		template<tuple_constructible_to<tuple_type, S...> U>
 		constexpr basic_tuple(U && u) : unit_type<S>{get_element<S>(std::forward<U>(u))}... {}
 
 		constexpr basic_tuple() = default;
@@ -799,12 +783,6 @@ namespace aa {
 	template<class T, template<class...> class F>
 	concept specialization_of = ([]<class... A>(const std::type_identity<F<A...>>) static -> bool { return true; })(type_v<std::remove_cvref_t<T>>);
 
-	template<class T, class F>
-	concept constructible_from_value = requires(F && f) { { std::forward<F>(f).value } -> constructible_to<T>; };
-
-	template<class T, class F, class... A>
-	concept constructible_from_invoke_result = (std::invocable<F, A...> && std::constructible_from<T, std::invoke_result_t<F, A...>>);
-
 	template<sized_contiguous_range T>
 	using range_char_traits_t = type_in_const_t<([] static -> auto {
 		if constexpr (uses_traits_type<T>) {
@@ -837,12 +815,15 @@ namespace aa {
 	using filled_t = type_in_const_t<apply<N>([]<size_t... I> static ->
 		auto { return type_v<T<type_in_const_t<invoke<I>(F)>...>>; })>;
 
+	// GCC 15.1.0 BUG: ICE with 'return (... && requires { requires std::constructible_from<typename T::value_type<I>, get_result_t<I, T>>; })'
+	// Netikriname ar 'std::constructible_from<typename T::value_type<I>, get_result_t<I, T>>', nes tai patikrins tuple_like.
 	template<class T>
-	concept new_tuple_like = apply<std::remove_cvref_t<T>::tuple_size>([]<size_t... I> static -> bool { return (... && gettable<T, I>); });
+	concept new_tuple_like = (requires { { T::tuple_size } -> wo_cvref_same_as<size_t>; })
+		&& apply<T::tuple_size>([]<size_t... I> static -> bool { return (... && requires { typename T::value_type<I>; }); });
 
 	template<class T, size_t N = 0>
 	concept uniform_tuple_like = (tuple_like<T, N>
-		&& apply<std::tuple_size_v<T>>([]<size_t... I> static -> bool { return same_as_every<get_result_t<I, T>...>; }));
+		&& apply<tuple_size_v<T>>([]<size_t... I> static -> bool { return same_as_every<tuple_element_t<I, T>...>; }));
 
 	template<class T, size_t N = 0>
 	concept fixed_string_like = range_uses_traits_type<T> && uniform_tuple_like<T, N>;
@@ -855,7 +836,7 @@ namespace aa {
 		std::array<call_template_t<F, 0uz>, N> { return {(&std::remove_cvref_t<F>::template operator()<I>)...}; });
 
 	template<size_t N, constexprifier_like<N> F, class... A>
-	constexpr function_result_t<call_template_t<F, 0uz>> constexprify(const size_t i, F && f, A &&... args) {
+	constexpr decltype(auto) constexprify(const size_t i, F && f, A &&... args) {
 		if constexpr (std::is_member_function_pointer_v<call_template_t<F, 0uz>>) {
 			return (std::forward<F>(f).*constexprifier_table_v<N, F>[i])(std::forward<A>(args)...);
 		} else {
@@ -971,11 +952,11 @@ namespace aa {
 		using value_type = std::remove_reference_t<function_argument_t<call_template_t<F>>>;
 		if constexpr (!sizeof...(A)) {
 			value_type d;
-			apply<std::tuple_size_v<value_type>>(std::forward<F>(f), d);
+			apply<tuple_size_v<value_type>>(std::forward<F>(f), d);
 			return d;
 		} else {
 			value_type d = {std::forward<A>(args)...};
-			apply<std::tuple_size_v<value_type>>(std::forward<F>(f), d);
+			apply<tuple_size_v<value_type>>(std::forward<F>(f), d);
 			return d;
 		}
 	}
@@ -1220,16 +1201,10 @@ namespace aa {
 
 
 
-template<aa::tuple_like T>
-struct std::tuple_size<T &> : aa::constant<std::tuple_size_v<T>> {};
-
-template<size_t I, aa::tuple_like T>
-struct std::tuple_element<I, T &> : std::type_identity<std::tuple_element_t<I, T>> {};
-
 // Negalime tikrinti ar prieš šį momentą tuple_size<T> buvo deklaruotas tipas ar ne, nes įeitume į begalinį
 // ciklą. Reiškia turi mums pats tipas pranešti ar jis nori būti laikomas kaip tuple like tipas.
 template<aa::new_tuple_like T>
 struct std::tuple_size<T> : aa::constant<T::tuple_size> {};
 
 template<size_t I, aa::new_tuple_like T>
-struct std::tuple_element<I, T> : std::type_identity<std::remove_reference_t<aa::get_result_t<I, T>>> {};
+struct std::tuple_element<I, T> : std::type_identity<typename T::value_type<I>> {};

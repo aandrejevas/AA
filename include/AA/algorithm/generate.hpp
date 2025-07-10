@@ -13,8 +13,8 @@ namespace aa {
 	// [0, MAX - MIN + 1)
 	template<bits_generator G>
 	constexpr generator_result_t<G> int_generate(G & g) {
-		if constexpr (!is_numeric_min(G::min()))	return g() - G::min();
-		else										return g();
+		if constexpr (G::min() != numeric_min)	return g() - G::min();
+		else									return g();
 	}
 
 

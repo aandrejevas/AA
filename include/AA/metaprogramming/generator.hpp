@@ -12,7 +12,7 @@ namespace aa {
 
 	template<class G>
 	concept full_range_generator = bits_generator<G>
-		&& is_numeric_min(std::remove_reference_t<G>::min()) && is_numeric_max(std::remove_reference_t<G>::max());
+		&& (std::remove_reference_t<G>::min() == numeric_min) && (std::remove_reference_t<G>::max() == numeric_max);
 
 
 

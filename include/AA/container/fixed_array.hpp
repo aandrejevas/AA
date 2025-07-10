@@ -102,7 +102,8 @@ namespace aa {
 		// Šios klasės specialūs metodai yra ištrinti dėl unique_ptr naudojimo.
 		constexpr fixed_array & operator=(fixed_array && o) & {
 			elements = std::move(o.elements);
-			ptr_to_last = std::exchange(o.ptr_to_last, nullptr);
+			// Nedarome std::exchange, nes taupome greitaveiką.
+			ptr_to_last = o.ptr_to_last;
 			return *this;
 		}
 
@@ -118,7 +119,7 @@ namespace aa {
 			: elements{nullptr}, ptr_to_last{nullptr} {}
 
 		constexpr fixed_array(fixed_array && o)
-			: elements{std::move(o.elements)}, ptr_to_last{std::exchange(o.ptr_to_last, nullptr)} {}
+			: elements{std::move(o.elements)}, ptr_to_last{o.ptr_to_last} {}
 
 		constexpr fixed_array(const size_type size) requires (std::same_as<deleter_type, std::default_delete<value_type[]>>)
 			: fixed_array{std::allocator<std::remove_const_t<value_type>>{}.allocate(size), size} {}
