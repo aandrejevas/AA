@@ -8,7 +8,7 @@ namespace aa {
 
 	// Konkretus panaudojimas struktūros yra, sakykime turime globalų kintamąjį, bet jį inicializuojame tik vėliau ir po to jo nekeičiame. Tai ši klasė leidžia jį inicializuoti ir jei bus bandoma pakeisti tą kintamąjį vėliau, iškarto bus išeinama iš programos.
 	template<std::movable T, cref_predicate<const T &> PREDICATE = equal_to<default_value>>
-	struct constify : protected unit<T> {
+	struct constify : private unit<T> {
 		// Member types
 		using typename unit<T>::tuple_type;
 		using unit_type = typename tuple_type::unit_type<0>;
@@ -18,8 +18,8 @@ namespace aa {
 
 		struct permit {
 			// Observers
-			constexpr pointer operator->() const {
-				return std::addressof(constifier.value);
+			constexpr auto operator->() const {
+				return to_pointer(constifier.value);
 			}
 
 			constexpr pointer operator&() const {
@@ -30,8 +30,8 @@ namespace aa {
 				return constifier.value;
 			}
 
-			constexpr reference operator*() const {
-				return constifier.value;
+			constexpr decltype(auto) operator*() const {
+				return to_reference(constifier.value);
 			}
 
 			constexpr reference get() const {
@@ -52,7 +52,7 @@ namespace aa {
 		};
 
 		// Observers
-	protected:
+	private:
 		constexpr void assert_valueless() const {
 			if (!std::invoke(default_v<PREDICATE>, unit_type::value))
 				std::exit(EXIT_FAILURE);
@@ -64,8 +64,8 @@ namespace aa {
 		}
 
 	public:
-		constexpr const_pointer operator->() const {
-			return std::addressof(unit_type::value);
+		constexpr auto operator->() const {
+			return to_pointer(unit_type::value);
 		}
 
 		constexpr const_pointer operator&() const {
@@ -76,8 +76,8 @@ namespace aa {
 			return unit_type::value;
 		}
 
-		constexpr const_reference operator*() const {
-			return unit_type::value;
+		constexpr decltype(auto) operator*() const {
+			return to_reference(unit_type::value);
 		}
 
 		constexpr const_reference get() const {

@@ -16,6 +16,7 @@
 // kur jį reikia naudoti, o kur ne, galiausiai išprotėčiau jei dar reiktų prižiūrėti ar visur tvarkingai sudėtas jis.
 
 // Nenaudojame decltype ir auto, bet galime naudoti auto ir decltype(auto) nurodant gražinamos reikšmės tipą, galime naudoti auto nurodant deducing this tipą.
+// Nenaudojame const nurodant bevardžių parametrų tuščius tipus, nes tokie parametrai nepanaudojami ir viršutinio lygio const nekeičia funkcijos tipo tai tik sutaupome vietos nerašydami const.
 
 // AA bibliotekos failuose elgiamasi lyg būtų įterpti toliau išdėstyti failai, nes tie failai suteikia galimybę
 // sklandžiai programuoti naudojantis esminėmis C++ kalbos savybėmis. Tie failai yra ir jų įterpimo priežastys:
@@ -321,12 +322,6 @@ namespace aa {
 		return static_cast<T>(std::forward<X>(x));
 	}
 
-	// https://docs.libreoffice.org/o3tl/html/temporary_8hxx_source.html
-	template<not_lvalue_reference_like T>
-	constexpr T & stay(T && x) {
-		return x;
-	}
-
 	// <><><><><><><><><><><><><><><><><><><><><><><><> STR RANGES <><><><><><><><><><><><><><><><><><><><><><><><>
 
 	template<class B, class I>
@@ -423,7 +418,13 @@ namespace aa {
 	concept movable_constructible_from = std::movable<T> && std::constructible_from<T, A...>;
 
 	namespace detail {
-		struct getter : std::monostate {
+		struct getter {
+			// Vietoj operatorių apibrėžimo galėtume paveldėti iš monostate, bet kitur negalime paveldėti ir nepaveldime tai čia taip pat taip elgiamės, kad būtume nuoseklūs. Taip pat nebūtų teisinga paveldėti, nes vietoje monostate galėtų būtų naudojamos šios klasės.
+			// Turime apibrėžti ir operator==, nes todėl, kad turime kitą operator==, iš operator<=> nėra sukuriamas automatiškai tas operatorius.
+			consteval bool operator==(this getter, getter) = default;
+			consteval std::strong_ordering operator<=>(this getter, getter) = default;
+
+			// Reikia funkcijų ir šios klasės apskritai, nes be jos, getter'ių negalima lyginti tik su fundamental tipais kažkodėl.
 			template<class S, not_same_as_and_equality_comparable<S> T>
 			constexpr bool operator==(this const S self, const T & t) { return cast<T>(self) == t; }
 
@@ -458,7 +459,7 @@ namespace aa {
 
 		// Galėtų struktūra būti pakeista globaliu kintamuoju, bet tada padidėtų programos dydis ir mes su šia realizacija neprarandame greitaveikos.
 		template<uintptr_t N>
-		struct ptr_getter : std::monostate {
+		struct ptr_getter : getter {
 			template<class T>
 			constexpr operator T * () const {
 				if constexpr (!!N)	return std::bit_cast<T *>(N);
@@ -520,26 +521,26 @@ namespace aa {
 	// Lambdos ne consteval, nes nereikia constexpr kontekstuose to žymėti. Analogiškos lambdos taip pat neturi tokio specifikatoriaus.
 	template<class F>
 	using function_t = type_in_const_t<overload{
-		([]<bool N, class R, class... A>(const std::type_identity<R(A...) noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
-		([]<bool N, class R, class... A>(const std::type_identity<R(*)(A...) noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
-		([]<class T, class R>(const std::type_identity<R T:: *>) static -> auto { return type_v<R()>; }),
-		([]<bool N, class T, class R, class... A>(const std::type_identity<R(T:: *)(A...) noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
-		([]<bool N, class T, class R, class... A>(const std::type_identity<R(T:: *)(A...) & noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
-		([]<bool N, class T, class R, class... A>(const std::type_identity<R(T:: *)(A...) && noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
-		([]<bool N, class T, class R, class... A>(const std::type_identity<R(T:: *)(A...) const noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
-		([]<bool N, class T, class R, class... A>(const std::type_identity<R(T:: *)(A...) const & noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
-		([]<bool N, class T, class R, class... A>(const std::type_identity<R(T:: *)(A...) const && noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
-		([]<class T>(this const auto lambda, const std::type_identity<T>) -> auto { return lambda(type_v<const_t<&T::operator()>>); })
+		([]<bool N, class R, class... A>(std::type_identity<R(A...) noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
+		([]<bool N, class R, class... A>(std::type_identity<R(*)(A...) noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
+		([]<class T, class R>(std::type_identity<R T:: *>) static -> auto { return type_v<R()>; }),
+		([]<bool N, class T, class R, class... A>(std::type_identity<R(T:: *)(A...) noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
+		([]<bool N, class T, class R, class... A>(std::type_identity<R(T:: *)(A...) & noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
+		([]<bool N, class T, class R, class... A>(std::type_identity<R(T:: *)(A...) && noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
+		([]<bool N, class T, class R, class... A>(std::type_identity<R(T:: *)(A...) const noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
+		([]<bool N, class T, class R, class... A>(std::type_identity<R(T:: *)(A...) const & noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
+		([]<bool N, class T, class R, class... A>(std::type_identity<R(T:: *)(A...) const && noexcept(N)>) static -> auto { return type_v<R(A...)>; }),
+		([]<class T>(this const auto lambda, std::type_identity<T>) -> auto { return lambda(type_v<const_t<&T::operator()>>); })
 	}(type_v<std::remove_cvref_t<F>>)>;
 
 	template<class F, size_t I = 0>
-	using function_argument_t = type_in_const_t<([]<class R, class... A>(const std::type_identity<R(A...)>) static ->
+	using function_argument_t = type_in_const_t<([]<class R, class... A>(std::type_identity<R(A...)>) static ->
 		auto { return type_v<A...[I]>; })(type_v<function_t<F>>)>;
 
 	// GCC 15.1.0 BUG: ICE Segmentation fault when using the lambda directly
 	namespace detail {
 		template<class F>
-		constexpr std::type_identity function_result_v = ([]<class R, class... A>(const std::type_identity<R(A...)>) static ->
+		constexpr std::type_identity function_result_v = ([]<class R, class... A>(std::type_identity<R(A...)>) static ->
 			auto { return type_v<R>; })(type_v<function_t<F>>);
 	}
 
@@ -547,7 +548,7 @@ namespace aa {
 	using function_result_t = type_in_const_t<detail::function_result_v<F>>;
 
 	template<class F>
-	constexpr size_t function_arity_v = ([]<class R, class... A>(const std::type_identity<R(A...)>) static ->
+	constexpr size_t function_arity_v = ([]<class R, class... A>(std::type_identity<R(A...)>) static ->
 		size_t { return sizeof...(A); })(type_v<function_t<F>>);
 
 
@@ -571,6 +572,9 @@ namespace aa {
 			using pointer = std::remove_reference_t<value_type> *;
 			using const_pointer = const std::remove_reference_t<value_type> *;
 
+			// Comparisons
+			constexpr auto operator<=>(const tuple_unit &) const = default;
+
 			// Special member functions
 			constexpr tuple_unit() = default;
 			constexpr tuple_unit() requires (const_unit_param_like<value_type>) : value{default_value} {}
@@ -592,6 +596,9 @@ namespace aa {
 			using pointer = value_type *;
 			using const_pointer = value_type *;
 
+			// Comparisons
+			consteval std::strong_ordering operator<=>(this tuple_unit, tuple_unit) = default;
+
 			// Member objects
 			static constexpr value_type value = default_value;
 		};
@@ -610,6 +617,13 @@ namespace aa {
 	using tuple_element_t = std::tuple_element_t<I, std::remove_reference_t<T>>;
 
 
+
+	// https://docs.libreoffice.org/o3tl/html/temporary_8hxx_source.html
+	template<not_lvalue_reference_like T>
+	constexpr T & stay(T && x = default_value) {
+		// Turime atlikti cast, kitaip meta klaidą.
+		return std::forward<T &>(x);
+	}
 
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
 	template<class T, size_t I>
@@ -655,7 +669,7 @@ namespace aa {
 	// Jei lambdą iškeltume į funkciją, tai ji jokio funkcionalumo nesuteiktų, nes patogiau kiekvienu atveju būtų ne ją naudoti, o atitinkamą invoke.
 	template<size_t N, class F, class... A>
 	constexpr decltype(auto) apply(F && f, A &&... args) {
-		return ([&]<size_t... I>(const std::index_sequence<I...>) -> decltype(auto) {
+		return ([&]<size_t... I>(std::index_sequence<I...>) -> decltype(auto) {
 			return invoke<I...>(std::forward<F>(f), std::forward<A>(args)...);
 		})(default_v<std::make_index_sequence<N>>);
 	}
@@ -725,6 +739,9 @@ namespace aa {
 		// Capacity
 		static constexpr size_t tuple_size = sizeof...(T);
 
+		// Comparisons
+		constexpr auto operator<=>(const tuple_type &) const = default;
+
 		// Element access
 		template<size_t I, class H>
 		constexpr auto && get(this H && self) {
@@ -736,6 +753,11 @@ namespace aa {
 			return std::forward<H>(self).unit_type<index<U>>::value;
 		}
 
+		template<class U>
+		constexpr U as() const {
+			return std::bit_cast<U>(*this);
+		}
+
 		// Special member functions
 		template<constructible_to<value_type<S>>... U>
 			requires (!!sizeof...(S))
@@ -743,7 +765,7 @@ namespace aa {
 
 		template<size_t... I, constructible_to<value_type<I>>... U>
 			requires (!!sizeof...(I))
-		constexpr basic_tuple(const std::index_sequence<I...>, U &&... u) : unit_type<I>{std::forward<U>(u)}... {}
+		constexpr basic_tuple(std::index_sequence<I...>, U &&... u) : unit_type<I>{std::forward<U>(u)}... {}
 
 		// Pvz: tuple<unit<int>> a = tuple{tuple{unit{1}}}; Neįmanoma šio konstruktoriaus sumaišyti su kitu konstruktoriumi.
 		template<tuple_constructible_to<tuple_type, S...> U>
@@ -781,7 +803,7 @@ namespace aa {
 
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2098r1.pdf
 	template<class T, template<class...> class F>
-	concept specialization_of = ([]<class... A>(const std::type_identity<F<A...>>) static -> bool { return true; })(type_v<std::remove_cvref_t<T>>);
+	concept specialization_of = ([]<class... A>(std::type_identity<F<A...>>) static -> bool { return true; })(type_v<std::remove_cvref_t<T>>);
 
 	template<sized_contiguous_range T>
 	using range_char_traits_t = type_in_const_t<([] static -> auto {
@@ -847,7 +869,7 @@ namespace aa {
 
 
 	template<class T>
-	using propagate_const_t = type_in_const_t<([]<class U>(this const auto lambda, const std::type_identity<U>) -> auto {
+	using propagate_const_t = type_in_const_t<([]<class U>(this const auto lambda, std::type_identity<U>) -> auto {
 		if constexpr (pointer_like<U>) {
 			return type_v<type_in_const_t<lambda(type_v<std::remove_pointer_t<U>>)> *const>;
 		} else if constexpr (lvalue_reference_like<U>) {
@@ -871,7 +893,7 @@ namespace aa {
 	// https://mathworld.wolfram.com/Hypermatrix.html
 	template<class T, size_t... N>
 		requires (!!sizeof...(N))
-	using hypermatrix_t = type_in_const_t<([]<size_t I1, size_t... I>(this const auto lambda, const constant<I1>, const constant<I>... args) -> auto {
+	using hypermatrix_t = type_in_const_t<([]<size_t I1, size_t... I>(this const auto lambda, constant<I1>, const constant<I>... args) -> auto {
 		if constexpr (sizeof...(I)) {
 			return type_v<std::array<type_in_const_t<lambda(args...)>, I1>>;
 		} else {
@@ -961,6 +983,24 @@ namespace aa {
 		}
 	}
 
+	template<class T>
+	constexpr auto to_pointer(T & t) {
+		if constexpr (std::indirectly_readable<T>) {
+			return std::to_address(t);
+		} else {
+			return std::addressof(t);
+		}
+	}
+
+	template<class T>
+	constexpr decltype(auto) to_reference(T & t) {
+		if constexpr (std::indirectly_readable<T>) {
+			return *t;
+		} else {
+			return t;
+		}
+	}
+
 	// Klasė naudinga naudoti su klasėmis, kurių move konstruktorius yra ištrintas, nes tokios klasės negali dalyvauti NRVO.
 	// https://devblogs.microsoft.com/oldnewthing/20230612-00/?p=108329
 	// Laikome konstantą, nes kintamojo nėra prasmės laikyti šioje klasėje, tokiu atveju reikėtų šios klasės nenaudoti.
@@ -974,8 +1014,8 @@ namespace aa {
 			typename unit_type::pointer, typename unit_type::const_pointer;
 
 		// Observers
-		constexpr const_pointer operator->() const {
-			return std::addressof(unit_type::value);
+		constexpr auto operator->() const {
+			return to_pointer(unit_type::value);
 		}
 
 		constexpr const_pointer operator&() const {
@@ -986,8 +1026,8 @@ namespace aa {
 			return unit_type::value;
 		}
 
-		constexpr const_reference operator*() const {
-			return unit_type::value;
+		constexpr decltype(auto) operator*() const {
+			return to_reference(unit_type::value);
 		}
 
 		constexpr const_reference get() const {

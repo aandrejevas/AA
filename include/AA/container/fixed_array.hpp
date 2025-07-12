@@ -90,6 +90,11 @@ namespace aa {
 		// Galėtume neturėti šio metodo, nes gražinamos reikšmės yra pasiekiamos per konstantą tai
 		// neprarastume greitaveikos, bet turime juos dėl įsivaizduojamo patogumo.
 
+		// capacity - size
+		constexpr size_type space(this const auto & self) { return unsign(self.last_data() - self.back_data()); }
+
+		static constexpr size_type min_size = numeric_min, max_size = numeric_max_v<difference_type>;
+
 		template<class S>
 		constexpr auto && get_deleter(this S && self) {
 			return std::forward_like<S>(self.elements.get_deleter());
@@ -102,8 +107,7 @@ namespace aa {
 		// Šios klasės specialūs metodai yra ištrinti dėl unique_ptr naudojimo.
 		constexpr fixed_array & operator=(fixed_array && o) & {
 			elements = std::move(o.elements);
-			// Nedarome std::exchange, nes taupome greitaveiką.
-			ptr_to_last = o.ptr_to_last;
+			ptr_to_last = std::exchange(o.ptr_to_last, default_value);
 			return *this;
 		}
 
@@ -115,11 +119,13 @@ namespace aa {
 			: elements{p}, ptr_to_last{(p - 1) + size} {}
 
 	public:
+		// Reikia tokio konstruktoriaus, nes gal norės naudotojas vėliau daryti construct_at ant šito objekto. Tuščia būsena taip pat gaunama po move.
+		// Inicializuojame su nullptr, nes tai suteikia saugumo ir tas priskyrimas bus išoptimizuotas (unique_ptr inicializacijos negalėtume sustabdyti).
 		constexpr fixed_array()
-			: elements{nullptr}, ptr_to_last{nullptr} {}
+			: elements{default_value}, ptr_to_last{default_value} {}
 
 		constexpr fixed_array(fixed_array && o)
-			: elements{std::move(o.elements)}, ptr_to_last{o.ptr_to_last} {}
+			: elements{std::move(o.elements)}, ptr_to_last{std::exchange(o.ptr_to_last, default_value)} {}
 
 		constexpr fixed_array(const size_type size) requires (std::same_as<deleter_type, std::default_delete<value_type[]>>)
 			: fixed_array{std::allocator<std::remove_const_t<value_type>>{}.allocate(size), size} {}
