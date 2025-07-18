@@ -122,7 +122,7 @@ namespace aa {
 		// Reikia tokio konstruktoriaus, nes gal norės naudotojas vėliau daryti construct_at ant šito objekto. Tuščia būsena taip pat gaunama po move.
 		// Inicializuojame su nullptr, nes tai suteikia saugumo ir tas priskyrimas bus išoptimizuotas (unique_ptr inicializacijos negalėtume sustabdyti).
 		constexpr fixed_array()
-			: elements{default_value}, ptr_to_last{default_value} {}
+			: elements{}, ptr_to_last{default_value} {}
 
 		constexpr fixed_array(fixed_array && o)
 			: elements{std::move(o.elements)}, ptr_to_last{std::exchange(o.ptr_to_last, default_value)} {}
