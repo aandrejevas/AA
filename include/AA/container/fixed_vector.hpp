@@ -10,10 +10,10 @@ namespace aa {
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p0843r14.html
 	// https://en.wikipedia.org/wiki/Dynamic_array
 	// Negali būti tuple like, nes kinta kiek masyvo elementų yra "naudojama".
-	template<class T, ref_invocable<T *> D = std::default_delete<T[]>>
-	struct fixed_vector : fixed_array<T, D> {
+	template<std::destructible T, cref_invocable<T *> auto DELETER = default_v<std::default_delete<T[]>>>
+	struct fixed_vector : fixed_array<T, DELETER> {
 		// Member types
-		using base_type = fixed_array<T, D>;
+		using base_type = fixed_array<T, DELETER>;
 		using typename base_type::value_type, typename base_type::size_type, typename base_type::difference_type,
 			typename base_type::reference, typename base_type::const_reference,
 			typename base_type::pointer, typename base_type::const_pointer,
@@ -168,7 +168,7 @@ namespace aa {
 
 	namespace pmr {
 		template<class T>
-		using fixed_vector = aa::fixed_vector<T, std::identity>;
+		using fixed_vector = aa::fixed_vector<T, default_v<std::identity>>;
 	}
 
 }

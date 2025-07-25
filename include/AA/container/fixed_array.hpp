@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
+#include "managed.hpp"
 #include <memory_resource>
 
 
@@ -13,7 +14,7 @@ namespace aa {
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p0401r6.html
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0316r0.html
 	// https://en.wikipedia.org/wiki/Array_data_structure
-	template<class T, ref_invocable<T *> D = std::default_delete<T[]>>
+	template<std::destructible T, cref_invocable<T *> auto DELETER = default_v<std::default_delete<T[]>>>
 	struct fixed_array {
 		// Member types
 		using value_type = T;
@@ -25,14 +26,14 @@ namespace aa {
 		using const_pointer = const value_type *;
 		using iterator = pointer;
 		using const_iterator = const_pointer;
-		using deleter_type = D;
+		using deleter_type = const_t<DELETER>;
 
 
 
 		// Element access
 		template<class S>
 		constexpr auto && operator[](this S && self, const size_type pos) {
-			return std::forward_like<S>(self.elements[pos]);
+			return std::forward_like<S>(self.ptr_to_front[pos]);
 		}
 
 		constexpr auto data(this auto && self) {
@@ -49,7 +50,7 @@ namespace aa {
 
 		template<class S>
 		constexpr auto && front(this S && self) {
-			return std::forward_like<S>(*self.elements.get());
+			return std::forward_like<S>(*self.ptr_to_front);
 		}
 
 		template<class S>
@@ -95,18 +96,13 @@ namespace aa {
 
 		static constexpr size_type min_size = numeric_min, max_size = numeric_max_v<difference_type>;
 
-		template<class S>
-		constexpr auto && get_deleter(this S && self) {
-			return std::forward_like<S>(self.elements.get_deleter());
-		}
-
 
 
 		// Modifiers
 		// Neturime iš range kopijavimo metodų ar konstruktorių, nes visų atvejų kopijavimo ir taip neapimtume.
 		// Šios klasės specialūs metodai yra ištrinti dėl unique_ptr naudojimo.
 		constexpr fixed_array & operator=(fixed_array && o) & {
-			elements = std::move(o.elements);
+			ptr_to_front = std::move(o.ptr_to_front);
 			ptr_to_last = std::exchange(o.ptr_to_last, default_value);
 			return *this;
 		}
@@ -116,16 +112,16 @@ namespace aa {
 		// Special member functions
 	private:
 		constexpr fixed_array(const pointer p, const size_type size)
-			: elements{p}, ptr_to_last{(p - 1) + size} {}
+			: ptr_to_front{p}, ptr_to_last{(p - 1) + size} {}
 
 	public:
 		// Reikia tokio konstruktoriaus, nes gal norės naudotojas vėliau daryti construct_at ant šito objekto. Tuščia būsena taip pat gaunama po move.
 		// Inicializuojame su nullptr, nes tai suteikia saugumo ir tas priskyrimas bus išoptimizuotas (unique_ptr inicializacijos negalėtume sustabdyti).
 		constexpr fixed_array()
-			: elements{}, ptr_to_last{default_value} {}
+			: ptr_to_front{}, ptr_to_last{default_value} {}
 
 		constexpr fixed_array(fixed_array && o)
-			: elements{std::move(o.elements)}, ptr_to_last{std::exchange(o.ptr_to_last, default_value)} {}
+			: ptr_to_front{std::move(o.ptr_to_front)}, ptr_to_last{std::exchange(o.ptr_to_last, default_value)} {}
 
 		constexpr fixed_array(const size_type size) requires (std::same_as<deleter_type, std::default_delete<value_type[]>>)
 			: fixed_array{std::allocator<std::remove_const_t<value_type>>{}.allocate(size), size} {}
@@ -140,14 +136,14 @@ namespace aa {
 
 		// Member objects
 	protected:
-		std::unique_ptr<value_type[], deleter_type> elements;
-		// Ne const_pointer, nes elements ir taip nebūtų const.
+		managed<pointer, DELETER> ptr_to_front;
+		// Ne const_pointer, nes ptr_to_front ir taip nebūtų const.
 		pointer ptr_to_last;
 	};
 
 	namespace pmr {
 		template<class T>
-		using fixed_array = aa::fixed_array<T, std::identity>;
+		using fixed_array = aa::fixed_array<T, default_v<std::identity>>;
 	}
 
 }

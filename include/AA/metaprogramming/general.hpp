@@ -1,6 +1,6 @@
 #pragma once
 
-// Nerealizuojame algoritmų, kurie netikrintų ar masyvas tuščias, nes tą patį galime pasiekti su įprastais algoritmais ir atributo assume naudojimu. Nerealizuojame fixed_string, type_name, log, nes tokį funkcionalumą suteikia žurnalavimo (spdlog) ir tokios kaip nameof bibliotekos. Nerealizuojame savo lexer, nes galime naudoti tiesiog populiarų formatą kaip json. Nerealizuojame print ir read, nes galime naudoti bibliotekas fmt ir scn. Nerealizuojame AA_IF_DEBUG, AA_TRACE_ASSERT, timekeeper, nes jie realizuoti tokiose bibliotekose kaip Boost. Nerealizuojame to_array, nes galime naudoti std::to_array arba std::array<T, 0>{}. Nerealizuojame int_math, nes galime tiesiogiai naudoti math funkcijas (klaidinga bandyti išrašyti math funkcijų visas kombinacijas, o tą ir darėme). Neturime ptr_v ir out_v, nes tokie globalūs kintamieji padidina programos dydį, ko be problemų galima išvengti.
+// Nerealizuojame algoritmų, kurie netikrintų ar masyvas tuščias, nes tą patį galime pasiekti su įprastais algoritmais ir atributo assume naudojimu. Nerealizuojame fixed_string, type_name, log, nes tokį funkcionalumą suteikia žurnalavimo (spdlog) ir tokios kaip nameof bibliotekos. Nerealizuojame savo lexer, nes galime naudoti tiesiog populiarų formatą kaip json. Nerealizuojame print ir read, nes galime naudoti bibliotekas fmt ir scn. Nerealizuojame AA_IF_DEBUG, AA_TRACE_ASSERT, timekeeper, nes jie realizuoti tokiose bibliotekose kaip Boost. Nerealizuojame to_array, nes galime naudoti std::to_array arba std::array<T, 0>{}. Nerealizuojame int_math, nes galime tiesiogiai naudoti math funkcijas (klaidinga bandyti išrašyti math funkcijų visas kombinacijas, o tą ir darėme). Neturime ptr_v ir out_v, nes tokie globalūs kintamieji padidina programos dydį, ko be problemų galima išvengti. Nerealizuojame enum bitwise operacijų, nes galime naudoti biblioteką magic_enum.
 
 // Filosofija bibliotekos tokia, visos funkcijos žymimos constexpr ir tiek. Nesvarbu gali ar negali būti funkcija
 // naudojama constexpr kontekste, ji bus pažymėta constexpr. Gal naudotojams kiek neaišku gali būti ar jie gali
@@ -182,6 +182,27 @@ namespace aa {
 	template<class T>
 	concept class_like = std::is_class_v<T>;
 
+	template<class T, class... A>
+	concept movable_constructible_from = std::movable<T> && std::constructible_from<T, A...>;
+
+	template<class T>
+	concept const_like = std::is_const_v<T>;
+
+	template<class T>
+	concept empty_like = std::is_empty_v<T>;
+
+	template<class T>
+	concept not_const_not_movable = !const_like<T> && !std::movable<T>;
+
+	template<class T>
+	concept not_const_movable = !const_like<T> && std::movable<T>;
+
+	template<class T>
+	concept const_movable_defaultable = const_like<T> && movable_constructible_from<std::remove_const_t<T>>;
+
+	template<class T>
+	concept empty_const_movable_defaultable = empty_like<T> && const_movable_defaultable<T>;
+
 	template<class T>
 	concept reference_like = std::is_reference_v<T>;
 
@@ -219,9 +240,6 @@ namespace aa {
 	concept cref_relation = std::relation<const F &, U, V>;
 
 	template<class F, class... A>
-	concept ref_invocable = std::invocable<F &, A...>;
-
-	template<class F, class... A>
 	concept cref_invocable = std::invocable<const F &, A...>;
 
 	template<class F, class... A>
@@ -235,6 +253,9 @@ namespace aa {
 
 	template<class F, class T>
 	concept constructible_to = std::constructible_from<T, F>;
+
+	template<class F, class T>
+	concept cref_constructible_to = std::constructible_from<T, const F &>;
 
 	template<class F, class T>
 	concept constructible_between = (std::constructible_from<T, F> && std::constructible_from<F, T>);
@@ -428,9 +449,6 @@ namespace aa {
 
 	// <><><><><><><><><><><><><><><><><><><><><><><><> END RANGES <><><><><><><><><><><><><><><><><><><><><><><><>
 
-	template<class T, class... A>
-	concept movable_constructible_from = std::movable<T> && std::constructible_from<T, A...>;
-
 	namespace detail {
 		struct getter {
 			// Vietoj operatorių apibrėžimo galėtume paveldėti iš monostate, bet kitur negalime paveldėti ir nepaveldime tai čia taip pat taip elgiamės, kad būtume nuoseklūs. Taip pat nebūtų teisinga paveldėti, nes vietoje monostate galėtų būtų naudojamos šios klasės.
@@ -565,15 +583,6 @@ namespace aa {
 
 
 
-	template<class T>
-	concept empty_unit_param_like = std::is_empty_v<T> && movable_constructible_from<std::remove_const_t<T>>;
-
-	template<class T>
-	concept nonempty_unit_param_like = !empty_unit_param_like<T>;
-
-	template<class T>
-	concept const_unit_param_like = std::is_const_v<T> && movable_constructible_from<std::remove_const_t<T>>;
-
 	namespace detail {
 		template<size_t, class T>
 		struct tuple_unit {
@@ -589,20 +598,26 @@ namespace aa {
 
 			// Special member functions
 			constexpr tuple_unit() = default;
-			constexpr tuple_unit() requires (const_unit_param_like<value_type>) : value{default_value} {}
+
+			constexpr tuple_unit() requires (const_movable_defaultable<value_type>) : value{default_value} {}
+
+#pragma GCC diagnostic push // GCC BUG, meta klaidą, kur jos nėra, naudojant agregate tipus. Peržiūrėti thank_you_2025.
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 			template<constructible_to<value_type> U = value_type>
 			constexpr tuple_unit(U && u) : value{std::forward<U>(u)} {}
+#pragma GCC diagnostic pop
 
 			// Member objects
-			// Nenaudojame atributo no_unique_address, nes jis čia nieko nekeistų.
-			value_type value;
+			// Atributas no_unique_address sumažina tuple dydį, kai naudojami tušti objektai, bet nesumažina iki minimalaus dydžio.
+			// Pvz: 'sizeof(aa::tuple<std::monostate, int, std::monostate, int, std::monostate, double, std::monostate>)', šio tuple dydis be atributo yra 40 baitų, su atributu dydis tampa 24 baitai, o minimalus dydis yra 16 baitų.
+			[[no_unique_address]] value_type value;
 		};
 
-		// Negalime paveldėti iš T, nes kažkodėl tada tuple dydis padidėja.
-		template<size_t I, empty_unit_param_like T>
+		// Negalime paveldėti iš T ar iš kokio kito tuščio tipo, nes kažkodėl tada tuple dydis padidėja.
+		template<size_t I, empty_const_movable_defaultable T>
 		struct tuple_unit<I, T> {
 			// Member types
-			using value_type = const T;
+			using value_type = T;
 			using reference = value_type &;
 			using const_reference = value_type &;
 			using pointer = value_type *;
@@ -849,6 +864,9 @@ namespace aa {
 	template<bool B, class T>
 	using add_const_if_t = std::conditional_t<B, const T, T>;
 
+	template<class T, class U>
+	using copy_const_t = std::conditional_t<const_like<std::remove_reference_t<T>>, const U, U>;
+
 	// Reikia using šio, nes testavimui reikėjo sukurti tuple su 100 elementų ir nėra variantas turėti 100 using'ų.
 	template<template<class...> class T, auto F, size_t N>
 	using filled_t = type_in_const_t<apply<N>([]<size_t... I> static ->
@@ -918,11 +936,25 @@ namespace aa {
 		}
 	})(c<N>...)>;
 
-	template<function_pointer_like auto INVOCABLE, auto... V>
+	// Netikriname ar INVOCABLE yra funkcijos rodyklė, nes gali būti naudinga naudoti šiuos tipus ir su objektais.
+	template<auto INVOCABLE, auto... V>
 	using lift_t = const_t<[]<class... A>(A &&... args) static -> decltype(auto)
 		requires (std::invocable<const const_t<INVOCABLE> &, A..., const const_t<V> &...>)
 	{
 		return std::invoke(INVOCABLE, std::forward<A>(args)..., V...);
+	}>;
+
+	template<auto INVOCABLE, auto... V>
+	using lift_wo_args_t = const_t<[]<class... A>(A &&...) static -> decltype(auto)
+		requires (std::invocable<const const_t<INVOCABLE> &, const const_t<V> &...>)
+	{
+		return std::invoke(INVOCABLE, V...);
+	}>;
+
+	// Negalime naudoti generic lift, nes negalime naudoti std funkcijų adresų.
+	template<int EXIT_CODE>
+	using lift_exit_t = const_t<[]<class... A> [[noreturn]] (A &&...) static -> void {
+		std::exit(EXIT_CODE);
 	}>;
 
 	// Nedarome cast operacijos ant rezultato (kad, pavyzdžiui, leisti naudotojui pasirinkti gauti didesnį integral tipą),
@@ -1018,120 +1050,6 @@ namespace aa {
 			return *t;
 		} else {
 			return t;
-		}
-	}
-
-	// Klasė naudinga naudoti su klasėmis, kurių move konstruktorius yra ištrintas, nes tokios klasės negali dalyvauti NRVO.
-	// https://devblogs.microsoft.com/oldnewthing/20230612-00/?p=108329
-	// Laikome konstantą, nes kintamojo nėra prasmės laikyti šioje klasėje, tokiu atveju reikėtų šios klasės nenaudoti.
-	template<nonempty_unit_param_like T>
-	struct make_wo_moving : unit<const T> {
-		// Member types
-		using typename unit<const T>::tuple_type;
-		using unit_type = typename tuple_type::unit_type<0>;
-		using typename unit_type::value_type,
-			typename unit_type::reference, typename unit_type::const_reference,
-			typename unit_type::pointer, typename unit_type::const_pointer;
-
-		// Observers
-		constexpr auto operator->() const {
-			return to_pointer(unit_type::value);
-		}
-
-		constexpr const_pointer operator&() const {
-			return std::addressof(unit_type::value);
-		}
-
-		constexpr operator const_reference() const {
-			return unit_type::value;
-		}
-
-		constexpr decltype(auto) operator*() const {
-			return to_reference(unit_type::value);
-		}
-
-		constexpr const_reference get() const {
-			return unit_type::value;
-		}
-
-		// Special member functions
-		template<std::invocable<reference> F>
-		constexpr make_wo_moving(F && f) {
-			std::invoke(std::forward<F>(f), unit_type::value);
-		}
-
-		template<std::invocable<reference> F, constructible_to<value_type> U = value_type>
-		constexpr make_wo_moving(F && f, U && u) : tuple_type{std::forward<U>(u)} {
-			std::invoke(std::forward<F>(f), unit_type::value);
-		}
-	};
-
-
-
-	template<scoped_enum_like E>
-	constexpr E to_enum(const std::underlying_type_t<E> u) {
-		return std::bit_cast<E>(u);
-	}
-
-	namespace operators {
-		template<scoped_enum_like E>
-		constexpr bool operator!(const E rhs) {
-			return !std::to_underlying(rhs);
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator+(const E rhs) {
-			return std::to_underlying(rhs);
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator~(const E rhs) {
-			return ~std::to_underlying(rhs);
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator|(const E lhs, const E rhs) {
-			return std::to_underlying(lhs) | std::to_underlying(rhs);
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator|(const std::underlying_type_t<E> lhs, const E rhs) {
-			return lhs | std::to_underlying(rhs);
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator|(const E lhs, const std::underlying_type_t<E> rhs) {
-			return std::to_underlying(lhs) | rhs;
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator&(const E lhs, const E rhs) {
-			return std::to_underlying(lhs) & std::to_underlying(rhs);
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator&(const std::underlying_type_t<E> lhs, const E rhs) {
-			return lhs & std::to_underlying(rhs);
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator&(const E lhs, const std::underlying_type_t<E> rhs) {
-			return std::to_underlying(lhs) & rhs;
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator^(const E lhs, const E rhs) {
-			return std::to_underlying(lhs) ^ std::to_underlying(rhs);
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator^(const std::underlying_type_t<E> lhs, const E rhs) {
-			return lhs ^ std::to_underlying(rhs);
-		}
-
-		template<scoped_enum_like E>
-		constexpr std::underlying_type_t<E> operator^(const E lhs, const std::underlying_type_t<E> rhs) {
-			return std::to_underlying(lhs) ^ rhs;
 		}
 	}
 
