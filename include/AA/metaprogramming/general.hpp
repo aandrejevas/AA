@@ -960,13 +960,23 @@ namespace aa {
 	// Nedarome cast operacijos ant rezultato (kad, pavyzdžiui, leisti naudotojui pasirinkti gauti didesnį integral tipą),
 	// nes tokia realizacija yra visados klaidinga. Naudotojas galės, jei norės pats tokią operaciją atlikti.
 	template<std::integral X>
-	constexpr std::make_unsigned_t<X> unsign(const X x) {
+	constexpr auto unsign(const X x) {
 		return std::bit_cast<std::make_unsigned_t<X>>(x);
 	}
 
+	template<enum_like X>
+	constexpr auto unsign(const X x) {
+		return unsign(std::bit_cast<std::underlying_type_t<X>>(x));
+	}
+
 	template<std::integral X>
-	constexpr std::make_signed_t<X> sign(const X x) {
+	constexpr auto sign(const X x) {
 		return std::bit_cast<std::make_signed_t<X>>(x);
+	}
+
+	template<enum_like X>
+	constexpr auto sign(const X x) {
+		return sign(std::bit_cast<std::underlying_type_t<X>>(x));
 	}
 
 	// https://en.cppreference.com/w/cpp/language/implicit_cast.html#Integral_conversions
