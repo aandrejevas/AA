@@ -10,11 +10,11 @@ namespace aa {
 
 	// Neturime fixed_array konteinerio, nes talpinimas pabaigos rodyklės nepagreitintų funkcijų, nes
 	// greitaveika nenukenčia prie adreso pridėjus skaičių, kuris yra žinomas kompiliavimo metu.
-
+	//
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p0401r6.html
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0316r0.html
 	// https://en.wikipedia.org/wiki/Array_data_structure
-	template<std::destructible T, cref_invocable<T *> auto DELETER = default_v<std::default_delete<T[]>>>
+	template<not_cref T, cref_invocable<T *> auto DELETER = default_v<std::default_delete<T[]>>>
 	struct fixed_array {
 		// Member types
 		using value_type = T;
@@ -96,6 +96,10 @@ namespace aa {
 
 		static constexpr size_type min_size = numeric_min, max_size = numeric_max_v<difference_type>;
 
+		constexpr bool has_ownership() const {
+			return ptr_to_front.has_ownership();
+		}
+
 
 
 		// Modifiers
@@ -123,9 +127,11 @@ namespace aa {
 		constexpr fixed_array(fixed_array && o)
 			: ptr_to_front{std::move(o.ptr_to_front)}, ptr_to_last{std::exchange(o.ptr_to_last, default_value)} {}
 
+		// Nenaudojame std::allocator, nes klasė neturi atminties išskyrimo funkcijų, kurios nemestų išimčių.
 		constexpr fixed_array(const size_type size) requires (std::same_as<deleter_type, std::default_delete<value_type[]>>)
-			: fixed_array{std::allocator<std::remove_const_t<value_type>>{}.allocate(size), size} {}
+			: fixed_array{new(std::nothrow) value_type[size], size} {}
 
+		// FIXME: implement a null memory_resource which does not throw
 		constexpr fixed_array(const size_type size, std::pmr::monotonic_buffer_resource & r) requires (std::same_as<deleter_type, std::identity>)
 			: fixed_array{std::pmr::polymorphic_allocator<value_type>{&r}.allocate(size), size} {}
 

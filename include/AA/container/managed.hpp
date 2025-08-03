@@ -30,6 +30,10 @@ namespace aa {
 
 
 		// Observers
+		constexpr bool has_ownership() const {
+			return !std::invoke(PREDICATE, unit_type::value);
+		}
+
 		constexpr auto operator->() const {
 			return to_pointer(unit_type::value);
 		}
@@ -66,7 +70,7 @@ namespace aa {
 		template<class... A>
 			requires ((!sizeof...(A)) || std::constructible_from<value_type, A...>)
 		constexpr void reset(A &&... args) & {
-			if (std::invoke(PREDICATE, std::as_const(unit_type::value))) {
+			if (!has_ownership()) {
 				// We are empty so we do not have to delete or initialize value so that it would be empty
 				if constexpr (!!sizeof...(A)) {
 					std::ranges::construct_at(std::addressof(unit_type::value), std::forward<A>(args)...);
@@ -108,8 +112,8 @@ namespace aa {
 	template<class T, auto EMPTY = default_value, auto PREDICATE = default_v<equal_to<EMPTY>>>
 	using explicitly_managed = managed<T, default_v<lift_exit_t<EXIT_FAILURE>>, EMPTY, PREDICATE>;
 
-	template<class T, auto EMPTY = default_value>
-	using shallowly_managed = managed<T, default_v<std::identity>, EMPTY, default_v<lift_wo_args_t<default_v<std::false_type>>>>;
+	template<class T, auto EMPTY = default_value, auto PREDICATE = default_v<equal_to<EMPTY>>>
+	using shallowly_managed = managed<T, default_v<std::identity>, EMPTY, PREDICATE>;
 
 	template<auto DELETER>
 	using instrumentally_managed = managed<std::monostate, DELETER, default_value, default_v<not_equal_to<default_v<std::monostate>>>>;

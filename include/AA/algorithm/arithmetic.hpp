@@ -39,8 +39,8 @@ namespace aa {
 	template<arithmetic auto V, arithmetic T>
 	constexpr T product(const T x) {
 		static constexpr T X = V;
-		/**/ if constexpr (is_value<0>(X))				return default_value;
-		else if constexpr (is_value<1>(X))				return x;
+		/**/ if constexpr (X == value<0>)				return default_value;
+		else if constexpr (X == value<1>)				return x;
 		else if constexpr (!std::unsigned_integral<T>)	return x * X;
 		else if constexpr (!std::has_single_bit(X))		return x * X;
 		else											return x << const_v<int_log2(X)>;
@@ -50,10 +50,10 @@ namespace aa {
 	// Nepaduodame pack V, nes arithmetic tipo iš pack neišeitų sukonstruoti.
 	// Viduje requires reikia naudoti value_v, nes kitaip pvz. būtų float'ai neteisingai patikrinami kai T int.
 	template<arithmetic auto V, arithmetic T>
-		requires (!is_value<0>(value_v<T, V>))
+		requires (value_v<T, V> != value<0>)
 	constexpr T remainder(const T x) {
 		static constexpr T X = V;
-		/**/ if constexpr (is_value<1>(X))				return default_value;
+		/**/ if constexpr (X == value<1>)				return default_value;
 		else if constexpr (std::floating_point<T>)		return std::fmod(x, X);
 		else if constexpr (std::signed_integral<T>)		return x % X;
 		else if constexpr (!std::has_single_bit(X))		return x % X;
@@ -62,10 +62,10 @@ namespace aa {
 
 	// https://en.wikipedia.org/wiki/Quotient
 	template<arithmetic auto V, arithmetic T>
-		requires (!is_value<0>(value_v<T, V>))
+		requires (value_v<T, V> != value<0>)
 	constexpr T quotient(const T x) {
 		static constexpr T X = V;
-		/**/ if constexpr (is_value<1>(X))				return x;
+		/**/ if constexpr (X == value<1>)				return x;
 		else if constexpr (std::floating_point<T>)		return x * const_v<value_v<T, 1> / X>;
 		else if constexpr (std::signed_integral<T>)		return x / X;
 		else if constexpr (!std::has_single_bit(X))		return x / X;
@@ -133,10 +133,10 @@ namespace aa {
 	template<size_t N = 2, arithmetic T>
 		requires (N <= 4)
 	constexpr T pow(const T x) {
-		/**/ if constexpr (is_value<0>(N))	return value_v<T, 1>;
-		else if constexpr (is_value<1>(N))	return x;
-		else if constexpr (is_value<2>(N))	return x * x;
-		else if constexpr (is_value<3>(N))	return x * x * x;
+		/**/ if constexpr (N == value<0>)	return value_v<T, 1>;
+		else if constexpr (N == value<1>)	return x;
+		else if constexpr (N == value<2>)	return x * x;
+		else if constexpr (N == value<3>)	return x * x * x;
 		else								return pow(pow(x));
 	}
 
@@ -144,11 +144,11 @@ namespace aa {
 	template<size_t N = 1, std::floating_point T>
 		requires (N <= 3)
 	constexpr T smoothstep(const T x) {
-		/*  */ if constexpr (is_value<0>(N)) {
+		/*  */ if constexpr (N == value<0>) {
 			return x;
-		} else if constexpr (is_value<1>(N)) {
+		} else if constexpr (N == value<1>) {
 			return pow(x) * (product<-2>(x) + value_v<T, 3>);
-		} else if constexpr (is_value<2>(N)) {
+		} else if constexpr (N == value<2>) {
 			const T xx = pow(x);
 			return xx * x * (product<6>(xx) + product<-15>(x) + value_v<T, 10>);
 		} else {

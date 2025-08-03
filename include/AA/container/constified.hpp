@@ -26,16 +26,20 @@ namespace aa {
 		// Observers
 	private:
 		constexpr void assert_valueless() const {
-			if (!std::invoke(PREDICATE, unit_type::value))
+			if (has_ownership())
 				std::exit(EXIT_FAILURE);
 		}
 
 		constexpr void assert_valueful() const {
-			if (std::invoke(PREDICATE, unit_type::value))
+			if (!has_ownership())
 				std::exit(EXIT_FAILURE);
 		}
 
 	public:
+		constexpr bool has_ownership() const {
+			return !std::invoke(PREDICATE, unit_type::value);
+		}
+
 		constexpr auto operator->() const {
 			return to_pointer(unit_type::value);
 		}

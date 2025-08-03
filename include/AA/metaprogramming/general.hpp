@@ -49,6 +49,7 @@
 #include <ranges>
 #include <algorithm>
 #include <memory>
+#include <optional>
 
 
 
@@ -149,12 +150,6 @@ namespace aa {
 	template<class T>
 	using add_cref_t = std::add_lvalue_reference_t<std::add_const_t<T>>;
 
-	template<class T>
-	concept not_cv = std::same_as<std::remove_reference_t<T>, std::remove_cvref_t<T>>;
-
-	template<class T>
-	concept not_cvref = std::same_as<T, std::remove_cvref_t<T>>;
-
 	template<class... A>
 	concept same_as_every = (... && std::same_as<A...[0], A>);
 
@@ -189,13 +184,16 @@ namespace aa {
 	concept const_like = std::is_const_v<T>;
 
 	template<class T>
+	concept not_const = !const_like<T>;
+
+	template<class T>
 	concept empty_like = std::is_empty_v<T>;
 
 	template<class T>
-	concept not_const_not_movable = !const_like<T> && !std::movable<T>;
+	concept not_const_not_movable = not_const<T> && !std::movable<T>;
 
 	template<class T>
-	concept not_const_movable = !const_like<T> && std::movable<T>;
+	concept not_const_movable = not_const<T> && std::movable<T>;
 
 	template<class T>
 	concept const_movable_defaultable = const_like<T> && movable_constructible_from<std::remove_const_t<T>>;
@@ -205,6 +203,12 @@ namespace aa {
 
 	template<class T>
 	concept reference_like = std::is_reference_v<T>;
+
+	template<class T>
+	concept not_reference = !reference_like<T>;
+
+	template<class T>
+	concept not_cref = not_reference<T> && not_const<T>;
 
 	template<class T>
 	concept lvalue_reference_like = std::is_lvalue_reference_v<T>;
@@ -861,11 +865,11 @@ namespace aa {
 	template<class T, class... A>
 	using first_not_t = A...[pack_index_v<false, std::same_as<T, A>...>];
 
-	template<bool B, class T>
-	using add_const_if_t = std::conditional_t<B, const T, T>;
-
-	template<class T, class U>
+	template<class T, not_cref U>
 	using copy_const_t = std::conditional_t<const_like<std::remove_reference_t<T>>, const U, U>;
+
+	template<std::integral T, std::signed_integral U>
+	using copy_unsigned_t = std::conditional_t<std::unsigned_integral<T>, std::make_unsigned_t<U>, U>;
 
 	// Reikia using šio, nes testavimui reikėjo sukurti tuple su 100 elementų ir nėra variantas turėti 100 using'ų.
 	template<template<class...> class T, auto F, size_t N>
@@ -966,7 +970,7 @@ namespace aa {
 
 	template<enum_like X>
 	constexpr auto unsign(const X x) {
-		return unsign(std::bit_cast<std::underlying_type_t<X>>(x));
+		return unsign(std::to_underlying(x));
 	}
 
 	template<std::integral X>
@@ -976,7 +980,7 @@ namespace aa {
 
 	template<enum_like X>
 	constexpr auto sign(const X x) {
-		return sign(std::bit_cast<std::underlying_type_t<X>>(x));
+		return sign(std::to_underlying(x));
 	}
 
 	// https://en.cppreference.com/w/cpp/language/implicit_cast.html#Integral_conversions
@@ -1027,6 +1031,36 @@ namespace aa {
 			value_type d = {std::forward<A>(args)...};
 			std::invoke(std::forward<F>(f), d);
 			return d;
+		}
+	}
+
+	template<auto EMPTY = default_value, class F, class... A>
+		requires (out_unary_invocable<F, A...> && cref_constructible_to<const_t<EMPTY>, std::remove_reference_t<function_argument_t<F>>>)
+	constexpr std::remove_reference_t<function_argument_t<F>> make_if(F && f = default_value, A &&... args) {
+		using value_type = std::remove_reference_t<function_argument_t<F>>;
+		if constexpr (!sizeof...(A)) {
+			value_type d;
+			if (std::invoke_r<bool>(std::forward<F>(f), d))
+				return d; else return EMPTY;
+		} else {
+			value_type d = {std::forward<A>(args)...};
+			if (std::invoke_r<bool>(std::forward<F>(f), d))
+				return d; else return EMPTY;
+		}
+	}
+
+	template<class F, class... A>
+		requires (out_unary_invocable<F, A...>)
+	constexpr std::optional<std::remove_reference_t<function_argument_t<F>>> make_opt(F && f = default_value, A &&... args) {
+		using value_type = std::remove_reference_t<function_argument_t<F>>;
+		if constexpr (!sizeof...(A)) {
+			value_type d;
+			if (std::invoke_r<bool>(std::forward<F>(f), d))
+				return d; else return std::nullopt;
+		} else {
+			value_type d = {std::forward<A>(args)...};
+			if (std::invoke_r<bool>(std::forward<F>(f), d))
+				return d; else return std::nullopt;
 		}
 	}
 
@@ -1173,17 +1207,21 @@ namespace aa {
 	template<class T, class... A>
 	using next_type_t = A...[(type_pack_index_v<T, A...>) + 1];
 
-	template<class T>
-	using next_unsigned_t = next_type_t<T, uint8_t, uint16_t, uint32_t, uint64_t>;
+	template<std::integral T>
+	using next_int_t = copy_unsigned_t<T, next_type_t<std::make_signed_t<T>, int8_t, int16_t, int32_t, int64_t>>;
 
-	template<class T>
-	using prev_unsigned_t = next_type_t<T, uint64_t, uint32_t, uint16_t, uint8_t>;
+	template<std::integral T>
+	using prev_int_t = copy_unsigned_t<T, next_type_t<std::make_signed_t<T>, int64_t, int32_t, int16_t, int8_t>>;
 
-	template<class T>
-	using next_signed_t = next_type_t<T, int8_t, int16_t, int32_t, int64_t>;
+	template<std::integral X>
+	constexpr auto uprank(const X x) {
+		return sign_cast<next_int_t<X>>(x);
+	}
 
-	template<class T>
-	using prev_signed_t = next_type_t<T, int64_t, int32_t, int16_t, int8_t>;
+	template<std::integral X>
+	constexpr auto downrank(const X x) {
+		return sign_cast<prev_int_t<X>>(x);
+	}
 
 }
 

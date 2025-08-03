@@ -10,7 +10,7 @@ namespace aa {
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p0843r14.html
 	// https://en.wikipedia.org/wiki/Dynamic_array
 	// Negali būti tuple like, nes kinta kiek masyvo elementų yra "naudojama".
-	template<std::destructible T, cref_invocable<T *> auto DELETER = default_v<std::default_delete<T[]>>>
+	template<not_cref T, cref_invocable<T *> auto DELETER = default_v<std::default_delete<T[]>>>
 	struct fixed_vector : fixed_array<T, DELETER> {
 		// Member types
 		using base_type = fixed_array<T, DELETER>;
@@ -112,6 +112,12 @@ namespace aa {
 #pragma endregion
 
 		// assign
+		template<class... A>
+			requires (std::constructible_from<value_type, A...>)
+		constexpr iterator assign(A &&... args) {
+			return std::ranges::construct_at(resize(this->data()), std::forward<A>(args)...);
+		}
+
 		template<std::ranges::input_range R>
 		constexpr iterator assign_range(R && r) {
 			return resize(std::ranges::copy(r, this->data()).out - 1);
