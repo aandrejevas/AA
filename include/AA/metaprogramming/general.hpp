@@ -270,6 +270,9 @@ namespace aa {
 	template<class T, class U>
 	concept not_same_as_and_totally_ordered = !std::same_as<T, U> && std::totally_ordered<T>;
 
+	template<class T>
+	concept placeholder_like = !!std::is_placeholder_v<T>;
+
 	// https://en.cppreference.com/w/cpp/concepts/boolean-testable.
 	template<class B>
 	concept bool_testable = (std::constructible_from<bool, B>
@@ -691,7 +694,7 @@ namespace aa {
 
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2989r2.pdf
 	template<auto... A, class F, class... T>
-	constexpr decltype(auto) invoke(F && f, T &&... t) {
+	constexpr decltype(auto) invoke(F && f = default_value, T &&... t) {
 		return std::forward<F>(f).template operator()<A...>(std::forward<T>(t)...);
 	}
 
@@ -699,7 +702,7 @@ namespace aa {
 	// https://www.fluentcpp.com/2021/03/05/stdindex_sequence-and-its-improvement-in-c20/
 	// Jei lambdą iškeltume į funkciją, tai ji jokio funkcionalumo nesuteiktų, nes patogiau kiekvienu atveju būtų ne ją naudoti, o atitinkamą invoke.
 	template<size_t N, class F, class... A>
-	constexpr decltype(auto) apply(F && f, A &&... args) {
+	constexpr decltype(auto) apply(F && f = default_value, A &&... args) {
 		return ([&]<size_t... I>(std::index_sequence<I...>) -> decltype(auto) {
 			return invoke<I...>(std::forward<F>(f), std::forward<A>(args)...);
 		})(default_v<std::make_index_sequence<N>>);
@@ -897,7 +900,7 @@ namespace aa {
 		std::array<call_template_t<F, 0uz>, N> { return {(&std::remove_cvref_t<F>::template operator()<I>)...}; });
 
 	template<size_t N, constexprifier_like<N> F, class... A>
-	constexpr decltype(auto) constexprify(const size_t i, F && f, A &&... args) {
+	constexpr decltype(auto) constexprify(const size_t i, F && f = default_value, A &&... args) {
 		if constexpr (std::is_member_function_pointer_v<call_template_t<F, 0uz>>) {
 			return (std::forward<F>(f).*constexprifier_table_v<N, F>[i])(std::forward<A>(args)...);
 		} else {
