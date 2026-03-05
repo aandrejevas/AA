@@ -105,10 +105,10 @@ namespace aa {
 		// Modifiers
 		// Neturime iš range kopijavimo metodų ar konstruktorių, nes visų atvejų kopijavimo ir taip neapimtume.
 		// Šios klasės specialūs metodai yra ištrinti dėl unique_ptr naudojimo.
+		// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p3812r0.html
 		constexpr fixed_array & operator=(fixed_array && o) & {
-			ptr_to_front = std::move(o.ptr_to_front);
-			ptr_to_last = std::exchange(o.ptr_to_last, default_value);
-			return *this;
+			std::ranges::destroy_at(this);
+			return *std::ranges::construct_at(this, std::move(o));
 		}
 
 

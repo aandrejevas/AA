@@ -13,10 +13,10 @@ namespace aa {
 	// 3. we want to be able to manage not only pointers.
 	//
 	// Internal object not movable or changeable from outside bc it is a managed object and first it has to be run through the deleter and then it can be initialized to a new state.
-	template<not_const_movable T,
-		cref_invocable<const T &> auto DELETER = default_v<std::default_delete<std::remove_pointer_t<T>>>,
+	template<wo_cv_movable T,
+		cref_nullary_or_unary_invocable<const T &> auto DELETER = default_v<std::default_delete<std::remove_pointer_t<T>>>,
 		cref_constructible_to<T> auto EMPTY = default_value,
-		cref_predicate<const T &> auto PREDICATE = default_v<equal_to<EMPTY>>>
+		cref_nullary_or_unary_predicate<const T &> auto PREDICATE = default_v<equal_to<EMPTY>>>
 	struct managed : private unit<T> {
 		// Member types
 		using typename unit<T>::tuple_type;
@@ -31,7 +31,7 @@ namespace aa {
 
 		// Observers
 		constexpr bool has_ownership() const {
-			return !std::invoke(PREDICATE, unit_type::value);
+			return !greedy_invoke(PREDICATE, unit_type::value);
 		}
 
 		constexpr auto operator->() const {
@@ -57,18 +57,12 @@ namespace aa {
 
 
 		// Modifiers
-		constexpr permit<managed> acquire() & {
-			return {*this};
-		}
-
-		template<constructible_to<value_type> O = value_type>
-		constexpr managed & operator=(O && other) & {
-			reset(std::forward<O>(other));
-			return *this;
+		constexpr auto acquire() & {
+			return permit{*this};
 		}
 
 		template<class... A>
-			requires ((!sizeof...(A)) || std::constructible_from<value_type, A...>)
+			requires ((!sizeof...(A)) || (not_const<value_type> && std::constructible_from<value_type, A...>))
 		constexpr void reset(A &&... args) & {
 			if (!has_ownership()) {
 				// We are empty so we do not have to delete or initialize value so that it would be empty
@@ -76,19 +70,19 @@ namespace aa {
 					std::ranges::construct_at(std::addressof(unit_type::value), std::forward<A>(args)...);
 				}
 			} else {
-				std::invoke(DELETER, std::as_const(unit_type::value));
+				greedy_invoke(DELETER, std::as_const(unit_type::value));
 
 				if constexpr (!!sizeof...(A)) {
 					std::ranges::construct_at(std::addressof(unit_type::value), std::forward<A>(args)...);
-				} else {
+				} else if constexpr (not_const<value_type>) {
 					std::ranges::construct_at(std::addressof(unit_type::value), empty_value);
 				}
 			}
 		}
 
 		constexpr managed & operator=(managed && o) & {
-			unit_type::value = std::move(o).release();
-			return *this;
+			std::ranges::destroy_at(this);
+			return *std::ranges::construct_at(this, std::move(o));
 		}
 
 		// Būtina turėti tokią funkciją, nes nėra kito būdo kaip gauti mutable reikšmę, jei ją reiktų paduoti į funkciją, kuri tikisi tokios reikšmės.
@@ -110,12 +104,12 @@ namespace aa {
 	};
 
 	template<class T, auto EMPTY = default_value, auto PREDICATE = default_v<equal_to<EMPTY>>>
-	using explicitly_managed = managed<T, default_v<lift_exit_t<EXIT_FAILURE>>, EMPTY, PREDICATE>;
+	using explicitly_managed = managed<T, [] [[noreturn]] static -> void { std::exit(EXIT_FAILURE); }, EMPTY, PREDICATE>;
 
 	template<class T, auto EMPTY = default_value, auto PREDICATE = default_v<equal_to<EMPTY>>>
 	using shallowly_managed = managed<T, default_v<std::identity>, EMPTY, PREDICATE>;
 
-	template<auto DELETER>
-	using instrumentally_managed = managed<std::monostate, DELETER, default_value, default_v<not_equal_to<default_v<std::monostate>>>>;
+	template<auto DELETER, class T = first_not_t<void, function_argument_t<const_t<DELETER>>, std::monostate>, auto EMPTY = default_value>
+	using instrumentally_managed = managed<const T, DELETER, EMPTY, default_v<std::false_type>>;
 
 }

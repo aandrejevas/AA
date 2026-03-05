@@ -6,7 +6,7 @@
 
 namespace aa {
 
-	template<class ACQUIRER>
+	template<value_type_movable ACQUIRER>
 	struct permit : unit<value_type_in_use_t<ACQUIRER>> {
 		// Member types
 		using typename unit<value_type_in_use_t<ACQUIRER>>::tuple_type;

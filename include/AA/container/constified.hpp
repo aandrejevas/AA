@@ -65,8 +65,8 @@ namespace aa {
 		// Modifiers
 		// Neturime funkcijos, kuri priimtų funkciją, nes su permit galime tą patį pasiekti ir nereikia kurti lambdos.
 		// Tikrinimai valueless ir valueful turi būti atlikti destruktoriuje, nes jei valueless tikrinimas bus atliktas konstruktoriuje, bus leidžiama tokia klaidinga elgsena: sukuriami du permits int objekto, praeina abu tikrinimai, kad objektas yra valueless, tada abu pakeičia reikšmę ir gale praeina abu tikrinimai, kad objektas yra valueful ir taip bus pakeistas du kartus int objektas.
-		constexpr permit<constified> acquire() & {
-			return {*this};
+		constexpr auto acquire() & {
+			return permit{*this};
 		}
 
 		template<constructible_to<value_type> O = value_type>

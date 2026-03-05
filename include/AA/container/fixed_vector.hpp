@@ -129,9 +129,8 @@ namespace aa {
 		}
 
 		constexpr fixed_vector & operator=(fixed_vector && a) & {
-			cast<base_type &>(*this) = std::move(a);
-			ptr_to_back = std::exchange(a.ptr_to_back, default_value);
-			return *this;
+			std::ranges::destroy_at(this);
+			return *std::ranges::construct_at(this, std::move(a));
 		}
 
 
@@ -150,10 +149,10 @@ namespace aa {
 
 		// Negalime turėti konstruktoriaus, kuris priimtų rodyklę, nes
 		// tik po konstruktoriaus įvykdymo galima gauti rodykles.
-		constexpr fixed_vector(base_type && a, const const_t<std::placeholders::_1>)
+		constexpr fixed_vector(base_type && a, const_t<std::placeholders::_1>)
 			: base_type{std::move(a)} { resize(this->data()); }
 
-		constexpr fixed_vector(base_type && a, const const_t<std::placeholders::_2>)
+		constexpr fixed_vector(base_type && a, const_t<std::placeholders::_2>)
 			: base_type{std::move(a)} { resize(this->max_data()); }
 
 		constexpr fixed_vector(base_type && a, const size_type count)

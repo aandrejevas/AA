@@ -51,6 +51,11 @@
 #include <memory>
 #include <optional>
 
+using namespace std::string_view_literals;
+
+// TODO: https://github.com/microsoft/vscode-cpptools/issues/14234
+#define AA_EXPAND(identifier) identifier...
+
 
 
 namespace aa {
@@ -193,7 +198,10 @@ namespace aa {
 	concept not_const_not_movable = not_const<T> && !std::movable<T>;
 
 	template<class T>
-	concept not_const_movable = not_const<T> && std::movable<T>;
+	concept wo_cv_movable = std::movable<std::remove_cv_t<T>>;
+
+	template<class T>
+	concept value_type_movable = std::movable<value_type_in_use_t<T>>;
 
 	template<class T>
 	concept const_movable_defaultable = const_like<T> && movable_constructible_from<std::remove_const_t<T>>;
@@ -222,9 +230,6 @@ namespace aa {
 	template<class T>
 	concept arithmetic = std::is_arithmetic_v<T>;
 
-	template<class T, class F>
-	concept arithmetic_or_assignable_from = arithmetic<T> || std::assignable_from<T &, F>;
-
 	template<class T>
 	concept regular_scalar = arithmetic<T> || object_pointer_like<T>;
 
@@ -240,11 +245,18 @@ namespace aa {
 	template<class F, class... A>
 	concept cref_predicate = std::predicate<const F &, A...>;
 
+	// TODO: https://github.com/cplusplus/papers/issues/1546
+	template<class F, class A>
+	concept cref_nullary_or_unary_predicate = cref_predicate<F, A> || cref_predicate<F>;
+
 	template<class F, class U, class V>
 	concept cref_relation = std::relation<const F &, U, V>;
 
 	template<class F, class... A>
 	concept cref_invocable = std::invocable<const F &, A...>;
+
+	template<class F, class A>
+	concept cref_nullary_or_unary_invocable = cref_invocable<F, A> || cref_invocable<F>;
 
 	template<class F, class... A>
 	concept invocable_with_one_of = (... || std::invocable<F, A>);
@@ -411,6 +423,7 @@ namespace aa {
 
 	// Galėtume realizuoti taip: function_result_t<const_t<&const_t<std::ranges::rbegin>::operator()<T &>>>;
 	// Bet yra draudžiama gauti std funkcijos adresą: https://en.cppreference.com/w/cpp/language/extending_std.html.
+	// Jeigu jau bandytume tai daryt tai reiktų naudoti static_cast, kad gauti tinkamą užklojimą, ir mes to nenorime daryti.
 	template<class T>
 	using reverse_iterator_t = std::invoke_result_t<const_t<std::ranges::rbegin>, T &>;
 
@@ -571,18 +584,17 @@ namespace aa {
 	}(t<std::remove_cvref_t<F>>)>;
 
 	template<class F, size_t I = 0>
-	using function_argument_t = type_in_const_t<([]<class R, class... A>(std::type_identity<R(A...)>) static ->
-		auto { return t<A...[I]>; })(t<function_t<F>>)>;
-
-	// GCC 15.1.0 BUG: ICE Segmentation fault when using the lambda directly
-	namespace detail {
-		template<class F>
-		constexpr std::type_identity function_result_v = ([]<class R, class... A>(std::type_identity<R(A...)>) static ->
-			auto { return t<R>; })(t<function_t<F>>);
-	}
+	using function_argument_t = type_in_const_t<([]<class R, class... A>(std::type_identity<R(A...)>) static -> auto {
+		if constexpr (I < sizeof...(A)) {
+			return t<A...[I]>;
+		} else {
+			return t<void>;
+		}
+	})(t<function_t<F>>)>;
 
 	template<class F>
-	using function_result_t = type_in_const_t<detail::function_result_v<F>>;
+	using function_result_t = type_in_const_t<([]<class R, class... A>(std::type_identity<R(A...)>) static ->
+		auto { return t<R>; })(t<function_t<F>>)>;
 
 	template<class F>
 	constexpr size_t function_arity_v = ([]<class R, class... A>(std::type_identity<R(A...)>) static ->
@@ -635,6 +647,12 @@ namespace aa {
 
 			// Member objects
 			static constexpr value_type value = default_value;
+
+			// Special member functions
+			constexpr tuple_unit() = default;
+
+			template<constructible_to<value_type> U = value_type>
+			constexpr tuple_unit(U &&) {}
 		};
 	}
 
@@ -706,6 +724,18 @@ namespace aa {
 		return ([&]<size_t... I>(std::index_sequence<I...>) -> decltype(auto) {
 			return invoke<I...>(std::forward<F>(f), std::forward<A>(args)...);
 		})(default_v<std::make_index_sequence<N>>);
+	}
+
+	template<class F, class... A>
+	constexpr decltype(auto) greedy_invoke(F && f = default_value, A &&... args) {
+
+		return ([&]<size_t... I>(this const auto lambda, std::index_sequence<I...>) -> decltype(auto) {
+			if constexpr (!sizeof...(I) || std::invocable<F, AA_EXPAND(A)[I]...>) {
+				return std::invoke(std::forward<F>(f), std::forward<A...[I]>(AA_EXPAND(args)[I])...);
+			} else {
+				return lambda(default_v<std::make_index_sequence<sizeof...(I) - 1>>);
+			}
+		})(default_v<std::make_index_sequence<sizeof...(A)>>);
 	}
 
 	template<class T, size_t N = 0>
@@ -932,6 +962,9 @@ namespace aa {
 	template<class U, template<class> class T>
 	concept hashable_by_template = (hashable_by<U, T<U>> && movable_constructible_from<T<U>>);
 
+	template<class T>
+	using array_t = std::array<std::remove_extent_t<T>, std::extent_v<T>>;
+
 	// https://mathworld.wolfram.com/Hypermatrix.html
 	template<class T, size_t... N>
 		requires (!!sizeof...(N))
@@ -944,24 +977,31 @@ namespace aa {
 	})(c<N>...)>;
 
 	// Netikriname ar INVOCABLE yra funkcijos rodyklė, nes gali būti naudinga naudoti šiuos tipus ir su objektais.
+	// Yra neleidžiama gauti std funkcijų adresų, bet visų atvejų atskirų neišrašysime, kai būtų toks adresas paduotas.
 	template<auto INVOCABLE, auto... V>
-	using lift_t = const_t<[]<class... A>(A &&... args) static -> decltype(auto)
-		requires (std::invocable<const const_t<INVOCABLE> &, A..., const const_t<V> &...>)
+	using lift_bind_back_t = const_t<[]<class... A>(A &&... args) static -> decltype(auto)
+		requires (cref_invocable<const_t<INVOCABLE>, A..., const const_t<V> &...>)
 	{
 		return std::invoke(INVOCABLE, std::forward<A>(args)..., V...);
 	}>;
 
 	template<auto INVOCABLE, auto... V>
-	using lift_wo_args_t = const_t<[]<class... A>(A &&...) static -> decltype(auto)
-		requires (std::invocable<const const_t<INVOCABLE> &, const const_t<V> &...>)
+	using lift_bind_front_t = const_t<[]<class... A>(A &&... args) static -> decltype(auto)
+		requires (cref_invocable<const_t<INVOCABLE>, const const_t<V> &..., A...>)
 	{
+		return std::invoke(INVOCABLE, V..., std::forward<A>(args)...);
+	}>;
+
+	template<auto INVOCABLE, auto... V>
+		requires (cref_invocable<const_t<INVOCABLE>, const const_t<V> &...>)
+	using lift_ignore_args_t = const_t<[]<class... A>(A &&...) static -> decltype(auto) {
 		return std::invoke(INVOCABLE, V...);
 	}>;
 
-	// Negalime naudoti generic lift, nes negalime naudoti std funkcijų adresų.
-	template<int EXIT_CODE>
-	using lift_exit_t = const_t<[]<class... A> [[noreturn]] (A &&...) static -> void {
-		std::exit(EXIT_CODE);
+	template<auto INVOCABLE, auto... V>
+		requires (cref_invocable<const_t<INVOCABLE>, const const_t<V> &...>)
+	using lift_wo_args_t = const_t<[] static -> decltype(auto) {
+		return std::invoke(INVOCABLE, V...);
 	}>;
 
 	// Nedarome cast operacijos ant rezultato (kad, pavyzdžiui, leisti naudotojui pasirinkti gauti didesnį integral tipą),
@@ -1109,7 +1149,7 @@ namespace aa {
 	//
 	// Mes nurodome dešinės pusės operandą su template parametru, nes realizuojame šią gražią elgseną: sakykime turime
 	// objektą tipo less<3>, šio objekto operator() grąžins true tik tada kai paduotas kintamasis bus mažesnis už 3.
-	template<auto R = std::placeholders::_1>
+	template<auto R = t<void>>
 	struct less {
 		static constexpr const_t<R> value = R;
 
@@ -1118,12 +1158,12 @@ namespace aa {
 	};
 
 	template<>
-	struct less<std::placeholders::_1> {
+	struct less<t<void>> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
 		static constexpr bool operator()(const L & l) { return l < R; }
 	};
 
-	template<auto R = std::placeholders::_1>
+	template<auto R = t<void>>
 	struct less_equal {
 		static constexpr const_t<R> value = R;
 
@@ -1132,12 +1172,12 @@ namespace aa {
 	};
 
 	template<>
-	struct less_equal<std::placeholders::_1> {
+	struct less_equal<t<void>> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
 		static constexpr bool operator()(const L & l) { return l <= R; }
 	};
 
-	template<auto R = std::placeholders::_1>
+	template<auto R = t<void>>
 	struct greater {
 		static constexpr const_t<R> value = R;
 
@@ -1146,12 +1186,12 @@ namespace aa {
 	};
 
 	template<>
-	struct greater<std::placeholders::_1> {
+	struct greater<t<void>> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
 		static constexpr bool operator()(const L & l) { return l > R; }
 	};
 
-	template<auto R = std::placeholders::_1>
+	template<auto R = t<void>>
 	struct greater_equal {
 		static constexpr const_t<R> value = R;
 
@@ -1160,12 +1200,12 @@ namespace aa {
 	};
 
 	template<>
-	struct greater_equal<std::placeholders::_1> {
+	struct greater_equal<t<void>> {
 		template<auto R, std::totally_ordered_with<const_t<R>> L>
 		static constexpr bool operator()(const L & l) { return l >= R; }
 	};
 
-	template<auto R = std::placeholders::_1>
+	template<auto R = t<void>>
 	struct equal_to {
 		static constexpr const_t<R> value = R;
 
@@ -1174,12 +1214,12 @@ namespace aa {
 	};
 
 	template<>
-	struct equal_to<std::placeholders::_1> {
+	struct equal_to<t<void>> {
 		template<auto R, std::equality_comparable_with<const_t<R>> L>
 		static constexpr bool operator()(const L & l) { return l == R; }
 	};
 
-	template<auto R = std::placeholders::_1>
+	template<auto R = t<void>>
 	struct not_equal_to {
 		static constexpr const_t<R> value = R;
 
@@ -1188,7 +1228,7 @@ namespace aa {
 	};
 
 	template<>
-	struct not_equal_to<std::placeholders::_1> {
+	struct not_equal_to<t<void>> {
 		template<auto R, std::equality_comparable_with<const_t<R>> L>
 		static constexpr bool operator()(const L & l) { return l != R; }
 	};
