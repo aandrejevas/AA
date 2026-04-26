@@ -1,8 +1,7 @@
 #pragma once
 
 #include "../metaprogramming/general.hpp"
-#include <cmath> // fmod, fma
-#include <numeric> // midpoint
+#include <cmath>
 
 
 
@@ -36,40 +35,40 @@ namespace aa {
 	// Reikalaujama, kad T būtų unsigned, nes per shift operacijas neįmanoma pagreitinti neigiamų skaičių daugybos.
 	// Bandžiau rekursijos nenaudoti, gaunasi tas pats tik vietoje X visur atsiranda cast X į T.
 	// Turime turėti du tokius pačius return sakinius, nes apjungus sąlygas X gali sąlygoje būti float.
-	template<arithmetic auto V, arithmetic T>
+	template<arithmetic auto X, arithmetic T>
 	constexpr T product(const T x) {
-		static constexpr T X = V;
-		/**/ if constexpr (X == value<0>)				return default_value;
+		/**/ if constexpr (different_from<t<X>, T>)		return product<T{X}>(x);
+		else if constexpr (X == value<0>)				return default_value;
 		else if constexpr (X == value<1>)				return x;
-		else if constexpr (!std::unsigned_integral<T>)	return x * X;
+		else if constexpr (std::signed_integral<T>)		return x * X;
 		else if constexpr (!std::has_single_bit(X))		return x * X;
-		else											return x << const_v<int_log2(X)>;
+		else											return x << c(int_log2(X));
 	}
 
 	// https://en.wikipedia.org/wiki/Remainder
 	// Nepaduodame pack V, nes arithmetic tipo iš pack neišeitų sukonstruoti.
 	// Viduje requires reikia naudoti value_v, nes kitaip pvz. būtų float'ai neteisingai patikrinami kai T int.
-	template<arithmetic auto V, arithmetic T>
-		requires (value_v<T, V> != value<0>)
+	template<arithmetic auto X, arithmetic T>
+		requires (T{X} != value<0>)
 	constexpr T remainder(const T x) {
-		static constexpr T X = V;
-		/**/ if constexpr (X == value<1>)				return default_value;
+		/**/ if constexpr (different_from<t<X>, T>)		return remainder<T{X}>(x);
+		else if constexpr (X == value<1>)				return default_value;
 		else if constexpr (std::floating_point<T>)		return std::fmod(x, X);
 		else if constexpr (std::signed_integral<T>)		return x % X;
 		else if constexpr (!std::has_single_bit(X))		return x % X;
-		else											return x & const_v<X - 1>;
+		else											return x & c(X - 1);
 	}
 
 	// https://en.wikipedia.org/wiki/Quotient
-	template<arithmetic auto V, arithmetic T>
-		requires (value_v<T, V> != value<0>)
+	template<arithmetic auto X, arithmetic T>
+		requires (T{X} != value<0>)
 	constexpr T quotient(const T x) {
-		static constexpr T X = V;
-		/**/ if constexpr (X == value<1>)				return x;
-		else if constexpr (std::floating_point<T>)		return x * const_v<value_v<T, 1> / X>;
+		/**/ if constexpr (different_from<t<X>, T>)		return quotient<T{X}>(x);
+		else if constexpr (X == value<1>)				return x;
+		else if constexpr (std::floating_point<T>)		return x * c(T{1} / X);
 		else if constexpr (std::signed_integral<T>)		return x / X;
 		else if constexpr (!std::has_single_bit(X))		return x / X;
-		else											return x >> const_v<int_log2(X)>;
+		else											return x >> c(int_log2(X));
 	}
 
 
@@ -95,7 +94,7 @@ namespace aa {
 	template<std::unsigned_integral U = size_t, std::unsigned_integral T>
 	constexpr U magic_binary_number(const T x) {
 		// exp expression tipai galėtų būti: uint << (size_t << uint). Bet greitaveikos neprarandame.
-		return numeric_max_v<U> / (int_exp2<U>(int_exp2(x)) | 1);
+		return c<U>(numeric_max) / (int_exp2<U>(int_exp2(x)) | c<U>(1));
 	}
 
 	template<arithmetic T>
@@ -133,7 +132,7 @@ namespace aa {
 	template<size_t N = 2, arithmetic T>
 		requires (N <= 4)
 	constexpr T pow(const T x) {
-		/**/ if constexpr (N == value<0>)	return value_v<T, 1>;
+		/**/ if constexpr (N == value<0>)	return value<1>;
 		else if constexpr (N == value<1>)	return x;
 		else if constexpr (N == value<2>)	return x * x;
 		else if constexpr (N == value<3>)	return x * x * x;
@@ -147,13 +146,13 @@ namespace aa {
 		/*  */ if constexpr (N == value<0>) {
 			return x;
 		} else if constexpr (N == value<1>) {
-			return pow(x) * (product<-2>(x) + value_v<T, 3>);
+			return pow(x) * (product<-2>(x) + c(T{3}));
 		} else if constexpr (N == value<2>) {
 			const T xx = pow(x);
-			return xx * x * (product<6>(xx) + product<-15>(x) + value_v<T, 10>);
+			return xx * x * (product<6>(xx) + product<-15>(x) + c(T{10}));
 		} else {
 			const T x2 = pow(x), x3 = x2 * x;
-			return x3 * x * (product<-20>(x3) + product<70>(x2) + product<-84>(x) + value_v<T, 35>);
+			return x3 * x * (product<-20>(x3) + product<70>(x2) + product<-84>(x) + c(T{35}));
 		}
 	}
 
@@ -161,30 +160,31 @@ namespace aa {
 	template<std::unsigned_integral T>
 	constexpr T min(const T x, const T y) {
 		const T d = (x - y);
-		return y + (d & unsign(sign(d) >> numeric_digits_v<std::make_signed_t<T>>));
+		return y + (d & unsign(sign(d) >> numeric_digits<std::make_signed_t<T>>()));
 	}
 
 	template<std::unsigned_integral T>
 	constexpr T max(const T x, const T y) {
 		const T d = (x - y);
-		return x - (d & unsign(sign(d) >> numeric_digits_v<std::make_signed_t<T>>));
+		return x - (d & unsign(sign(d) >> numeric_digits<std::make_signed_t<T>>()));
 	}
 
 	// https://graphics.stanford.edu/~seander/bithacks.html#ReverseParallel
 	template<regular_unsigned_integral T>
 	constexpr T bitswap(T v) {
-		return apply<int_log2(numeric_digits_v<T>)>([&]<size_t... I> -> T {
-			return ((v = ((v >> const_v<int_exp2(I)>) & const_v<magic_binary_number<T>(I)>)
-				/*	*/ | ((v & const_v<magic_binary_number<T>(I)>) << const_v<int_exp2(I)>)), ...);
-		});
+		return apply<int_log2(numeric_digits<T>())>(
+			[&]<size_t... I> -> T {
+				return ((v = ((v >> c(int_exp2(I))) & c(magic_binary_number<T>(I)))
+					/*	*/ | ((v & c(magic_binary_number<T>(I))) << c(int_exp2(I)))), ...);
+			});
 	}
 
 	// https://graphics.stanford.edu/~seander/bithacks.html#SwappingBitsXOR
 	template<regular_unsigned_integral T, std::unsigned_integral I, std::unsigned_integral J>
 	constexpr T byteswap(const T b, I i, J j) {
-		i = product<numeric_digits_v<std::byte>>(i);
-		j = product<numeric_digits_v<std::byte>>(j);
-		const T x = ((b >> i) ^ (b >> j)) & value_v<T, numeric_max_v<std::byte>>;
+		i = product<numeric_digits<std::byte>()>(i);
+		j = product<numeric_digits<std::byte>()>(j);
+		const T x = ((b >> i) ^ (b >> j)) & c(T{std::byte{numeric_max}});
 		return b ^ ((x << i) | (x << j));
 	}
 

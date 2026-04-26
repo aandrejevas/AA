@@ -24,7 +24,6 @@ namespace aa {
 		std::source_location && l = std::source_location::current())
 	{
 		::_lock_file(stream);
-		// const managed<std::FILE *, ::_unlock_file> _ = stream;
 
 		// https://stackoverflow.com/questions/76106361/stdformating-stdchrono-seconds-without-fractional-digits
 		std::print(stream, "{} [{} {}] {}:{}:{} '{}': ",
@@ -32,39 +31,46 @@ namespace aa {
 			::_getpid(), std::this_thread::get_id(),
 			l.file_name(), l.line(), l.column(), l.function_name());
 
-		if constexpr (std::invocable<F, std::FILE * const &>) {
-			if constexpr (!invocable_r<F, void, std::FILE * const &>) {
-				std::invoke(std::forward<F>(f), stream);
-			}
-			std::invoke(std::forward<F>(f), stream);
+		if constexpr (std::invocable<F, std::FILE *>) {
+			std::invoke(std::forward<F>(f), auto{stream});
 		} else {
 			std::print(stream, "{}", std::forward<F>(f));
 		}
-		// return stream;
 
 		std::println(stream);
 		std::fflush(stream);
+
 		::_unlock_file(stream);
 	}
 
-	template<class F = std::identity>
-	constexpr bool alway(const bool cond,
+	template<class U, class F = std::identity>
+	constexpr auto never(const bool cond,
+		U && u,
 		F && f = default_value,
 		std::FILE * const stream = stdout,
 		std::source_location && l = std::source_location::current())
 	{
-		if (!cond) log(std::forward<F>(f), stream, std::move(l));
-		return !cond;
+		if (cond) {
+			log(std::forward<F>(f), stream, std::move(l));
+
+			if constexpr (invocable_not_r<U, void>
+				)	return std::expected<void, std::invoke_result_t<U>>{std::unexpect, std::invoke(std::forward<U>(u))};
+			else	return std::expected<void, U>{std::unexpect, std::forward<U>(u)};
+		} else {
+			if constexpr (invocable_not_r<U, void>
+				)	return c(std::expected<void, std::invoke_result_t<U>>{std::in_place});
+			else	return c(std::expected<void, U>{std::in_place});
+		}
 	}
 
-	template<class F = std::identity>
-	constexpr std::expected never(const bool cond,
+	template<class U, class F = std::identity>
+	constexpr auto alway(const bool cond,
+		U && u,
 		F && f = default_value,
 		std::FILE * const stream = stdout,
 		std::source_location && l = std::source_location::current())
 	{
-		if (cond) return log(std::forward<F>(f), stream, std::move(l));
-		return cond;
+		return never(!cond, std::forward<U>(u), std::forward<F>(f), stream, std::move(l));
 	}
 
 }

@@ -8,10 +8,11 @@
 namespace aa {
 
 	// Konkretus panaudojimas struktūros yra, sakykime turime globalų kintamąjį, bet jį inicializuojame tik vėliau ir po to jo nekeičiame. Tai ši klasė leidžia jį inicializuoti ir jei bus bandoma pakeisti tą kintamąjį vėliau, iškarto bus išeinama iš programos.
-	template<not_const_movable T,
+	template<std::movable T,
 		cref_constructible_to<T> auto EMPTY = default_value,
-		cref_predicate<const T &> auto PREDICATE = default_v<equal_to<EMPTY>>>
-	struct constified : private unit<T> {
+		class PREDICATE = equal_to<EMPTY>
+	>
+	struct constified : protected unit<T> {
 		// Member types
 		using typename unit<T>::tuple_type;
 		using unit_type = typename tuple_type::unit_type<0>;
@@ -19,7 +20,7 @@ namespace aa {
 			typename unit_type::reference, typename unit_type::const_reference,
 			typename unit_type::pointer, typename unit_type::const_pointer;
 
-		static constexpr const_t<EMPTY> empty_value = EMPTY;
+		static consteval t<EMPTY> empty_value() { return EMPTY; }
 
 
 
@@ -37,7 +38,7 @@ namespace aa {
 
 	public:
 		constexpr bool has_ownership() const {
-			return !std::invoke(PREDICATE, unit_type::value);
+			return !std::invoke(c<PREDICATE>(), unit_type::value);
 		}
 
 		constexpr auto operator->() const {
@@ -79,7 +80,7 @@ namespace aa {
 			requires (std::constructible_from<value_type, A...>)
 		constexpr void reset(A &&... args) & {
 			assert_valueless();
-			std::ranges::construct_at(std::addressof(unit_type::value), std::forward<A>(args)...);
+			std_r::construct_at(std::addressof(unit_type::value), std::forward<A>(args)...);
 			assert_valueful();
 		}
 
@@ -87,7 +88,7 @@ namespace aa {
 
 		// Special member functions
 		// Neturime default konstruktoriaus, nes pradžioje neinicializavus lauko, joks vėliau daromas tikrinimas nebūtų racionalus.
-		constexpr constified() : tuple_type{empty_value} {
+		constexpr constified() : tuple_type{empty_value()} {
 			assert_valueless();
 		}
 

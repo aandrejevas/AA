@@ -41,7 +41,7 @@ namespace aa {
 
 
 		// Special member functions
-		constexpr permit(ACQUIRER & a) : tuple_type{ACQUIRER::empty_value}, acquirer{a} {}
+		constexpr permit(ACQUIRER & a) : tuple_type{ACQUIRER::empty_value()}, acquirer{a} {}
 
 		constexpr ~permit() {
 			acquirer.reset(std::move(unit_type::value));

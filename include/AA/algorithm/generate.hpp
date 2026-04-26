@@ -28,7 +28,7 @@ namespace aa {
 	// [0, mag)
 	template<full_range_generator G>
 	constexpr distribution_result_t<G> int_generate(G & g, const distribution_result_t<G> mag) {
-		return (mag * cast<distribution_result_t<G>>(g())) >> numeric_digits_v<generator_result_t<G>>;
+		return (mag * distribution_result_t<G>{g()}) >> numeric_digits<generator_result_t<G>>();
 	}
 
 	// [off, mag + off)
@@ -50,7 +50,7 @@ namespace aa {
 	// [0, 1)
 	template<std::floating_point T = double, generator_modulus_representable_by<T> G>
 	constexpr T real_generate(G & g) {
-		return quotient<generator_modulus_v<G>>(cast<T>(int_generate(g)));
+		return quotient<generator_modulus_v<G>>(T{int_generate(g)});
 	}
 
 	// [0, mag)

@@ -31,11 +31,10 @@ namespace aa {
 		// https://cp-algorithms.com/algebra/module-inverse.html
 		// https://en.wikipedia.org/wiki/Euler%27s_totient_function
 		// https://en.wikipedia.org/wiki/Modular_multiplicative_inverse#Using_Euler's_theorem
-		static constexpr modulus_type
-			modulus = representable_values_v<result_type>;
-		static constexpr result_type
-			multiplier = A, increment = C,
-			inverse = pow(multiplier, (modulus >> 1) - 1);
+		static consteval modulus_type modulus() { return representable_values_v<result_type>; }
+		static consteval result_type multiplier() { return A; }
+		static consteval result_type increment() { return C; }
+		static consteval result_type inverse() { return pow(multiplier(), (modulus() >> 1) - 1); }
 
 
 
@@ -69,8 +68,8 @@ namespace aa {
 
 		// Generation
 		// [0, MODULUS)
-		constexpr result_type next() { return (state = (state * multiplier) + increment); }
-		constexpr result_type prev() { return (state = inverse * (state - increment)); }
+		constexpr result_type next() { return (state = (state * multiplier()) + increment()); }
+		constexpr result_type prev() { return (state = inverse() * (state - increment())); }
 		constexpr result_type curr() const { return state; }
 
 		constexpr result_type operator()() { return next(); }
@@ -80,7 +79,7 @@ namespace aa {
 		template<std::unsigned_integral U>
 		constexpr result_type jump(U n) {
 			result_type acc_mult = 1, acc_plus = 0,
-				cur_mult = multiplier, cur_plus = increment;
+				cur_mult = multiplier(), cur_plus = increment();
 			do {
 				if (n & 1) {
 					acc_mult *= cur_mult;
@@ -97,7 +96,7 @@ namespace aa {
 		// https://math.stackexchange.com/questions/2008585/computing-the-distance-between-two-linear-congruential-generator-states
 		constexpr result_type dist(const linear_congruential_generator o) const {
 			result_type d = 0, mask = 1, t_state = state,
-				cur_mult = multiplier, cur_plus = increment;
+				cur_mult = multiplier(), cur_plus = increment();
 			do {
 				if ((t_state ^ o.state) & mask) {
 					(t_state *= cur_mult) += cur_plus;

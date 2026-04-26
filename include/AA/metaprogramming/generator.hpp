@@ -27,10 +27,10 @@ namespace aa {
 	constexpr generator_result_t<G> generator_modulus_v = (std::remove_reference_t<G>::max() - std::remove_reference_t<G>::min() + 1);
 
 	template<full_range_generator G>
-	constexpr distribution_result_t<G> generator_modulus_v<G> = (cast<distribution_result_t<G>>(std::remove_reference_t<G>::max()) + 1);
+	constexpr distribution_result_t<G> generator_modulus_v<G> = (distribution_result_t<G>{std::remove_reference_t<G>::max()} + 1);
 
 	template<bits_generator G>
-	using generator_modulus_t = const_t<generator_modulus_v<G>>;
+	using generator_modulus_t = t<generator_modulus_v<G>>;
 
 
 
@@ -44,6 +44,6 @@ namespace aa {
 	concept distribution_result_constructible_to = std::constructible_from<T, distribution_result_t<G>>;
 
 	template<class G, class T>
-	concept generator_modulus_representable_by = (numeric_digits_v<T> >= std::bit_width(generator_modulus_v<G>));
+	concept generator_modulus_representable_by = (numeric_digits<T>() >= std::bit_width(generator_modulus_v<G>));
 
 }
