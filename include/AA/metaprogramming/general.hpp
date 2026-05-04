@@ -823,25 +823,12 @@ namespace aa {
 	}
 
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
-	template<class T, size_t I>
-	concept member_get_exists = requires(T && t) {
-		std::forward<T>(t).template get<I>();
-	};
-
-	template<class T, size_t I>
-	concept adl_get_exists = requires(T && t) {
-		get<I>(std::forward<T>(t));
-	};
-
-	template<class T, size_t I>
-	concept gettable = member_get_exists<T, I> || adl_get_exists<T, I>;
-
 	// Negalime turėti funkcijos, nes neišeina turėti function aliases patogių.
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/p2769r1.html
 	template<size_t I>
-	constexpr auto get_element = []<gettable<I> T>(T && t) static -> decltype(auto) {
-		if constexpr (member_get_exists<T, I>)	return std::forward<T>(t).template get<I>();
-		else									return get<I>(std::forward<T>(t));
+	constexpr auto get_element = []<class T>(T && t) static -> auto && {
+		auto && [...elems] = t;
+		return std::forward_like<T>(AA_EXPAND(elems)[I]);
 	};
 
 	constexpr t<get_element<0>> get_0, get_x, get_key;
@@ -849,7 +836,7 @@ namespace aa {
 	constexpr t<get_element<2>> get_2, get_z;
 	constexpr t<get_element<3>> get_3;
 
-	template<size_t I, gettable<I> T>
+	template<size_t I, class T>
 	using get_result_t = std::invoke_result_t<t<get_element<I>>, T>;
 
 	template<class F, auto... A>
@@ -890,25 +877,23 @@ namespace aa {
 	// Funkcijos atvejis: apply -> invoke -> f
 	// Funktoriaus atvejis: apply (invoke) -> f
 	// Taip pat mažiau kompiliatoriui tenka generuoti esybių, nes pernaudojami template parametrai.
-	template<size_t N>
-	constexpr auto apply = invoke<([] static {
-		if constexpr (!N) return get_call(); else return get_call<__integer_pack(N)...>();
-	})()>;
-
 	// Negalime tiesiog naudoti __integer_pack(N)... vietoje I, nes meta klaidą:
 	// sorry, unimplemented: '__integer_pack(N)' is not the entire pattern of the pack expansion
 	template<class F, class... A>
 	constexpr decltype(auto) greedy_invoke(F && f = default_value, A &&... args) {
 		if constexpr (get_function_arity<F>() < sizeof...(A)) {
-			return apply<get_function_arity<F>()>([&]<size_t... I> -> decltype(auto) {
-				return std::invoke(std::forward<F>(f), std::forward<A...[I]>(AA_EXPAND(args)[I])...); });
+			constexpr auto [...I] = c<std::make_index_sequence<get_function_arity<F>()>>();
+			return std::invoke(std::forward<F>(f), std::forward<A...[I]>(AA_EXPAND(args)[I])...);
 		} else
 			return std::invoke(std::forward<F>(f), std::forward<A>(args)...);
 	}
 
+	// statement-expressions are not allowed outside functions nor in template-argument lists
 	template<class T, size_t N = 0>
-	concept tuple_like = (tuple_size<T>() >= N) && apply<tuple_size<T>()>(
-		[]<size_t... I> static { return (... && std::constructible_from<tuple_element_t<I, T>, get_result_t<I, T>>); });
+	concept tuple_like = (tuple_size<T>() >= N) && ([] static {
+		constexpr auto [...I] = c<std::make_index_sequence<tuple_size<T>()>>();
+		return (... && std::constructible_from<tuple_element_t<I, T>, get_result_t<I, T>>);
+	})();
 
 	template<class F, class T, class... A>
 		requires (std::invocable<F, T &, A...>)
@@ -982,7 +967,7 @@ namespace aa {
 
 		template<size_t I, class H>
 		constexpr auto && get(this H && self) {
-			return std::forward<H>(self).unit_type<I>::operator()();
+			return as<unit_type<I>>(std::forward<H>(self))();
 		}
 
 		template<class U, class H>
@@ -992,7 +977,7 @@ namespace aa {
 
 		template<class U, class H>
 		constexpr auto && get(this H && self) {
-			return std::forward<H>(self).unit_type<index<U>()>::operator()();
+			return as<unit_type<index<U>()>>(std::forward<H>(self))();
 		}
 
 		// Special member functions
@@ -1068,28 +1053,39 @@ namespace aa {
 
 	// Reikia using šio, nes testavimui reikėjo sukurti tuple su 100 elementų ir nėra variantas turėti 100 using'ų.
 	template<template<class...> class T, auto F, size_t N>
-	using filled_t = type_in_c_t<apply<N>([]<size_t... I>
-		static { return c_type<T<type_in_c_t<invoke<get_call<I>()>(F)>...>>(); })>;
+	using filled_t = type_in_c_t<([] static {
+		constexpr auto [...I] = c<std::make_index_sequence<N>>();
+		return c_type<T<type_in_c_t<invoke<get_call<I>()>(F)>...>>();
+	})()>;
 
 	// GCC 15.1.0 BUG: ICE with 'return (... && requires { requires std::constructible_from<typename T::value_type<I>, get_result_t<I, T>>; })'
 	// Netikriname ar 'std::constructible_from<typename T::value_type<I>, get_result_t<I, T>>', nes tai patikrins tuple_like.
 	template<class T>
-	concept new_tuple_like = (requires { { T::tuple_size() } -> wo_cvref_same_as<size_t>; })
-		&& apply<T::tuple_size()>([]<size_t... I> static { return (... && requires { typename T::value_type<I>; }); });
+	concept new_tuple_like = (requires { { T::tuple_size() } -> wo_cvref_same_as<size_t>; }) && ([] static {
+		constexpr auto [...I] = c<std::make_index_sequence<T::tuple_size()>>();
+		return (... && requires { typename T::value_type<I>; });
+	})();
 
 	template<class T, size_t N = 0>
-	concept uniform_tuple_like = (tuple_like<T, N>
-		&& apply<tuple_size<T>()>([]<size_t... I> static { return same_as_every<tuple_element_t<I, T>...>; }));
+	concept uniform_tuple_like = (tuple_like<T, N> && ([] static {
+		constexpr auto [...I] = c<std::make_index_sequence<tuple_size<T>()>>();
+		return same_as_every<tuple_element_t<I, T>...>;
+	})());
 
 	template<class T, size_t N = 0>
 	concept fixed_string_like = range_uses_traits_type<T> && uniform_tuple_like<T, N>;
 
 	template<class F, size_t N>
-	concept constexprifier_like = !!N && apply<N>([]<size_t... I> static { return same_as_every<call_template_t<F, I>...>; });
+	concept constexprifier_like = !!N && ([] static {
+		constexpr auto [...I] = c<std::make_index_sequence<N>>();
+		return same_as_every<call_template_t<F, I>...>;
+	})();
 
 	template<size_t N, constexprifier_like<N> F>
-	constexpr std::array constexprifier_table_v = apply<N>([]<size_t... I> static ->
-		std::array<call_template_t<F, 0uz>, N> { return {(&std::remove_cvref_t<F>::template operator()<I>)...}; });
+	constexpr std::array constexprifier_table_v = ([] static {
+		constexpr auto [...I] = c<std::make_index_sequence<N>>();
+		return std::array<call_template_t<F, 0uz>, N>{(&std::remove_cvref_t<F>::template operator()<I>)...};
+	})();
 
 	template<size_t N, constexprifier_like<N> F, class... A>
 	constexpr decltype(auto) constexprify(const size_t i, F && f = default_value, A &&... args) {
@@ -1273,21 +1269,6 @@ namespace aa {
 		}
 	}
 
-	template<class F, class... A>
-		requires (out_unary_call_invocable<F, A...>)
-	constexpr auto make_tuple(F && f = default_value, A &&... args) {
-		using value_type = std::remove_reference_t<function_argument_t<call_template_t<F>>>;
-		if constexpr (!sizeof...(A)) {
-			value_type d;
-			apply<tuple_size<value_type>()>(std::forward<F>(f), d);
-			return d;
-		} else {
-			value_type d = {std::forward<A>(args)...};
-			apply<tuple_size<value_type>()>(std::forward<F>(f), d);
-			return d;
-		}
-	}
-
 	template<class T>
 	constexpr auto to_pointer(T & t) {
 		if constexpr (std::indirectly_readable<T>) {
@@ -1408,7 +1389,10 @@ namespace aa {
 	// P yra value tipas, nes funktoriai, kurie bus kviečiami daug kartų yra taip padavinėjami. Kitaip P tipas būtų rvalue reference.
 	template<size_t N, class F>
 	constexpr void repeat(F f) {
-		apply<N>([&]<size_t... I> -> void { (aa::invoke<get_call<I>()>(f), ...); });
+		constexpr auto [...INDEXES] = c<std::make_index_sequence<N>>();
+		template for (constexpr size_t I : {INDEXES...}) {
+			aa::invoke<get_call<I>()>(f);
+		}
 	}
 
 

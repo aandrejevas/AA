@@ -42,34 +42,40 @@ namespace aa {
 	struct string_perfect_hash {
 		using traits_type = range_char_traits_t<t<A>>...[0];
 
-		template<same_range_char_traits_as<traits_type> T, class F>
-		static constexpr void operator()(const T & t, F && f) {
+		// GCC 16.1.0 BUG ICE: If we pass index as nttp to a lambda.
+		template<same_range_char_traits_as<traits_type> T>
+		static constexpr size_t operator()(const T & str) {
 			// size_t tipas, nes reikės lyginti su size_t tipo kintamuoju.
-			const size_t count = std_r::size(t);
-			if (apply<sizeof...(A)>(
-				[&]<size_t... V> -> bool {
-					return !(... || ((count == tuple_size<t<A>>()) && apply<tuple_size<t<A>>()>(
-						[&]<size_t... I> -> bool {
-							if (... && traits_type::eq(std_r::data(t)[I], c(get_element<I>(A)))) {
-								invoke<get_call<V>()>(std::forward<F>(f));
-								return true;
-							} else {
-								return false;
-							}
-						})));
-				}))
-			{
-				invoke<get_call<max>()>(std::forward<F>(f));
+			const size_t count = std_r::size(str);
+			const range_pointer_t<const T> str_data = std_r::data(str);
+
+			constexpr auto [...PARAMETER_INDEXES] = c<std::make_index_sequence<sizeof...(A)>>();
+			template for (constexpr size_t I : {PARAMETER_INDEXES...}) {
+				if (count != tuple_size<t<A...[I]>>())
+					continue;
+
+				constexpr auto [...CHAR_INDEXES] = c<std::make_index_sequence<tuple_size<t<A...[I]>>()>>();
+				template for (constexpr size_t J : {CHAR_INDEXES...}) {
+					if (!traits_type::eq(str_data[J], c(get_element<J>(AA_EXPAND(A)[I]))))
+						break;
+
+					if constexpr (J == (tuple_size<t<A...[I]>>() - 1)) {
+						// invoke<get_call<I>()>(std::forward<F>(f));
+						return I;
+					}
+				}
 			}
+			// invoke<get_call<max()>()>(std::forward<F>(f));
+			return max();
 		}
 
-		template<same_range_char_traits_as<traits_type> T>
-		static constexpr size_t operator()(const T & t) {
-			return make(
-				[&](size_t & hash) {
-					operator()(t, [&]<size_t I> { hash = I; });
-				});
-		}
+		// template<same_range_char_traits_as<traits_type> T>
+		// static constexpr size_t operator()(const T & t) {
+		// 	return make(
+		// 		[&](size_t & hash) {
+		// 			operator()(t, [&]<size_t I> { hash = I; });
+		// 		});
+		// }
 
 		static consteval size_t max() { return sizeof...(A); }
 		static consteval size_t min() { return 0; }

@@ -172,11 +172,9 @@ namespace aa {
 	// https://graphics.stanford.edu/~seander/bithacks.html#ReverseParallel
 	template<regular_unsigned_integral T>
 	constexpr T bitswap(T v) {
-		return apply<int_log2(numeric_digits<T>())>(
-			[&]<size_t... I> -> T {
-				return ((v = ((v >> c(int_exp2(I))) & c(magic_binary_number<T>(I)))
-					/*	*/ | ((v & c(magic_binary_number<T>(I))) << c(int_exp2(I)))), ...);
-			});
+		constexpr auto [...I] = c<std::make_index_sequence<int_log2(numeric_digits<T>())>>();
+		return ((v = ((v >> c(int_exp2(I))) & c(magic_binary_number<T>(I)))
+			/*	*/ | ((v & c(magic_binary_number<T>(I))) << c(int_exp2(I)))), ...);
 	}
 
 	// https://graphics.stanford.edu/~seander/bithacks.html#SwappingBitsXOR
