@@ -127,7 +127,7 @@ namespace aa {
 		}
 
 		constexpr fixed_array(std::allocator_arg_t, const size_type size)
-			: ptr_to_front{c<ALLOC>().allocate(size)}, ptr_to_tail{(ptr_to_front - 1) + size} {}
+			: ptr_to_front{c<allocator_type>().allocate(size)}, ptr_to_tail{(ptr_to_front - 1) + size} {}
 
 	public:
 		// Reikia tokio konstruktoriaus, nes gal norės naudotojas vėliau daryti construct_at ant šito objekto. Tuščia būsena taip pat gaunama po move.

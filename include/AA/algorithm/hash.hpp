@@ -51,15 +51,15 @@ namespace aa {
 
 			constexpr auto [...PARAMETER_INDEXES] = c<std::make_index_sequence<sizeof...(A)>>();
 			template for (constexpr size_t I : {PARAMETER_INDEXES...}) {
-				if (count != tuple_size<t<A...[I]>>())
+				if (count != get_tuple_size<t<A...[I]>>())
 					continue;
 
-				constexpr auto [...CHAR_INDEXES] = c<std::make_index_sequence<tuple_size<t<A...[I]>>()>>();
+				constexpr auto [...CHAR_INDEXES] = c<std::make_index_sequence<get_tuple_size<t<A...[I]>>()>>();
 				template for (constexpr size_t J : {CHAR_INDEXES...}) {
 					if (!traits_type::eq(str_data[J], c(get_element<J>(AA_EXPAND(A)[I]))))
 						break;
 
-					if constexpr (J == (tuple_size<t<A...[I]>>() - 1)) {
+					if constexpr (J == (get_tuple_size<t<A...[I]>>() - 1)) {
 						// invoke<get_call<I>()>(std::forward<F>(f));
 						return I;
 					}

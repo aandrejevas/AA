@@ -497,12 +497,13 @@ namespace aa {
 	// 	constexpr AAA(const AAA &) = delete;
 	// 	constexpr AAA() = default;
 	// };
+	// Integral, yes, very important constant :).
 	template<std::copyable auto V>
 	using constant = std::integral_constant<t<V>, V>;
 
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p2781r9.html
 	template<std::copyable T>
-	consteval T c(const T value = default_value) {
+	consteval T c(const T value = default_value.operator T()) {
 		return value;
 	}
 
@@ -699,8 +700,10 @@ namespace aa {
 	};
 
 	// Lambdos ne consteval, nes nereikia constexpr kontekstuose to žymėti. Analogiškos lambdos taip pat neturi tokio specifikatoriaus.
+#pragma GCC diagnostic push // https://stackoverflow.com/questions/76867698/what-does-ignoring-attributes-on-template-argument-mean-in-this-context
+#pragma GCC diagnostic ignored "-Wignored-attributes"
 	template<class F>
-	using function_t = type_in_c_t<overload{
+	using function_t = t<overload{
 		([]<bool N, class R, class... A>(std::type_identity<R(A...) noexcept(N)>) static { return c_type<R(A...)>(); }),
 		([]<bool N, class R, class... A>(std::type_identity<R(A...) & noexcept(N)>) static { return c_type<R(A...)>(); }),
 		([]<bool N, class R, class... A>(std::type_identity<R(A...) && noexcept(N)>) static { return c_type<R(A...)>(); }),
@@ -714,6 +717,7 @@ namespace aa {
 		}),
 		([]<functor T>(this const auto lambda, std::type_identity<T>) { return lambda(c_type<t<&T::operator()>>()); })
 	}(c_type<std::remove_cvref_t<F>>())>;
+#pragma GCC diagnostic pop
 
 	template<class F>
 	concept function_type_deducible = requires { typename function_t<F>; };
@@ -725,16 +729,16 @@ namespace aa {
 		} else {
 			return c_type<void>();
 		}
-	})(c_type<function_t<F>>())>;
+	})(c<function_t<F>>())>;
 
 	template<function_type_deducible F>
 	using function_result_t = type_in_c_t<([]<class R, class... A>(std::type_identity<R(A...)>)
-		static { return c_type<R>(); })(c_type<function_t<F>>())>;
+		static { return c_type<R>(); })(c<function_t<F>>())>;
 
 	template<class F>
 	consteval size_t get_function_arity() {
 		if constexpr (function_type_deducible<F>) {
-			return ([]<class R, class... A>(std::type_identity<R(A...)>) static { return sizeof...(A); })(c_type<function_t<F>>());
+			return ([]<class R, class... A>(std::type_identity<R(A...)>) static { return sizeof...(A); })(c<function_t<F>>());
 		} else {
 			return numeric_max;
 		}
@@ -794,10 +798,10 @@ namespace aa {
 			static consteval value_type operator()() { return default_value; }
 
 			// Special member functions
-			constexpr tuple_unit() = default;
+			consteval tuple_unit() = default;
 
 			template<constructible_to<value_type> U = value_type>
-			constexpr tuple_unit(U &&) {}
+			consteval tuple_unit(U &&) {}
 		};
 	}
 
@@ -805,7 +809,7 @@ namespace aa {
 	concept complete_tuple_size = complete<std::tuple_size<std::remove_reference_t<T>>>;
 
 	template<complete_tuple_size T>
-	consteval size_t tuple_size() { return std::tuple_size_v<std::remove_reference_t<T>>; }
+	consteval size_t get_tuple_size() { return std::tuple_size_v<std::remove_reference_t<T>>; }
 
 	template<class T, size_t I>
 	concept complete_tuple_element = complete<std::tuple_element<I, std::remove_reference_t<T>>>;
@@ -823,12 +827,27 @@ namespace aa {
 	}
 
 	// T čia neturi būti tuple_like, nes tuple_like tipo visi get validūs, o čia tikrinamas tik vienas get.
+	template<class T, size_t I>
+	concept member_get_exists = requires(T && t) {
+		std::forward<T>(t).template get<I>();
+	};
+
+	template<class T, size_t I>
+	concept adl_get_exists = requires(T && t) {
+		get<I>(std::forward<T>(t));
+	};
+
 	// Negalime turėti funkcijos, nes neišeina turėti function aliases patogių.
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/p2769r1.html
 	template<size_t I>
-	constexpr auto get_element = []<class T>(T && t) static -> auto && {
-		auto && [...elems] = t;
-		return std::forward_like<T>(AA_EXPAND(elems)[I]);
+	constexpr auto get_element = []<class T>(T && t) static -> decltype(auto) {
+		// Negalime tiesiog naudoti structured bindings, nes taip negalėtume atskirti atvejo, kai get gražina value, o ne reference tipą. Tokiu atveju structured binding sukuria rvalue reference kintamąjį, o ne value tipo kintamąjį. Ir taip pat su šia realizacija galime naudoti tipus, kurie pilnai nerealizuoja tuple protokolo.
+		/**/ if constexpr (member_get_exists<T, I>)		return std::forward<T>(t).template get<I>();
+		else if constexpr (adl_get_exists<T, I>)		return get<I>(std::forward<T>(t));
+		else {
+			auto && [...elems] = std::forward<T>(t);
+			return std::forward_like<T>(AA_EXPAND(elems)[I]);
+		}
 	};
 
 	constexpr t<get_element<0>> get_0, get_x, get_key;
@@ -890,8 +909,8 @@ namespace aa {
 
 	// statement-expressions are not allowed outside functions nor in template-argument lists
 	template<class T, size_t N = 0>
-	concept tuple_like = (tuple_size<T>() >= N) && ([] static {
-		constexpr auto [...I] = c<std::make_index_sequence<tuple_size<T>()>>();
+	concept tuple_like = (get_tuple_size<T>() >= N) && ([] static {
+		constexpr auto [...I] = c<std::make_index_sequence<get_tuple_size<T>()>>();
 		return (... && std::constructible_from<tuple_element_t<I, T>, get_result_t<I, T>>);
 	})();
 
@@ -903,7 +922,7 @@ namespace aa {
 	}
 
 	template<class F, class T, size_t... I>
-	concept tuple_constructible_to = tuple_like<F, tuple_size<T>()>
+	concept tuple_constructible_to = tuple_like<F, get_tuple_size<T>()>
 		&& (... && std::constructible_from<tuple_element_t<I, T>, get_result_t<I, F>>);
 
 
@@ -920,6 +939,18 @@ namespace aa {
 
 	template<class, class...>
 	struct basic_tuple;
+
+	template<>
+	struct basic_tuple<std::index_sequence<>> {
+		// Member types
+		using tuple_type = basic_tuple;
+
+		// Capacity
+		static consteval size_t tuple_size() { return 0; }
+
+		// Comparisons
+		friend consteval auto operator<=>(const tuple_type &, const tuple_type &) = default;
+	};
 
 	// https://danlark.org/2020/04/13/why-is-stdpair-broken/
 	// https://en.wikipedia.org/wiki/Tuple
@@ -961,28 +992,38 @@ namespace aa {
 
 		// Element access
 		template<size_t I, class H>
-		constexpr auto && operator[](this H && self, constant<I>) {
+		constexpr decltype(auto) operator[](this H && self, constant<I>) {
 			return std::forward<H>(self).template get<I>();
 		}
 
 		template<size_t I, class H>
+			requires (!empty_const_movable_defaultable<value_type<I>>)
 		constexpr auto && get(this H && self) {
-			return as<unit_type<I>>(std::forward<H>(self))();
+			return std::forward<H>(self).unit_type<I>::value;
 		}
 
+		template<size_t I>
+			requires (empty_const_movable_defaultable<value_type<I>>)
+		static consteval auto get() { return unit_type<I>::operator()(); }
+
+
 		template<class U, class H>
-		constexpr auto && operator[](this H && self, std::type_identity<U>) {
+		constexpr decltype(auto) operator[](this H && self, std::type_identity<U>) {
 			return std::forward<H>(self).template get<U>();
 		}
 
 		template<class U, class H>
+			requires (!empty_const_movable_defaultable<value_type<index<U>()>>)
 		constexpr auto && get(this H && self) {
-			return as<unit_type<index<U>()>>(std::forward<H>(self))();
+			return std::forward<H>(self).unit_type<index<U>()>::value;
 		}
+
+		template<class U>
+			requires (empty_const_movable_defaultable<value_type<index<U>()>>)
+		static consteval auto get() { return unit_type<index<U>()>::operator()(); }
 
 		// Special member functions
 		template<constructible_to<value_type<S>>... U>
-			requires (!!sizeof...(S))
 		constexpr basic_tuple(U &&... u) : unit_type<S>{std::forward<U>(u)}... {}
 
 		template<size_t... I, constructible_to<value_type<I>>... U>
@@ -998,6 +1039,12 @@ namespace aa {
 
 	template<class... T>
 	using tuple = basic_tuple<std::index_sequence_for<T...>, T...>;
+
+	template<class... A>
+	using type_list = tuple<const std::type_identity<A>...>;
+
+	template<auto... A>
+	using const_list = tuple<const constant<A>...>;
 
 	// Reikia deduction guide, kitaip nesikompiliuos toks kodas: aa::tuple _ = {2, 4u, 5.0, 8.f};
 	template<class... T>
@@ -1068,7 +1115,7 @@ namespace aa {
 
 	template<class T, size_t N = 0>
 	concept uniform_tuple_like = (tuple_like<T, N> && ([] static {
-		constexpr auto [...I] = c<std::make_index_sequence<tuple_size<T>()>>();
+		constexpr auto [...I] = c<std::make_index_sequence<get_tuple_size<T>()>>();
 		return same_as_every<tuple_element_t<I, T>...>;
 	})());
 
@@ -1140,31 +1187,24 @@ namespace aa {
 
 	// Netikriname ar INVOCABLE yra funkcijos rodyklė, nes gali būti naudinga naudoti šiuos tipus ir su objektais.
 	// Yra neleidžiama gauti std funkcijų adresų, bet visų atvejų atskirų neišrašysime, kai būtų toks adresas paduotas.
-	template<auto INVOCABLE, auto... V>
-	using lift_bind_back_t = t<[]<class... A>
-		requires (cref_invocable<t<INVOCABLE>, A..., const t<V> &...>)
-	(A &&... args) static -> decltype(auto) {
-		return std::invoke(INVOCABLE, std::forward<A>(args)..., V...);
-	}>;
-
-	template<auto INVOCABLE, auto... V>
-	using lift_bind_front_t = t<[]<class... A>
-		requires (cref_invocable<t<INVOCABLE>, const t<V> &..., A...>)
-	(A &&... args) static -> decltype(auto) {
-		return std::invoke(INVOCABLE, V..., std::forward<A>(args)...);
-	}>;
-
-	template<auto INVOCABLE, auto... V>
-		requires (cref_invocable<t<INVOCABLE>, const t<V> &...>)
-	using lift_ignore_args_t = t<[]<class... A>(A &&...) static -> decltype(auto) {
-		return std::invoke(INVOCABLE, V...);
-	}>;
-
-	template<auto INVOCABLE, auto... V>
-		requires (cref_invocable<t<INVOCABLE>, const t<V> &...>)
-	using lift_wo_args_t = t<[] static -> decltype(auto) {
-		return std::invoke(INVOCABLE, V...);
-	}>;
+	template<function_type_deducible auto FUNC, class FRONT_LIST = const_list<>, class BACK_LIST = const_list<>>
+		requires ((FRONT_LIST::tuple_size() + BACK_LIST::tuple_size()) <= get_function_arity<t<FUNC>>())
+	using lift_t = t<([]<class R, class... A, auto... F, auto... B, size_t... I>(
+		std::type_identity<R(A...)>,
+		const_list<F...>,
+		const_list<B...>,
+		std::index_sequence<I...>) static
+	{
+		return ([](A...[I + sizeof...(F)]... args) static->R {
+			return std::invoke(FUNC,
+				F...,
+				std::forward<A...[I + sizeof...(F)]>(args)...,
+				B...);
+		});
+	})(c<function_t<t<FUNC>>>(),
+		c<FRONT_LIST>(),
+		c<BACK_LIST>(),
+		c<std::make_index_sequence<get_function_arity<t<FUNC>>() - FRONT_LIST::tuple_size() - BACK_LIST::tuple_size()>>())>;
 
 	// Nedarome cast operacijos ant rezultato (kad, pavyzdžiui, leisti naudotojui pasirinkti gauti didesnį integral tipą),
 	// nes tokia realizacija yra visados klaidinga. Naudotojas galės, jei norės pats tokią operaciją atlikti.
@@ -1219,10 +1259,6 @@ namespace aa {
 	template<class F, class... A>
 	concept out_unary_invocable = lvalue_reference_like<function_argument_t<F>>
 		&& movable_constructible_from<std::remove_reference_t<function_argument_t<F>>, A...>;
-
-	template<class F, class... A>
-	concept out_unary_call_invocable = out_unary_invocable<call_template_t<F>, A...>
-		&& tuple_like<function_argument_t<call_template_t<F>>>;
 
 	template<class F, class... A>
 		requires (out_unary_invocable<F, A...>)
