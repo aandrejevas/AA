@@ -19,7 +19,7 @@ namespace aa {
 	// https://en.wikipedia.org/wiki/Linear_congruential_generator
 	// Parinktos konstantos priderintos darbui su moduliu 2^32 todėl T sakome, kad yra uint32_t.
 	template<std::unsigned_integral T = uint32_t, T A = 0x8088405, T C = 1>
-		requires (std::gcd(representable_values_v<T>, C) == 1 && !remainder<4>(A - 1))
+		requires (std::gcd(get_representable_values<T>(), C) == 1 && !remainder<4>(A - 1))
 	struct linear_congruential_generator {
 		// Member types
 		using result_type = T;
@@ -31,7 +31,7 @@ namespace aa {
 		// https://cp-algorithms.com/algebra/module-inverse.html
 		// https://en.wikipedia.org/wiki/Euler%27s_totient_function
 		// https://en.wikipedia.org/wiki/Modular_multiplicative_inverse#Using_Euler's_theorem
-		static consteval modulus_type modulus() { return representable_values_v<result_type>; }
+		static consteval modulus_type modulus() { return get_representable_values<result_type>(); }
 		static consteval result_type multiplier() { return A; }
 		static consteval result_type increment() { return C; }
 		static consteval result_type inverse() { return pow(multiplier(), (modulus() >> 1) - 1); }

@@ -10,7 +10,7 @@ namespace aa {
 	// Konkretus panaudojimas struktūros yra, sakykime turime globalų kintamąjį, bet jį inicializuojame tik vėliau ir po to jo nekeičiame. Tai ši klasė leidžia jį inicializuoti ir jei bus bandoma pakeisti tą kintamąjį vėliau, iškarto bus išeinama iš programos.
 	template<std::movable T,
 		cref_constructible_to<T> auto EMPTY = default_value,
-		class PREDICATE = equal_to<EMPTY>
+		class_like PREDICATE = equal_to<EMPTY>
 	>
 	struct constified : protected unit<T> {
 		// Member types

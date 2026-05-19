@@ -7,7 +7,7 @@
 
 // https://github.com/boostorg/leaf/blob/bd58aa238cd389e23a456f0d7ad1422834818496/include/boost/leaf/error.hpp#L64
 // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/p2561r2.html
-#define AA_TRY(operand, ...) ({\
+#define AA_TRY(operand, ...) __extension__ ({\
 	auto && o = (operand);\
 	using O = decltype(o);\
 	using T = aa::try_traits<std::remove_cvref_t<O>>;\

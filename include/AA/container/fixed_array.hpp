@@ -15,7 +15,7 @@ namespace aa {
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p0401r6.html
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0316r0.html
 	// https://en.wikipedia.org/wiki/Array_data_structure
-	template<not_cref T, class ALLOC = nothrow_allocator<T>>
+	template<not_cref T, class_like ALLOC = nothrow_allocator<T>>
 	struct fixed_array {
 		// Member types
 		using value_type = T;
@@ -132,7 +132,7 @@ namespace aa {
 	public:
 		// Reikia tokio konstruktoriaus, nes gal norės naudotojas vėliau daryti construct_at ant šito objekto. Tuščia būsena taip pat gaunama po move.
 		// Inicializuojame su nullptr, nes tai suteikia saugumo ir tas priskyrimas bus išoptimizuotas (unique_ptr inicializacijos negalėtume sustabdyti).
-		consteval fixed_array()
+		constexpr fixed_array()
 			: ptr_to_front{}, ptr_to_tail{default_value} {}
 
 		constexpr fixed_array(fixed_array && o)

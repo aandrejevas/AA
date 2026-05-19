@@ -14,10 +14,10 @@ namespace aa {
 	//
 	// Internal object not movable or changeable from outside bc it is a managed object and first it has to be run through the deleter and then it can be initialized to a new state.
 	template<
-		class DELETER,
+		class_like DELETER,
 		wo_cv_movable T = std::remove_reference_t<function_argument_t<DELETER>>,
 		cref_constructible_to<T> auto EMPTY = default_value,
-		class PREDICATE = equal_to<EMPTY>
+		class_like PREDICATE = equal_to<EMPTY>
 	>
 	struct managed : protected unit<T> {
 		// Member types
@@ -132,14 +132,9 @@ namespace aa {
 	using instrumentally_managed = managed<DELETER, const T, EMPTY, constant<false>>;
 
 	template<pointer_like T>
-	using managed_by_new = managed<std::default_delete<std::remove_pointer_t<T>>>;
+	using managed_by_new = managed<std::default_delete<std::remove_pointer_t<T>>, T>;
 
-	template<class ALLOC>
-	using managed_by_allocator = managed<t<[](
-		const pointer_in_use_t<std::allocator_traits<ALLOC>> p,
-		const size_type_in_use_t<std::allocator_traits<ALLOC>> n = default_value) static -> void
-	{
-		c<ALLOC>().deallocate(p, n);
-	}>>;
+	template<class_like ALLOC>
+	using managed_by_allocator = managed<default_deallocate<ALLOC>, pointer_in_use_t<default_deallocate<ALLOC>>>;
 
 }

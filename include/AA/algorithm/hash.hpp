@@ -49,7 +49,7 @@ namespace aa {
 			const size_t count = std_r::size(str);
 			const range_pointer_t<const T> str_data = std_r::data(str);
 
-			constexpr auto [...PARAMETER_INDEXES] = c<std::make_index_sequence<sizeof...(A)>>();
+			constexpr auto [...PARAMETER_INDEXES] = c<std::index_sequence_for<A...>>();
 			template for (constexpr size_t I : {PARAMETER_INDEXES...}) {
 				if (count != get_tuple_size<t<A...[I]>>())
 					continue;

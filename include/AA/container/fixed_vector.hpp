@@ -10,7 +10,7 @@ namespace aa {
 	// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p0843r14.html
 	// https://en.wikipedia.org/wiki/Dynamic_array
 	// Negali būti tuple like, nes kinta kiek masyvo elementų yra "naudojama".
-	template<not_cref T, class ALLOC = nothrow_allocator<T>>
+	template<not_cref T, class_like ALLOC = nothrow_allocator<T>>
 	struct fixed_vector : fixed_array<T, ALLOC> {
 		// Member types
 		using base_type = fixed_array<T, ALLOC>;
@@ -162,7 +162,7 @@ namespace aa {
 		// Special member functions
 		// Nedarome = default, nes konstruktorius vis tiek nebus trivial,
 		// nes klasė turi kintamųjų su numatytais inicializatoriais.
-		consteval fixed_vector()
+		constexpr fixed_vector()
 			: base_type{}, ptr_to_back{default_value} {}
 
 		constexpr fixed_vector(fixed_vector && a)

@@ -230,7 +230,7 @@ namespace aa {
 	concept arithmetic = std::is_arithmetic_v<T>;
 
 	template<class T>
-	concept uniquely_representable = std::has_unique_object_representations_v<T>;
+	concept representable_values_computable = std::has_unique_object_representations_v<T> && sizeof(T) < sizeof(uintmax_t);
 
 	template<class T>
 	concept trivially_copyable = std::is_trivially_copyable_v<T>;
@@ -383,6 +383,16 @@ namespace aa {
 	template<auto V>
 	using t = decltype(V);
 
+	// Naudinga funkcija, kad pakeisti narrowing konversijas. Taip pat naudinga, kad pakeisti atvejus, kada privalome iškviesti konstruktorius naudojant apvalius skliaustelius.
+	template<std::movable T, class... A>
+		requires (std::constructible_from<T, A...>)
+	[[nodiscard, gnu::always_inline]]
+	constexpr T init(A &&... args) {
+		T t;
+		std_r::construct_at(std::addressof(t), std::forward<A>(args)...);
+		return t;
+	}
+
 	template<class U>
 	struct converter_base_t {
 		// Vietoj operatorių apibrėžimo galėtume paveldėti iš monostate, bet kitur negalime paveldėti ir nepaveldime tai čia taip pat taip elgiamės, kad būtume nuoseklūs. Taip pat nebūtų teisinga paveldėti, nes vietoje monostate galėtų būtų naudojamos šios klasės.
@@ -450,7 +460,7 @@ namespace aa {
 		// T turi būti movable, nes mums reikia žinoti ar galime iš gražinamos reikšmės sukonstruoti T.
 		// consteval, nes taip priversime naudotojus patiems sukonstruoti reikšmę, jei jos neišeina sukonstruoti kompiliavimo metu.
 		template<movable_constructible_from<const t<A> &...> T>
-		consteval operator T() const { return T{A...}; }
+		consteval operator T() const { return init<T>(A...); }
 	};
 
 	using converter_to_default_value_t = converter_to_value_t<>;
@@ -928,14 +938,16 @@ namespace aa {
 
 
 	// Naudojame constexpr algoritmą, kad surasti indeksą, nes lygiai taip pat ir GCC daro.
-	template<auto A, std::equality_comparable_with<t<A>> auto... V>
-	constexpr size_t pack_index_v = pack_index_v<true, (A == V)...>;
-
-	template<bool A, bool... V>
-	constexpr size_t pack_index_v<A, V...> = get_key(*std_r::find(std::views::enumerate(stay(std::array{V...})), A, get_val));
-
 	template<class U, class... T>
-	constexpr size_t type_pack_index_v = pack_index_v<true, std::same_as<U, T>...>;
+	consteval size_t get_type_index() {
+		constexpr auto [...INDEXES] = c<std::index_sequence_for<T...>>();
+		template for (constexpr size_t I : {INDEXES...}) {
+			if constexpr (std::same_as<U, AA_EXPAND(T)[I]>) {
+				return I;
+			}
+		}
+		static_assert(false);
+	}
 
 	template<class, class...>
 	struct basic_tuple;
@@ -982,7 +994,7 @@ namespace aa {
 
 		// Member constants
 		template<class U>
-		static consteval size_t index() { return type_pack_index_v<U, T...>; }
+		static consteval size_t index() { return get_type_index<U, T...>(); }
 
 		// Capacity
 		static consteval size_t tuple_size() { return sizeof...(T); }
@@ -1096,7 +1108,7 @@ namespace aa {
 
 	// Nors galėtume paveldėti tiesiog iš first, bet to nedarome, kad nekurti nereikalingų paveldėjimo ryšių.
 	template<class T, class... A>
-	using first_not_t = A...[pack_index_v<false, std::same_as<T, A>...>];
+	using first_not_t = A...[get_type_index<constant<false>, constant<std::same_as<T, A>>...>()];
 
 	// Reikia using šio, nes testavimui reikėjo sukurti tuple su 100 elementų ir nėra variantas turėti 100 using'ų.
 	template<template<class...> class T, auto F, size_t N>
@@ -1232,8 +1244,8 @@ namespace aa {
 	// Kai pirminis tipas yra signed ir rezultato tipas yra unsigned ir jis didesnis, tada reikšmė yra sign-extended. Todėl reikia šios funkcijos.
 	template<std::integral T, std::integral X>
 	constexpr T sign_cast(const X x) {
-		if constexpr (std::unsigned_integral<T>)	return T{unsign(x)};
-		else										return T{x};
+		if constexpr (std::unsigned_integral<T>)	return init<T>(unsign(x));
+		else										return init<T>(x);
 	}
 
 	template<std::integral U = size_t, std::unsigned_integral T>
@@ -1253,8 +1265,10 @@ namespace aa {
 	// T turi turėti unique object representations, nes kitaip neišeis patikimai apskaičiuoti konstantos.
 	//
 	// Vietoje byte negalime naudoti uint8_t, nes jei sistemoje baitas būtų ne 8 bitų, tas tipas nebus apibrėžtas.
-	template<uniquely_representable T>
-	constexpr size_t representable_values_v = int_exp2(sizeof(T) * numeric_digits<std::byte>());
+	template<representable_values_computable T>
+	consteval uintmax_t get_representable_values() {
+		return int_exp2(sizeof(T) * numeric_digits<std::byte>());
+	}
 
 	template<class F, class... A>
 	concept out_unary_invocable = lvalue_reference_like<function_argument_t<F>>
@@ -1434,7 +1448,7 @@ namespace aa {
 
 
 	template<class T, class... A>
-	using next_type_t = A...[(type_pack_index_v<T, A...>) + 1];
+	using next_type_t = A...[(get_type_index<T, A...>() + 1)];
 
 	template<std::integral T>
 	using next_int_t = copy_unsigned_t<T, next_type_t<std::make_signed_t<T>, int8_t, int16_t, int32_t, int64_t>>;
@@ -1451,6 +1465,34 @@ namespace aa {
 	constexpr auto downrank(const X x) {
 		return sign_cast<prev_int_t<X>>(x);
 	}
+
+
+
+	template<class A>
+	concept unary_deallocate_exists = requires(A && a, const pointer_in_use_t<std::allocator_traits<A>> p) {
+		std::forward<A>(a).deallocate(p);
+	};
+
+	template<class_like ALLOC>
+	struct default_deallocate {
+		// Member types
+		using allocator_type = ALLOC;
+		using value_type = value_type_in_use_t<std::allocator_traits<allocator_type>>;
+		using size_type = size_type_in_use_t<std::allocator_traits<allocator_type>>;
+		using difference_type = difference_type_in_use_t<std::allocator_traits<allocator_type>>;
+		using pointer = pointer_in_use_t<std::allocator_traits<allocator_type>>;
+		using const_pointer = const_pointer_in_use_t<std::allocator_traits<allocator_type>>;
+
+		// Member functions
+		static constexpr void operator()(const pointer p, const size_type n) {
+			c<allocator_type>().deallocate(p, n);
+		}
+
+		static constexpr void operator()(const pointer p) {
+			if constexpr (unary_deallocate_exists<allocator_type>)	c<allocator_type>().deallocate(p);
+			else													c<allocator_type>().deallocate(p, 0);
+		}
+	};
 
 }
 
